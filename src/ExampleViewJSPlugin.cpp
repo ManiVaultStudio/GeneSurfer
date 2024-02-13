@@ -30,9 +30,6 @@
 #include <sstream>
 #include <string>
 
-//#include <flann/flann.hpp> //TO DO remove flann dependency
-
-
 #include <chrono>
 
 #include <unordered_set> // check if needed
