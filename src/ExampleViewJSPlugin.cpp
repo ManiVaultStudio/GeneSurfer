@@ -1,0 +1,2306 @@
+#include "ExampleViewJSPlugin.h"
+
+#include "ChartWidget.h"
+#include "ScatterView.h"
+
+#include <DatasetsMimeData.h>
+
+#include <vector>
+#include <random>
+#include <set>
+#include <unordered_map>
+
+#include <Eigen/Dense>
+#include <Eigen/Eigenvalues>
+// #define EIGEN_DONT_PARALLELIZE // TO DO: is this necessary for controlling parallelization in eigen?
+
+#include "Compute/DataTransformations.h"
+
+#include <QString>
+#include <QStringList>
+#include <QVariant>
+#include <QVariantList>
+#include <QVariantMap>
+#include <QMimeData>
+#include <QDebug>
+
+// for reading hard-coded csv files
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+
+//#include <flann/flann.hpp> //TO DO remove flann dependency
+
+
+#include <chrono>
+
+#include <unordered_set> // check if needed
+
+
+
+Q_PLUGIN_METADATA(IID "nl.BioVault.ExampleViewJSPlugin")
+
+using namespace mv;
+
+namespace
+{
+    void normalizeVector(std::vector<float>& v)
+    {
+        // Store scalars in floodfill dataset
+        float scalarMin = std::numeric_limits<float>::max();
+        float scalarMax = -std::numeric_limits<float>::max();
+
+        // Compute min and max of scalars
+        for (int i = 0; i < v.size(); i++)
+        {
+            if (v[i] < scalarMin) scalarMin = v[i];
+            if (v[i] > scalarMax) scalarMax = v[i];
+        }
+        float scalarRange = scalarMax - scalarMin;
+
+        if (scalarRange != 0)
+        {
+            float invScalarRange = 1.0f / (scalarMax - scalarMin);
+            // Normalize the scalars
+#pragma omp parallel for
+            for (int i = 0; i < v.size(); i++)
+            {
+                v[i] = (v[i] - scalarMin) * invScalarRange;
+            }
+        }
+    }
+}
+
+ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
+    ViewPlugin(factory),
+    _nclust(3),
+    _positionDataset(),
+    _scatterViews(6 + 1, nullptr),// TO DO: hard code max 6 scatterViews
+    _dimView(nullptr),
+    _positions(),
+    _positionDimensions({ 0, 1 }),
+    _positionSourceDataset(),
+    _numPoints(0),
+    _subsetData(),
+    _corrGeneWave(),
+    _corrThreshold(0.15f),
+    _dimNameToClusterLabel(),
+    _colorScalars(_nclust, std::vector<float>(_numPoints, 0.0f)),
+    _chartWidget(nullptr),
+    _tableWidget(nullptr),
+    _client(nullptr),
+    _dropWidget(nullptr),
+    _settingsAction(this, "Settings Action"),
+    _currentDataSet(nullptr), // TO DO: Not used anymore
+    _selectedDimIndex(0),
+    _selectedClusterIndex(0),
+    _colorMapAction(this, "Color map", "RdYlBu")
+
+{
+    for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
+    {
+        _scatterViews[i] = new ScatterView();
+    }
+
+    _dimView = new ScatterView();
+
+    for (int i = 0; i < 6; i++) {//TO DO: hard code max 6 scatterViews
+        connect(_scatterViews[i], &ScatterView::initialized, this, [this, i]() {_scatterViews[i]->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
+        connect(_scatterViews[i], &ScatterView::viewSelected, this, [this, i]() { _selectedClusterIndex = i; updateClick(); });
+    }
+
+    connect(_dimView, &ScatterView::initialized, this, [this]() {_dimView->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
+    connect(_dimView, &ScatterView::viewSelected, this, [this]() { _selectedClusterIndex = 6; updateClick(); });   
+}
+
+void ExampleViewJSPlugin::init()
+{
+    //getWidget().setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+
+    // Create layout
+    auto layout = new QVBoxLayout();
+
+    auto chartTableDimLayout = new QHBoxLayout();
+    auto tableDimLayout = new QVBoxLayout();
+
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    //setting widget
+    auto settingsWidget = _settingsAction.createWidget(&getWidget());
+    settingsWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    layout->addWidget(settingsWidget);
+
+    // Create barchart widget and set html contents of webpage 
+    _chartWidget = new ChartWidget(this);
+    _chartWidget->setPage(":example_chart/bar_chart.html", "qrc:/example_chart/");
+
+    _tableWidget = new QTableWidget();
+
+    tableDimLayout->addWidget(_tableWidget, 50);
+    tableDimLayout->addWidget(_dimView, 50);
+
+    chartTableDimLayout->addWidget(_chartWidget, 60);
+    chartTableDimLayout->addLayout(tableDimLayout, 40);
+
+    layout->addLayout(chartTableDimLayout, 1);// stretch factor same as clusterViewLayout
+
+    auto clusterViewMainLayout = new QVBoxLayout();
+    clusterViewMainLayout->setContentsMargins(6, 6, 6, 6);
+
+    auto clusterViewRow1 = new QHBoxLayout();
+    for (int i = 0; i < 3; i++) {//TO DO: initialize 3 sactter plots
+        clusterViewRow1->addWidget(_scatterViews[i], 50);
+    }
+    clusterViewMainLayout->addLayout(clusterViewRow1);
+
+    auto clusterViewRow2 = new QHBoxLayout();
+    for (int i = 3; i < 6; i++) {//TO DO: initialize 3 sactter plots
+        clusterViewRow2->addWidget(_scatterViews[i], 50);
+    }
+    clusterViewMainLayout->addLayout(clusterViewRow2);
+
+    layout->addLayout(clusterViewMainLayout, 1);
+
+    // Apply the layout
+    getWidget().setLayout(layout);
+
+    // Instantiate new drop widget: See ExampleViewPlugin for details
+    _dropWidget = new DropWidget(_chartWidget);
+    _dropWidget->setDropIndicatorWidget(new DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "Drag the ExampleViewJSData in this view"));
+
+    _dropWidget->initialize([this](const QMimeData* mimeData) -> DropWidget::DropRegions {
+
+        // A drop widget can contain zero or more drop regions
+        DropWidget::DropRegions dropRegions;
+
+        const auto datasetsMimeData = dynamic_cast<const DatasetsMimeData*>(mimeData);
+
+
+        if (datasetsMimeData == nullptr)
+            return dropRegions;
+
+        if (datasetsMimeData->getDatasets().count() > 1)
+            return dropRegions;
+
+        const auto dataset = datasetsMimeData->getDatasets().first();
+        const auto datasetGuiName = dataset->text();
+        const auto datasetId = dataset->getId();
+        const auto dataType = dataset->getDataType();
+        const auto dataTypes = DataTypes({ PointType, ClusterType });
+
+
+        //check if the data type can be dropped
+        if (!dataTypes.contains(dataType))
+            dropRegions << new DropWidget::DropRegion(this, "Incompatible data", "This type of data is not supported", "exclamation-circle", false);
+
+        //Points dataset is about to be dropped
+        if (dataType == PointType) {
+
+            if (datasetId == getCurrentDataSetID()) {
+                dropRegions << new DropWidget::DropRegion(this, "Warning", "Data already loaded", "exclamation-circle", false);
+            }
+            else {
+                // Get points datset from the core
+                auto candidateDataset = mv::data().getDataset<Points>(datasetId);
+                qDebug() << " point dataset is dropped";
+
+                // Establish drop region description
+                const auto description = QString("Visualize %1 as points ").arg(datasetGuiName);
+
+                if (!_positionDataset.isValid()) {
+
+                    // Load as point positions when no dataset is currently loaded
+                    dropRegions << new DropWidget::DropRegion(this, "Point position", description, "map-marker-alt", true, [this, candidateDataset]() {
+                        _dataInitialized = false;
+                        _positionDataset = candidateDataset;
+                        //positionDatasetChanged();
+                        _dropWidget->setShowDropIndicator(false);
+                        });
+                }
+                else {
+                    if (_positionDataset != candidateDataset && candidateDataset->getNumDimensions() >= 2) {
+
+                        // The number of points is equal, so offer the option to replace the existing points dataset
+                        dropRegions << new DropWidget::DropRegion(this, "Point position", description, "map-marker-alt", true, [this, candidateDataset]() {
+                            _dataInitialized = false;
+                            _positionDataset = candidateDataset;
+                            //positionDatasetChanged();
+                            });
+                    }
+                }
+            }
+        }
+
+        // Cluster dataset is about to be dropped
+        if (dataType == ClusterType) {
+
+            // Get clusters dataset from the core
+            auto candidateDataset = mv::data().getDataset<Clusters>(datasetId);
+
+            // Establish drop region description
+            const auto description = QString("Use %1 as mask clusters").arg(candidateDataset->getGuiName());
+
+            // Only allow user to color by clusters when there is a positions dataset loaded
+            if (_positionDataset.isValid())
+            {
+                // Use the clusters set for points color
+                dropRegions << new DropWidget::DropRegion(this, "Mask", description, "palette", true, [this, candidateDataset]()
+                    {
+                        _sliceDataset = candidateDataset;
+                        updateSlice();
+
+                        loadDataAvgExpression();
+                        loadDataForLabels();
+                    });
+            }
+            else {
+
+                // Only allow user to color by clusters when there is a positions dataset loaded
+                dropRegions << new DropWidget::DropRegion(this, "No points data loaded", "Clusters can only be visualized in concert with points data", "exclamation-circle", false);
+            }
+        }
+        return dropRegions;
+
+        });
+
+    // Load points when the pointer to the position dataset changes
+    connect(&_positionDataset, &Dataset<Points>::changed, this, &ExampleViewJSPlugin::positionDatasetChanged);
+
+    // update data when data set changed
+    //connect(&_positionDataset, &Dataset<Points>::dataChanged, this, &ExampleViewJSPlugin::convertDataAndUpdateChart);
+
+    // Update the selection from JS
+    connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passSelectionToCore, this, &ExampleViewJSPlugin::publishSelection);
+
+    // Update point selection when the position dataset data changes
+    //connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, &ExampleViewJSPlugin::updateSelection);// TO DO
+
+
+    // disable the clicked frame when selection changed
+    connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, [this]() {
+        if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
+            _scatterViews[_selectedClusterIndex]->selectView(false);
+        }
+        else if (_selectedClusterIndex == 6) {
+            _dimView->selectView(false);
+        }
+        });
+
+    connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, &ExampleViewJSPlugin::updateFloodFill);
+
+    _client = new EnrichmentAnalysis(this);
+    connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &ExampleViewJSPlugin::updateEnrichmentTable);
+    connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &ExampleViewJSPlugin::noDataEnrichmentTable);
+
+    connect(_tableWidget, &QTableWidget::cellClicked, this, &ExampleViewJSPlugin::onTableClicked); // on table clicked
+
+}
+
+void ExampleViewJSPlugin::loadData(const mv::Datasets& datasets)
+{
+    // Exit if there is nothing to load
+    if (datasets.isEmpty())
+        return;
+
+    // Load the first dataset
+    _positionDataset = datasets.first();
+}
+
+void ExampleViewJSPlugin::positionDatasetChanged()
+{
+    if (!_positionDataset.isValid())
+        return;
+
+    qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): New data dropped";
+
+    _positionSourceDataset = _positionDataset->getSourceDataset<Points>();
+
+    _numPoints = _positionDataset->getNumPoints();
+
+    // Get enabled dimension names
+    const auto& dimNames = _positionSourceDataset->getDimensionNames();
+    auto enabledDimensions = _positionSourceDataset->getDimensionsPickerAction().getEnabledDimensions();
+
+    _enabledDimNames.clear();
+    for (int i = 0; i < enabledDimensions.size(); i++)
+    {
+        if (enabledDimensions[i])
+            _enabledDimNames.push_back(dimNames[i]);
+    }
+
+    qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): enabledDimensions size: " << _enabledDimNames.size();
+
+
+    if (!_clusterScalars.isValid())
+    {
+       _clusterScalars = mv::data().createDataset<Points>("Points", "Clusters");
+    }
+
+    qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): start converting dataset ... ";
+    convertToEigenMatrix(_positionDataset, _positionSourceDataset, _dataStore.getBaseData());
+    convertToEigenMatrixProjection(_positionDataset, _dataStore.getBaseFullProjection());
+
+    standardizeData(_dataStore.getBaseData(), _dataStore.getVariances()); // getBaseData() is standardized here TO DO: temporarily disabled
+    //normalizeDataEigen(_dataStore.getBaseData(), _dataStore.getBaseNormalizedData());TO DO: getBaseData() or getBaseNormalizedData()
+    qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): finish converting dataset ... ";
+
+    _dataStore.createDataView();
+    updateSelectedDim();
+
+    _dataInitialized = true;
+
+    // might be redundant
+    calculatePositions(*_positionDataset);
+}
+
+std::pair<std::vector<QString>, std::vector<float>> ExampleViewJSPlugin::sortCorrWave()
+{
+    // sort _corrGeneWave and dimNames for plotting the barchart
+    std::vector<int> indices(_enabledDimNames.size());
+    std::iota(indices.begin(), indices.end(), 0);
+
+    std::sort(indices.begin(), indices.end(), [this](int a, int b) {
+        return _corrGeneWave[a] < _corrGeneWave[b];
+        });
+
+    std::vector<QString> sortedDimNames(_enabledDimNames.size());
+    std::vector<float> sortedCorrGeneWave(_corrGeneWave.size());
+
+    for (int i = 0; i < indices.size(); ++i) {
+        sortedDimNames[i] = _enabledDimNames[indices[i]];
+        sortedCorrGeneWave[i] = _corrGeneWave[indices[i]];
+    }
+
+    qDebug() << "ExampleViewJSPlugin::sortCorrWave(): Sorting finished";
+
+    return { sortedDimNames, sortedCorrGeneWave };
+}
+
+std::pair<std::vector<QString>, std::vector<float>> ExampleViewJSPlugin::sortCorrSpatial()
+{
+    // sort _corrGeneWave and dimNames for plotting the barchart
+    std::vector<int> indices(_enabledDimNames.size());
+    std::iota(indices.begin(), indices.end(), 0);
+
+    std::sort(indices.begin(), indices.end(), [this](int a, int b) {
+        return _corrGeneSpatial[a] < _corrGeneSpatial[b];
+        });
+
+    std::vector<QString> sortedDimNames(_enabledDimNames.size());
+    std::vector<float> sortedCorrGeneSpatial(_corrGeneSpatial.size());
+
+    for (int i = 0; i < indices.size(); ++i) {
+        sortedDimNames[i] = _enabledDimNames[indices[i]];
+        sortedCorrGeneSpatial[i] = _corrGeneSpatial[indices[i]];
+    }
+
+    qDebug() << "ExampleViewJSPlugin::sortCorrSpatial(): Sorting finished";
+
+    return { sortedDimNames, sortedCorrGeneSpatial };
+}
+
+void ExampleViewJSPlugin::convertDataAndUpdateChart()
+{
+    if (!_positionDataset.isValid())
+        return;
+
+    if (_toClearBarchart) {
+        return;
+    }
+
+    std::vector<QString> sortedDimNames; 
+    std::vector<float> sortedCorr;
+
+    // TO DO: can save time to only sort avaliable genes in _dimNameToClusterLabel
+    if (_isCorrSpatial) {
+        std::tie(sortedDimNames, sortedCorr) = sortCorrSpatial();
+    }
+    else {
+        std::tie(sortedDimNames, sortedCorr) = sortCorrWave();
+    }
+
+    qDebug() << "sortedDimNames size" << sortedDimNames.size();
+    qDebug() << "_dimNameToClusterLabel size" << _dimNameToClusterLabel.size();
+
+    // debugging for checking duplicates - Warning: duplicates in ABC Atlas gene symbols
+    /*std::unordered_set<QString> uniqueCheck;
+    for (const auto& dimName : sortedDimNames) {
+        if (!uniqueCheck.insert(dimName).second) {
+            qDebug() << "Duplicate gene found:" << dimName;
+        }
+    }*/
+
+    // set colors for clustering labels
+    std::vector<std::string> plotlyT10Palette = {
+    "#4C78A8", // blue
+    "#72B7B2", // cyan
+    "#FF9DA6", // pink
+    "#EECA3B", // yellow
+    "#54A24B", // green 
+    "#E45756", // red
+    "#B279A2", // purple
+    "#F58518", // orange   
+    "#9D755D"  // brown
+    };
+
+    // convert data from ManiVault PointData to a JSON structure
+    QVariantList payload;
+    QVariantMap entry;
+
+    for (int i = 0; i < sortedDimNames.size(); ++i) {
+
+        entry["Gene"] = sortedDimNames[i];
+        entry["Value"] = sortedCorr[i];
+
+        // set color based on threshold
+        /*if (std::abs(sortedCorrGeneWave[i]) < _corrThreshold) {
+            entry["categoryColor"] = "#b7b5c0";
+        }
+        else {
+            entry["categoryColor"] = "#4b4561";
+        }*/
+
+        auto it = _dimNameToClusterLabel.find(sortedDimNames[i]);
+
+        if (it != _dimNameToClusterLabel.end()) {
+            // Dimension name exists in the map
+            int clusterLabel = it->second;
+            entry["categoryColor"] = QString::fromStdString(plotlyT10Palette[clusterLabel % plotlyT10Palette.size()]);
+            entry["cluster"] = "Gene cluster " + QString::number(clusterLabel);
+        }
+        else {
+            // Dimension name doesn't exist in the map, assign grey color
+            entry["categoryColor"] = "#7F7F7F";// Middle Gray
+            entry["cluster"] = "Unclustered";
+        }
+        payload.push_back(entry);
+    }
+
+    qDebug() << "ExampleViewJSPlugin::convertDataAndUpdateChart: Send data from Qt cpp to D3 js";
+    emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payload);
+}
+
+void ExampleViewJSPlugin::publishSelection(const QString& selection)
+{
+    updateDimView(selection);
+
+    qDebug() << "ExampleViewJSPlugin::publishSelection: selection: " << selection;
+}
+
+QString ExampleViewJSPlugin::getCurrentDataSetID() const
+{
+    if (_currentDataSet.isValid())
+        return _currentDataSet->getId();
+    else
+        return QString{};
+}
+
+void ExampleViewJSPlugin::updateFloodFillDataset()
+{
+    // TO DO: type thing in setData
+    _floodFillDataset = _settingsAction.getDatasetPickerAction().getCurrentDataset<Points>();
+
+    qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets name: " << _floodFillDataset->text();
+    qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets size: " << _floodFillDataset->getNumPoints();
+
+    if (_floodFillDataset->text() != "allFloodNodes")
+        return;
+     
+    updateFloodFill();
+}
+
+void ExampleViewJSPlugin::updateSelectedDim() {
+
+    int xDim = _settingsAction.getXDimensionPickerAction().getCurrentDimensionIndex();
+    int yDim = _settingsAction.getYDimensionPickerAction().getCurrentDimensionIndex();
+
+    //qDebug() << "ExampleViewJSPlugin::updateSelectedDim(): xDim: " << xDim << " yDim: " << yDim;
+
+    _dataStore.createProjectionView(xDim, yDim);
+
+    //qDebug()<< "ExampleViewJSPlugin::updateSelectedDim(): getProjectionSize()"<< _dataStore.getProjectionSize();
+
+    std::vector<Vector2f> positions(_dataStore.getProjectionView().rows());
+    //qDebug() << "ExampleViewJSPlugin::updateSelectedDim(): positions size: " << _dataStore.getProjectionView().rows();
+
+    for (int i = 0; i < _dataStore.getProjectionView().rows(); i++) {
+        positions[i].set(_dataStore.getProjectionView()(i, 0), _dataStore.getProjectionView()(i, 1));
+    }
+
+    //qDebug() << "ExampleViewJSPlugin::updateSelectedDim(): positions size: " << positions.size();
+
+    updateViewData(positions);
+
+    // test
+    _positions = positions;
+}
+
+void ExampleViewJSPlugin::updateViewData(std::vector<Vector2f>& positions) {
+
+    // TO DO: can save some time here only computing data bounds once
+    // pass the 2d points to the scatter plot widget
+    for (int i = 0; i < _nclust; i++) {// TO DO: hard code max 6 scatterViews
+        _scatterViews[i]->setData(&positions);
+    }
+
+    _dimView->setData(&positions);
+
+}
+
+void ExampleViewJSPlugin::computeCorrSpatial() {
+    if (_isFloodIndex.empty()) {
+        qDebug() << "ExampleViewJSPlugin::computeCorrWave(): _isFloodIndex is empty";
+        return;
+    }
+
+    if (!_sliceDataset.isValid()) {
+        // 2D dataset 
+        std::vector<float> xCoords, yCoords;
+        for (int index : _sortedFloodIndices) {
+            xCoords.push_back(_positions[index].x);
+            yCoords.push_back(_positions[index].y);
+        }
+
+        Eigen::VectorXf xVector = Eigen::Map<Eigen::VectorXf>(xCoords.data(), xCoords.size());
+        Eigen::VectorXf yVector = Eigen::Map<Eigen::VectorXf>(yCoords.data(), yCoords.size());
+
+        // Precompute means and norms for xVector, yVector
+        float meanX = xVector.mean(), meanY = yVector.mean();
+        Eigen::VectorXf centeredX = xVector - Eigen::VectorXf::Constant(xVector.size(), meanX);
+        Eigen::VectorXf centeredY = yVector - Eigen::VectorXf::Constant(yVector.size(), meanY);
+        float normX = centeredX.squaredNorm(), normY = centeredY.squaredNorm();
+
+        std::vector<float> correlationsX(_subsetData.cols());
+        std::vector<float> correlationsY(_subsetData.cols());
+        _corrGeneSpatial.clear();
+        _corrGeneSpatial.resize(_subsetData.cols());
+
+#pragma omp parallel for
+        for (int i = 0; i < _subsetData.cols(); ++i) {
+            Eigen::VectorXf column = _subsetData.col(i);
+            float meanColumn = column.mean();
+            Eigen::VectorXf centeredColumn = column - Eigen::VectorXf::Constant(column.size(), meanColumn);
+            float normColumn = centeredColumn.squaredNorm();
+
+            float correlationX = centeredColumn.dot(centeredX) / std::sqrt(normColumn * normX);
+            float correlationY = centeredColumn.dot(centeredY) / std::sqrt(normColumn * normY);
+
+            if (std::isnan(correlationX)) { correlationX = 0.0f; }
+            if (std::isnan(correlationY)) { correlationY = 0.0f; }
+            correlationsX[i] = correlationX;
+            correlationsY[i] = correlationY;
+            _corrGeneSpatial[i] = std::abs(correlationX) + std::abs(correlationY);
+        }
+    }
+    else {
+        // 3D dataset
+        std::vector<float> zPositions;
+        _positionDataset->extractDataForDimension(zPositions, 2);
+
+        std::vector<float> xCoords, yCoords, zCoords;
+        for (int index : _sortedFloodIndices) {
+            xCoords.push_back(_positions[index].x);
+            yCoords.push_back(_positions[index].y);
+            zCoords.push_back(zPositions[index]);
+        }
+
+        Eigen::VectorXf xVector = Eigen::Map<Eigen::VectorXf>(xCoords.data(), xCoords.size());
+        Eigen::VectorXf yVector = Eigen::Map<Eigen::VectorXf>(yCoords.data(), yCoords.size());
+        Eigen::VectorXf zVector = Eigen::Map<Eigen::VectorXf>(zCoords.data(), zCoords.size());
+
+        // Precompute means and norms for xVector, yVector, zVector
+        float meanX = xVector.mean(), meanY = yVector.mean(), meanZ = zVector.mean();
+        Eigen::VectorXf centeredX = xVector - Eigen::VectorXf::Constant(xVector.size(), meanX);
+        Eigen::VectorXf centeredY = yVector - Eigen::VectorXf::Constant(yVector.size(), meanY);
+        Eigen::VectorXf centeredZ = zVector - Eigen::VectorXf::Constant(zVector.size(), meanZ);
+        float normX = centeredX.squaredNorm(), normY = centeredY.squaredNorm(), normZ = centeredZ.squaredNorm();
+
+        std::vector<float> correlationsX(_subsetData3D.cols());
+        std::vector<float> correlationsY(_subsetData3D.cols());
+        std::vector<float> correlationsZ(_subsetData3D.cols());
+        _corrGeneSpatial.clear();
+        _corrGeneSpatial.resize(_subsetData3D.cols());
+
+#pragma omp parallel for
+        for (int i = 0; i < _subsetData3D.cols(); ++i) {
+            Eigen::VectorXf column = _subsetData3D.col(i);
+            float meanColumn = column.mean();
+            Eigen::VectorXf centeredColumn = column - Eigen::VectorXf::Constant(column.size(), meanColumn);
+            float normColumn = centeredColumn.squaredNorm();
+
+            float correlationX = centeredColumn.dot(centeredX) / std::sqrt(normColumn * normX);
+            float correlationY = centeredColumn.dot(centeredY) / std::sqrt(normColumn * normY);
+            float correlationZ = centeredColumn.dot(centeredZ) / std::sqrt(normColumn * normZ);
+
+            if (std::isnan(correlationX)) { correlationX = 0.0f; }
+            if (std::isnan(correlationY)) { correlationY = 0.0f; }
+            if (std::isnan(correlationZ)) { correlationZ = 0.0f; }
+            correlationsX[i] = correlationX;
+            correlationsY[i] = correlationY;
+            correlationsZ[i] = correlationZ;
+            _corrGeneSpatial[i] = std::abs(correlationX) + std::abs(correlationY) + std::abs(correlationZ);
+        }
+
+    }
+}
+
+void ExampleViewJSPlugin::updateSelection()
+{
+    //TO DO: seperate plotting part and computation part, only update plotting part when plotting settings are changed
+
+    _tableWidget->clearContents(); // clear table content
+
+    if (!_positionDataset.isValid())
+        return;
+
+    if (_isFloodIndex.empty()) {
+        qDebug() << "ExampleViewJSPlugin::updateSelection(): _isFloodIndex is empty";
+        return;
+    }
+
+    qDebug() << "ExampleViewJSPlugin::updateSelection(): start... ";
+    auto start = std::chrono::high_resolution_clock::now();
+
+    for (int i = 0; i < _nclust; i++) {
+        QString clusterIdx = QString::number(i);
+        _scatterViews[i]->setProjectionName("Gene cluster: " + clusterIdx);
+    }
+
+    // compute subset and correlation
+    if (_isSingleCell != true) {
+        
+        if (!_sliceDataset.isValid()) {
+            computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData); // TO DO: getBaseData() or getBaseNormalizedData()      
+        }
+        else {
+            // 3D dataset
+
+            //subset data only contains the onSliceFloodIndice
+            auto start1 = std::chrono::high_resolution_clock::now();
+            computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData);// TO DO: getBaseData() or getBaseNormalizedData()
+            auto end1 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+            std::cout << "computeSubsetData() on slice Elapsed time: " << elapsed1.count() << " ms\n";
+
+            //subset data contains all floodfill indices
+            auto start2 = std::chrono::high_resolution_clock::now();
+            computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
+            auto end2 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+            std::cout << "computeSubsetData() 3D Elapsed time: " << elapsed2.count() << " ms\n";
+        }
+
+        if (_isCorrSpatial) {
+            auto start3 = std::chrono::high_resolution_clock::now();
+            computeCorrSpatial();
+            auto end3 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
+            std::cout << "computeCorrSpatial() Elapsed time: " << elapsed3.count() << " ms\n";
+        }
+        else {
+            auto start3 = std::chrono::high_resolution_clock::now();
+            computeCorrWave();
+            auto end3 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
+            std::cout << "computeCorrWave() Elapsed time: " << elapsed3.count() << " ms\n";
+        }
+    } else {
+        // temporal code for corrWave - single cell option
+        // test temp code only for ABC Atlas
+        countLabelDistribution();
+        computeAvgExprSubset();
+
+        _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
+        _subsetData3D = _subsetDataAvgOri; // row for clusters, col for genes
+        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
+
+        // compute corrWave here - test temp code
+        int numEnabledDims = _subsetData3D.cols(); // genes
+        Eigen::VectorXf eigenWaveNumbers(_waveAvg.size()); // to do: should check if _sortedWaveNumbers is empty
+        std::copy(_waveAvg.begin(), _waveAvg.end(), eigenWaveNumbers.data());
+        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): eigenWaveNumbers size: " << eigenWaveNumbers.size();
+
+        Eigen::VectorXf centeredWaveNumbers = eigenWaveNumbers - Eigen::VectorXf::Constant(eigenWaveNumbers.size(), eigenWaveNumbers.mean());
+        float waveNumbersNorm = centeredWaveNumbers.squaredNorm();
+        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): waveNumbersNorm: " << waveNumbersNorm;
+
+        _corrGeneWave.clear();
+        _corrGeneWave.resize(numEnabledDims);
+#pragma omp parallel for
+        for (int col = 0; col < numEnabledDims; ++col) {
+            Eigen::VectorXf centered = _subsetData3D.col(col) - Eigen::VectorXf::Constant(_subsetData3D.col(col).size(), _subsetData3D.col(col).mean());
+            float correlation = centered.dot(centeredWaveNumbers) / std::sqrt(centered.squaredNorm() * waveNumbersNorm);
+            if (std::isnan(correlation)) { correlation = 0.0f; }
+            _corrGeneWave[col] = correlation;
+        }
+        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _corrGeneWave size: " << _corrGeneWave.size();
+
+        // output corrWave
+        /*for (float value : _corrGeneWave) {
+            std::cout << value << " ";
+        }
+        std::cout << std::endl;*/
+
+        // output mean and stdDev of corrWave
+        float mean = std::accumulate(_corrGeneWave.begin(), _corrGeneWave.end(), 0.0f) / _corrGeneWave.size();
+        float sumOfSquares = 0.0f;
+        for (float value : _corrGeneWave) {
+            sumOfSquares += (value - mean) * (value - mean);
+        }
+        float stdDev = std::sqrt(sumOfSquares / _corrGeneWave.size());
+        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): corrWave mean: " << mean << " stdDev: " << stdDev;
+    }
+
+    clusterGenes();
+
+    qDebug() << "updateSelection(): data clustered";
+
+    auto start4 = std::chrono::high_resolution_clock::now();
+    convertDataAndUpdateChart();
+    auto end4 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed4 = end4 - start4;
+    std::cout << "convertDataAndUpdateChart() Elapsed time: " << elapsed4.count() << " ms\n";
+
+
+    updateScatterColors();
+    updateScatterOpacity();
+    updateScatterSelection();
+ 
+    //if (_selectedClusterIndex != -1) {
+    //    // a view has been selected
+    //    updateClick();
+    //}
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::cout << "updateSelection() Elapsed time: " << elapsed.count() << " ms\n";
+    qDebug() << "ExampleViewJSPlugin::updateSelection(): end... ";
+
+}
+
+void ExampleViewJSPlugin::updateCorrOption() {
+    _settingsAction.getCorrSpatialAction().isChecked() ? _isCorrSpatial = true : _isCorrSpatial = false;
+    qDebug() << "ExampleViewJSPlugin::updateCorrOption(): _isCorrSpatial: " << _isCorrSpatial;
+
+    updateSelection();
+}
+
+void ExampleViewJSPlugin::updateSingleCellOption() {
+    _settingsAction.getSingleCellAction().isChecked() ? _isSingleCell = true : _isSingleCell = false;
+    qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _isSingleCell: " << _isSingleCell;
+
+    if (_isSingleCell) {
+        if (_avgExpr.size() == 0) {
+            qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr is empty";
+            return;
+        } 
+
+        // update _enabledDimNames
+        _enabledDimNames.clear();
+        _enabledDimNames = _geneNamesAvgExpr;
+        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _enabledDimNames size: " << _enabledDimNames.size();
+
+        updateSelection();
+
+    }
+    else {
+        const auto& dimNames = _positionSourceDataset->getDimensionNames();
+        auto enabledDimensions = _positionSourceDataset->getDimensionsPickerAction().getEnabledDimensions();
+        _enabledDimNames.clear();
+        for (int i = 0; i < enabledDimensions.size(); i++)
+        {
+            if (enabledDimensions[i])
+                _enabledDimNames.push_back(dimNames[i]);
+        }
+
+        updateSelection();
+    }
+
+    qDebug() << "data assigned" << _subsetData3D.rows() << _subsetData3D.cols();
+}
+
+void ExampleViewJSPlugin::updateNumCluster()
+{
+    // Clear clicked frame
+    _scatterViews[_selectedClusterIndex]->selectView(false);
+
+    int newNCluster = _settingsAction.getNumClusterAction().getValue();
+    if (newNCluster < _nclust) {
+        int diff = _nclust - newNCluster;
+        for (int i = newNCluster; i < _nclust; i++) {
+            _scatterViews[i]->clearData();
+        }
+    }
+    _nclust = newNCluster;
+
+    // cannot be changed before plotting
+    if (_isFloodIndex.empty()) {
+        qDebug() << "ExampleViewJSPlugin::updateNumCluster(): _isFloodIndex is empty";
+        return;
+    }
+
+    //to updateViewData
+    updateSelectedDim();// TO Do: can avoid repeatedly position calculation
+    updateScatterPointSize();
+    updateSelection();
+}
+
+void ExampleViewJSPlugin::updateCorrThreshold() {
+    _corrThreshold = _settingsAction.getCorrThresholdAction().getValue();
+
+    // cannot be changed before plotting
+    if (_isFloodIndex.empty()) {
+        qDebug() << "ExampleViewJSPlugin::updateCorrThreshold: _isFloodIndex is empty";
+        return;
+    }
+
+    updateSelection();
+}
+
+void ExampleViewJSPlugin::updateScatterPointSize()
+{
+    for (int i = 0; i < _nclust; i++) {
+        _scatterViews[i]->setSourcePointSize(_settingsAction.getPointSizeAction().getValue());
+    }
+    _dimView->setSourcePointSize(_settingsAction.getPointSizeAction().getValue());
+}
+
+void ExampleViewJSPlugin::updateScatterSelection()
+{
+    if (!_positionDataset.isValid())
+        return;
+
+    // highlight the current selection
+    auto selection = _positionDataset->getSelection<Points>();
+
+    std::vector<bool> selected;
+    std::vector<char> highlights;
+
+    _positionDataset->selectedLocalIndices(selection->indices, selected);
+
+    highlights.resize(_numPoints, 0);
+
+    for (int i = 0; i < selected.size(); i++)
+        highlights[i] = selected[i] ? 1 : 0;
+
+    for (int i = 0; i < _nclust; i++)
+        _scatterViews[i]->setHighlights(highlights, static_cast<std::int32_t>(selection->indices.size()));
+    //qDebug() << " ExampleViewJSPlugin::updateScatterSelection(): scatterViews highlighted";
+
+}
+
+void ExampleViewJSPlugin::updateScatterOpacity()
+{
+    if (!_positionDataset.isValid())
+        return;
+
+    if (_isFloodIndex.empty()) {
+        qDebug() << "ExampleViewJSPlugin::updateScatterOpacity: _isFloodIndex is empty";
+        return;
+    }
+
+    if (!_sliceDataset.isValid()) {
+        // for 2D dataset
+        std::vector<float> opacityScalars(_isFloodIndex.size());
+        float defaultOpacity = _settingsAction.getPointOpacityAction().getValue();
+#pragma omp parallel for
+        for (int i = 0; i < _isFloodIndex.size(); ++i) {
+            opacityScalars[i] = _isFloodIndex[i] ? 1.0f : defaultOpacity;
+        }
+
+        for (int i = 0; i < _nclust; i++)
+        {
+            _scatterViews[i]->setPointOpacityScalars(opacityScalars);
+        }
+        _dimView->setPointOpacityScalars(opacityScalars);
+    }
+    else {
+        // for 3D dataset
+        std::vector<float> opacityScalars(_isFloodOnSlice.size());
+        float defaultOpacity = _settingsAction.getPointOpacityAction().getValue();
+#pragma omp parallel for
+        for (int i = 0; i < _isFloodOnSlice.size(); ++i) {
+            opacityScalars[i] = _isFloodOnSlice[i] ? 1.0f : defaultOpacity;
+        }
+        
+        for (int i = 0; i < _nclust; i++)
+        {
+            _scatterViews[i]->setPointOpacityScalars(opacityScalars);
+        }
+        _dimView->setPointOpacityScalars(opacityScalars);
+    }
+    qDebug() << "ExampleViewJSPlugin::updateScatterOpacity: finished ...";
+}
+
+void ExampleViewJSPlugin::updateScatterColors()
+{
+    if (!_positionDataset.isValid())
+        return;
+
+    std::vector<uint32_t>& selection = _positionDataset->getSelectionIndices();
+
+    if (!_sliceDataset.isValid()) {
+        //2D dataset
+        for (int i = 0; i < _nclust; i++)
+        {
+            std::vector<float> dimV = _colorScalars[i];
+            _scatterViews[i]->setScalars(dimV, selection[0]);// TO DO: hard-coded the idx of point // selection not working?
+        }
+    }
+    else {
+        // 3D dataset
+
+        if (_colorScalars[0].empty()) {
+            qDebug() << "ExampleViewJSPlugin::updateScatterColors: _colorScalars[0] is empty";
+            return;
+        }
+
+        for (int j = 0; j < _nclust; j++) {
+            if (j >= _colorScalars.size()) {
+                qDebug() << "ExampleViewJSPlugin::updateScatterColors: Row index out of range: j=" << j;
+                break;
+            }
+
+            std::vector<float> viewScalars(_onSliceIndices.size());
+#pragma omp parallel for
+            for (int i = 0; i < _onSliceIndices.size(); i++)
+            {
+                if (_onSliceIndices[i] < _colorScalars[j].size()) {
+                    viewScalars[i] = _colorScalars[j][_onSliceIndices[i]];
+                }
+                else {
+                    qDebug() << "Column index out of range: j=" << j << " i=" << i << " _onSliceIndices[i]=" << _onSliceIndices[i];
+                    break;
+                }
+            }
+            _scatterViews[j]->setScalars(viewScalars, selection[0]);
+        }
+    }
+}
+
+void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
+{
+    QString dimName = selectedDimName;
+    _dimView->setProjectionName("Selected: " + selectedDimName);
+
+    for (int i = 0; i < _enabledDimNames.size(); ++i) {
+        if (_enabledDimNames[i] == selectedDimName) {
+            _selectedDimIndex = i;
+            break;
+        }
+    }
+    qDebug() << "ExampleViewJSPlugin::updateDimView: selected dim Name :" << dimName << " _selectedDimIndex: " << _selectedDimIndex;
+
+    // TO DO: is it needed? if we also use dataStore for singlecell optie
+    Eigen::VectorXf dimValues;
+    if (_isSingleCell != true) {
+        qDebug() << "Access getBaseData";
+        dimValues = _dataStore.getBaseData().col(_selectedDimIndex);// TO DO: getBaseData() or getBaseNormalizedData()
+        //Eigen::VectorXf dimValues = _dataStore.getBaseNormalizedData().col(_selecedDimIdx);
+    }
+    else {
+        qDebug() << "Access _avgExpr";
+        dimValues = _avgExpr(Eigen::all, _selectedDimIndex);
+    }
+    
+    std::vector<float> dimV(dimValues.data(), dimValues.data() + dimValues.size());
+
+    qDebug() << "ExampleViewJSPlugin::updateDimView: dimV size: " << dimV.size();
+
+    if(!_sliceDataset.isValid()) {
+        // 2D dataset
+        
+        _dimView->setScalars(dimV, 1);// TO DO: hard-coded the idx of point
+        
+     } else {
+        // 3D dataset
+        std::vector<float> viewScalars(_onSliceIndices.size());
+
+        if (_isSingleCell != true) {
+            // ST data     
+            for (int i = 0; i < _onSliceIndices.size(); i++)
+            {
+                viewScalars[i] = dimV[_onSliceIndices[i]];
+            }        
+        }
+        else {
+            // singlecell data - assign _avgExpr values to ST points
+
+            for (size_t i = 0; i < _onSliceIndices.size(); ++i) {
+                int cellIndex = _onSliceIndices[i]; // Get the actual cell index
+                int label = _cellLabels[cellIndex]; // Get the cluster alias label name of the cell
+
+                viewScalars[i] = dimV[_clusterAliasToRowMap[label]];
+            }
+        }
+        _dimView->setScalars(viewScalars, 1);// TO DO: hard-coded the idx of point
+              
+    }  
+
+}
+
+void ExampleViewJSPlugin::calculatePositions(const Points& points)
+{
+    // TO DO: is it needed? if use dataStore
+    int newDimX = _settingsAction.getXDimensionPickerAction().getCurrentDimensionIndex();
+    int newDimY = _settingsAction.getYDimensionPickerAction().getCurrentDimensionIndex();
+
+    if (newDimX >= 0)
+        _positionDimensions[0] = static_cast<unsigned int>(newDimX);
+
+    if (newDimY >= 0)
+        _positionDimensions[1] = static_cast<unsigned int>(newDimY);
+
+    points.extractDataForDimensions(_positions, _positionDimensions[0], _positionDimensions[1]);
+}
+
+float ExampleViewJSPlugin::computeCorrelation(const Eigen::VectorXf& a, const Eigen::VectorXf& b) {
+    // TO DO: might not needed? or only for 2D dataset
+    Eigen::VectorXf a_centered = a - Eigen::VectorXf::Constant(a.size(), a.mean());
+    Eigen::VectorXf b_centered = b - Eigen::VectorXf::Constant(b.size(), b.mean());
+    float correlation = a_centered.dot(b_centered) /
+        std::sqrt(a_centered.squaredNorm() * b_centered.squaredNorm());
+    if (std::isnan(correlation)) { return 0.0f; } // TO DO: check if this is a good way to handle nan in corr computation
+    return correlation;
+}
+
+void ExampleViewJSPlugin::computeSubsetData(const DataMatrix& dataMatrix, const std::vector<int>& sortedIndices, DataMatrix& subsetDataMatrix)
+{
+    if (_isFloodIndex.empty()) {
+        qDebug() << "ExampleViewJSPlugin::computeSubsetData: _isFloodIndex is empty";
+        return;
+    } 
+
+    int rows = sortedIndices.size();
+    int cols = dataMatrix.cols();
+
+    subsetDataMatrix.resize(rows, cols);
+
+#pragma omp parallel for
+    for (int i = 0; i < rows; ++i)
+    {
+        int index = sortedIndices[i];
+        subsetDataMatrix.row(i) = dataMatrix.row(index);
+    }
+
+    qDebug() << "ExampleViewJSPlugin::computeSubsetData: finished";
+
+}
+
+void ExampleViewJSPlugin::computeCorrWave()
+{
+    if (_isFloodIndex.empty()) {
+        qDebug() << "ExampleViewJSPlugin::computeCorrWave(): _isFloodIndex is empty";
+        return;
+    }
+
+    int numEnabledDims = _enabledDimNames.size();
+
+    // compute correlation between local gene expressions and waveNumbers (sorted)
+    // convert sortedWaveNumbers to an Eigen vector
+
+    if (!_sliceDataset.isValid()) {
+        // 2D dataset
+        Eigen::VectorXf eigenWaveNumbers(_sortedWaveNumbers.size());
+        std::copy(_sortedWaveNumbers.begin(), _sortedWaveNumbers.end(), eigenWaveNumbers.data());
+
+        _corrGeneWave.clear();
+        for (int col = 0; col < numEnabledDims; ++col) {
+            float correlation = computeCorrelation(_subsetData.col(col), eigenWaveNumbers);
+            _corrGeneWave.push_back(correlation);
+        }
+    }
+    else {
+        // 3D dataset
+
+        //only computing the correlation for the onSliceIndices in 2D
+        /*Eigen::VectorXf eigenWaveNumbers(_onSliceWaveNumbers.size());
+        std::copy(_onSliceWaveNumbers.begin(), _onSliceWaveNumbers.end(), eigenWaveNumbers.data());
+
+        _corrGeneWave.clear();
+        for (int col = 0; col < numEnabledDims; ++col) {
+            if (col < _subsetData.cols()) {
+                float correlation = computeCorrelation(_subsetData.col(col), eigenWaveNumbers);
+                _corrGeneWave.push_back(correlation);
+            }
+            else {
+                qDebug() << "Column index out of range in _subsetData for col=" << col;
+            }
+        }*/
+
+
+       // compute the correlation for floodfill in 3D
+        Eigen::VectorXf eigenWaveNumbers(_sortedWaveNumbers.size());
+        std::copy(_sortedWaveNumbers.begin(), _sortedWaveNumbers.end(), eigenWaveNumbers.data());
+
+        Eigen::VectorXf centeredWaveNumbers = eigenWaveNumbers - Eigen::VectorXf::Constant(eigenWaveNumbers.size(), eigenWaveNumbers.mean());
+        float waveNumbersNorm = centeredWaveNumbers.squaredNorm();
+
+        _corrGeneWave.clear();
+        _corrGeneWave.resize(numEnabledDims); 
+#pragma omp parallel for
+        for (int col = 0; col < numEnabledDims; ++col) {
+            Eigen::VectorXf centered = _subsetData3D.col(col) - Eigen::VectorXf::Constant(_subsetData3D.col(col).size(), _subsetData3D.col(col).mean());
+            float correlation = centered.dot(centeredWaveNumbers) / std::sqrt(centered.squaredNorm() * waveNumbersNorm);
+            if (std::isnan(correlation)) { correlation = 0.0f; }
+            _corrGeneWave[col] = correlation;
+        }
+    }
+
+    qDebug() << "ExampleViewJSPlugin::computeCorrWave():corrGeneWave is computed";
+}
+
+void ExampleViewJSPlugin::updateFloodFill()
+{
+    qDebug() << "ExampleViewJSPlugin::updateFloodfill: start... ";
+    auto start = std::chrono::high_resolution_clock::now();
+
+    if (!_floodFillDataset.isValid())
+    {
+        qDebug() << "ExampleViewJSPlugin::updateFloodfill: _floodFillDataset is not valid";
+        return;
+    }
+    
+    // get flood fill nodes from the core
+    auto start1 = std::chrono::high_resolution_clock::now();
+    std::vector<float> floodNodesWave(_floodFillDataset->getNumPoints());
+    _floodFillDataset->populateDataForDimensions < std::vector<float>, std::vector<float>>(floodNodesWave, { 0 });
+    auto end1 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+    std::cout << "populateDataForDimensions Elapsed time: " << elapsed1.count() << " ms\n";
+
+    qDebug() << "ExampleViewJSPlugin::updateFloodfill: floodNodesWave size: " << floodNodesWave.size();
+
+    // process the selected flood-fill 
+    auto start2 = std::chrono::high_resolution_clock::now();
+    std::vector<int> floodIndices;
+    std::vector<int> waveNumbers;
+    int tempWave = 0;
+
+    for (int i = 0; i < floodNodesWave.size(); ++i) {
+        float node = floodNodesWave[i];
+        if (node == -1.0f) {
+            tempWave += 1;
+        }
+        else {
+            floodIndices.push_back(static_cast<int>(node));
+            waveNumbers.push_back(tempWave);
+        }
+    }
+
+    int maxWaveNumber = std::max_element(waveNumbers.begin(), waveNumbers.end())[0];
+
+    for (int i = 0; i < waveNumbers.size(); ++i) {
+        waveNumbers[i] = maxWaveNumber + 1 - waveNumbers[i];
+    }
+
+    
+    std::vector<Vector2f> sortedFloodedCoordinates(floodIndices.size());// To check maybe not needed
+
+    // TO DO: test without ordering spatially
+    //orderSpatially(floodIndices, waveNumbers, sortedFloodedCoordinates, _sortedFloodIndices, _sortedWaveNumbers); 
+    _sortedFloodIndices.clear();
+    _sortedWaveNumbers.clear();
+    _sortedFloodIndices = floodIndices;
+    _sortedWaveNumbers = waveNumbers;
+    auto end2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+    std::cout << "process floodfill data Elapsed time: " << elapsed2.count() << " ms\n";
+
+    // must be put after orderSpatially() and before computeSubsetData()
+    auto start3 = std::chrono::high_resolution_clock::now();
+    _isFloodIndex.clear();
+    _isFloodIndex.resize(_numPoints, false);
+    for (int idx : _sortedFloodIndices) {
+        if (idx < _isFloodIndex.size()) {
+            _isFloodIndex[idx] = true;
+        }
+        else {
+            qDebug() << "ExampleViewJSPlugin::updateFloodfill: idx out of range: " << idx;
+            return;
+        }       
+    }
+    auto end3 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
+    std::cout << "update _isFloodIndex Elapsed time: " << elapsed3.count() << " ms\n";
+
+
+    if (_sliceDataset.isValid()) {      
+        auto start4 = std::chrono::high_resolution_clock::now();
+        _isFloodOnSlice.clear();
+        _isFloodOnSlice.resize(_onSliceIndices.size(), false);
+        for (int i = 0; i < _onSliceIndices.size(); i++)
+        {
+            _isFloodOnSlice[i] = _isFloodIndex[_onSliceIndices[i]];
+        }
+        auto end4 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed4 = end4 - start4;
+        std::cout << "update _isFloodOnSlice Elapsed time: " << elapsed4.count() << " ms\n";
+
+        qDebug() << "ExampleViewJSPlugin::updateFloodfill: _isFloodOnSlice size" << _isFloodOnSlice.size();
+
+        // TO DO: no spatial sorting here
+        auto start5 = std::chrono::high_resolution_clock::now();
+        _onSliceFloodIndices.clear();
+        _onSliceWaveNumbers.clear();
+
+        std::set<int> sliceIndicesSet(_onSliceIndices.begin(), _onSliceIndices.end());
+        for (int i = 0; i < _sortedFloodIndices.size(); ++i) {
+            if (sliceIndicesSet.find(_sortedFloodIndices[i]) != sliceIndicesSet.end()) {
+                _onSliceFloodIndices.push_back(_sortedFloodIndices[i]);
+                _onSliceWaveNumbers.push_back(_sortedWaveNumbers[i]);
+            }
+        }
+        auto end5 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed5 = end5 - start5;
+        std::cout << "update _onSliceFloodIndices Elapsed time: " << elapsed5.count() << " ms\n";
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::cout << "updateFloodfill() Elapsed time: " << elapsed.count() << " ms\n";
+
+    updateSelection();
+
+    qDebug() << "ExampleViewJSPlugin::updateFloodfill: finished";
+
+}
+
+void ExampleViewJSPlugin::loadDataAvgExpression() {
+    qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression(): start... ";
+
+    //file from Michael
+    //std::ifstream file("precomputed_stats_ABC_revision_230821_alias.csv"); // in this file column:gene identifier, row:cluster alias
+    std::ifstream file("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
+    //std::ifstream file("avg_MERFISH_aliasgenesymbol_august.csv");// august data, self computed from MERFISH data
+
+    if (!file.is_open()) {
+        std::cerr << "ExampleViewJSPlugin::loadDataForLabels(): Error: Could not open the file." << std::endl;
+        return;
+    }
+
+    _clusterNamesAvgExpr.clear();
+    _geneNamesAvgExpr.clear();
+
+    std::string line, cell;
+    // Read the first line to extract column headers (gene names)
+    if (std::getline(file, line)) {
+        std::stringstream lineStream(line);
+        bool firstColumn = true;
+        while (std::getline(lineStream, cell, ',')) {
+            if (firstColumn) {
+                // Skip the first cell of the first row
+                firstColumn = false;
+                continue;
+            }
+            _geneNamesAvgExpr.push_back(QString::fromStdString(cell));
+        }
+    }
+
+    // Prepare a vector of vectors to hold the matrix data temporarily
+    std::vector<std::vector<float>> matrixData;
+    while (std::getline(file, line)) {
+        std::stringstream lineStream(line);
+        std::vector<float> rowData;
+        std::string clusterNameStr;
+        if (std::getline(lineStream, clusterNameStr, ',')) {
+            try {
+                int clusterName = std::stoi(clusterNameStr);
+                _clusterNamesAvgExpr.push_back(clusterName);
+            }
+            catch (const std::exception& e) {
+                std::cerr << "Error converting cluster name to int: " << e.what() << std::endl;
+                continue;
+            }
+        }
+
+        // Read each cell in the row
+        while (std::getline(lineStream, cell, ',')) {
+            try {
+                rowData.push_back(std::stof(cell));
+            }
+            catch (const std::exception& e) {
+                std::cerr << "Error converting cell to float: " << e.what() << std::endl;
+                // Handle error or use a default value
+            }
+        }
+
+        matrixData.push_back(rowData);
+    }
+
+    int numClusters = _clusterNamesAvgExpr.size();
+    int numGenes = _geneNamesAvgExpr.size();
+
+    _avgExpr.resize(numClusters, numGenes);
+    for (int i = 0; i < numClusters; ++i) {
+        for (int j = 0; j < numGenes; ++j) {
+            _avgExpr(i, j) = matrixData[i][j];
+        }
+    }
+
+    file.close();
+
+    _clusterAliasToRowMap.clear();// _clusterAliasToRowMap: first element is cluster alias, second element is row index in _avgExpr
+    for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
+        _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
+    }
+
+    qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression()" << numGenes << " genes and " << numClusters << " clusters"; 
+    qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression(): finished";
+}
+
+void ExampleViewJSPlugin::loadDataForLabels() {
+    Dataset<Clusters> labelDataset;
+    for (const auto& data : mv::data().getAllDatasets())
+    {
+        //qDebug() << data->getGuiName();
+        if (data->getGuiName() == "cluster_alias") {
+            labelDataset = data;
+        }
+    }
+
+    QVector<Cluster> labelClusters = labelDataset->getClusters();
+
+    qDebug() << "ExampleViewJSPlugin::loadDataForLabels(): labelClusters size: " << labelClusters.size();
+
+    // precompute the cell-label array
+    _cellLabels.clear();
+    _cellLabels.resize(_numPoints);
+
+    for (int i = 0; i < labelClusters.size(); ++i) {
+        int clusterName = labelClusters[i].getName().toInt(); // TO DO: cluster alias - check if it matches
+        const auto& ptIndices = labelClusters[i].getIndices();
+        for (int j = 0; j < ptIndices.size(); ++j) {
+            int ptIndex = ptIndices[j];
+            _cellLabels[ptIndex] = clusterName;
+        }
+    }
+
+    qDebug() << "ExampleViewJSPlugin::loadDataForLabels(): _cellLabels size: " << _cellLabels.size();
+    qDebug() << "_cellLabels[0]" << _cellLabels[0];
+}
+
+void ExampleViewJSPlugin::countLabelDistribution() {
+
+    // count the number of cells in each cluster using the precomputed array _cellLabels
+    std::map<int, int> clusterPointCounts;
+    std::map<int, int> clusterWaveNumberSums; // test corrWave - use cluster instead of cell points
+    std::map<int, std::map<int, int>> waveNumberDistribution; // New map for wave number distribution
+    for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
+        int ptIndex = _sortedFloodIndices[index];
+        int label = _cellLabels[ptIndex];
+        clusterPointCounts[label]++;
+
+        clusterWaveNumberSums[label] += _sortedWaveNumbers[index]; // for computing the average wave number
+
+        int waveNumber = _sortedWaveNumbers[index]; // for outputting the distribution of wave numbers
+        waveNumberDistribution[label][waveNumber]++;
+    }
+
+    _countsLabel.clear(); // TO DO: can direct assign to _countsLabel - avoid copy
+    _countsLabel = clusterPointCounts;
+
+    // compute the average wave number for each cluster
+    std::map<int, float> clusterWaveAvg;
+    int i = 0;
+    for (const auto& pair : clusterPointCounts) {
+        int label = pair.first;
+        int count = pair.second;
+        float average = (count > 0) ? static_cast<float>(clusterWaveNumberSums[label]) / count : 0.0f;
+        clusterWaveAvg[label] = average;
+        i++;
+    }
+    _clusterWaveNumbers.clear(); // TO DO: can direct assign to _countsLabel - avoid copy
+    _clusterWaveNumbers = clusterWaveAvg;
+
+    // output the distribution of wave numbers within each cluster
+    /*for (const auto& cluster : waveNumberDistribution) {
+        int label = cluster.first;
+        const auto& distribution = cluster.second;
+        std::cout << "Cluster " << label << " Avg Wave: " << clusterWaveAvg[label] << " Distri: ";
+        for (const auto& waveNumberCount : distribution) {
+            std::cout << "Wave " << waveNumberCount.first << ": " << waveNumberCount.second << ", ";
+        }
+        std::cout << std::endl;
+    }*/
+
+   // sort the counts
+   /* std::vector<std::pair<QString, int>> sortedCounts;
+    for (const auto& pair : clusterPointCounts) {
+        sortedCounts.push_back(pair);
+    }
+    std::sort(sortedCounts.begin(), sortedCounts.end(),
+        [](const std::pair<QString, int>& a, const std::pair<QString, int>& b) {
+            return a.second > b.second;
+        });
+    for (const auto& pair : sortedCounts) {
+        qDebug() << pair.first << ": " << pair.second;
+    }*/
+}
+
+void ExampleViewJSPlugin::computeAvgExprSubset() {
+    // sum of counts for later normalization
+    int sumOfCounts = 0;
+    for (const auto& pair : _countsLabel) {
+        sumOfCounts += pair.second;
+    }
+    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): sumOfCounts: " << sumOfCounts;
+
+    // Create a map for counts
+    std::unordered_map<int, int> countsMap;
+    for (const auto& pair : _countsLabel) {
+        // int columnName = pair.first.toInt(); // for QString
+        int clusterName = pair.first; // for int
+        countsMap[clusterName] = pair.second;
+    }
+    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): countsMap size: " << countsMap.size();
+
+
+    int numClusters = _avgExpr.rows();
+    int numGenes = _avgExpr.cols();
+    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): before matching numClusters: " << numClusters << " numGenes: " << numGenes;
+
+
+    std::vector<int> clustersToKeep; // it is cluster names 
+    for (int i = 0; i < numClusters; ++i) {
+        int clusterName = _clusterNamesAvgExpr[i];
+        if (countsMap.find(clusterName) != countsMap.end()) {
+            clustersToKeep.push_back(clusterName);
+        }
+    }
+
+    // to check if any columns are not in _columnNamesAvgExpr
+    if (clustersToKeep.size() != countsMap.size()) {
+        qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): " << countsMap.size() - clustersToKeep.size() << "clusters not found in avgExpr";
+        // output the cluster names that are not in
+        QString output;
+        for (const auto& pair : countsMap) {
+            int clusterName = pair.first;
+            if (std::find(_clusterNamesAvgExpr.begin(), _clusterNamesAvgExpr.end(), clusterName) == _clusterNamesAvgExpr.end()) {
+                output += QString::number(clusterName) + " ";
+            }
+        }
+        qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): not found cluster names: " << output;
+    }
+    else {
+        qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): all clusters found in avgExpr";
+    }
+
+    // Handle case where no columns are to be kept // TO DO: check if needed
+    if (clustersToKeep.empty()) {
+        qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): No cluster to keep";
+        return;
+    }
+
+    _subsetDataAvgWeighted.resize(clustersToKeep.size(), numGenes); // here, numCluster might reduce
+    _subsetDataAvgOri.resize(clustersToKeep.size(), numGenes);
+    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): after matching numClusters: " << clustersToKeep.size();
+
+    for (int i = 0; i < clustersToKeep.size(); ++i) {
+        int clusterName = clustersToKeep[i];
+
+        auto it = std::find(_clusterNamesAvgExpr.begin(), _clusterNamesAvgExpr.end(), clusterName);
+        if (it == _clusterNamesAvgExpr.end()) {
+            qDebug() << "Error: clusterName " << clusterName << " not found in _clusterNamesAvgExpr";
+            continue;
+        }
+        int clusterIndex = std::distance(_clusterNamesAvgExpr.begin(), it);
+
+        if (countsMap.find(clusterName) == countsMap.end()) {
+            qDebug() << "Error: clusterName " << clusterName << " not found in countsMap";
+            continue;
+        }
+
+        for (int j = 0; j < numGenes; ++j) {
+            float weightedValue = (_avgExpr(clusterIndex, j) * countsMap[clusterName]) / static_cast<float>(sumOfCounts);
+            _subsetDataAvgWeighted(i, j) = weightedValue;
+        }
+        _subsetDataAvgOri.row(i) = _avgExpr.row(clusterIndex);
+    }
+
+
+    qDebug() << "subsetDataAvgExprWeighted num rows (clusters): " << _subsetDataAvgWeighted.rows() << ", num columns (genes): " << _subsetDataAvgWeighted.cols();
+    qDebug() << "subsetDataAvgExprOri num rows (clusters): " << _subsetDataAvgOri.rows() << ", num columns (genes): " << _subsetDataAvgOri.cols();
+
+    // match _clusterWaveNumbers to clustersToKeep, i.e. match the column order of subset
+    _waveAvg.clear();
+    for (int clusterName : clustersToKeep) {
+        _waveAvg.push_back(_clusterWaveNumbers[clusterName]);
+    }
+    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): _waveAvg size: " << _waveAvg.size();
+
+    _clustersToKeep.clear();
+    _clustersToKeep = clustersToKeep; // TO DO: dirty copy
+
+}
+
+void ExampleViewJSPlugin::orderSpatially(const std::vector<int>& unsortedIndices, const std::vector<int>& unsortedWave, std::vector<Vector2f>& sortedCoordinates, std::vector<int>& sortedIndices, std::vector<int>& sortedWave)
+{
+    // TO DO:compute once for the entire data and lookup every time
+
+    std::vector<mv::Vector2f> unsortedCoordinates;
+    for (int index : unsortedIndices)
+    {
+        unsortedCoordinates.push_back(_positions[index]);
+    }
+
+    // a map for reordering the vectors
+    std::vector<int> indiceMap(unsortedCoordinates.size());
+    std::iota(indiceMap.begin(), indiceMap.end(), 0);
+
+    // sort spatially
+    std::sort(indiceMap.begin(), indiceMap.end(), [&](int a, int b) {
+        if (unsortedCoordinates[a].y > unsortedCoordinates[b].y) return true;
+        if (unsortedCoordinates[a].y < unsortedCoordinates[b].y) return false;
+        return unsortedCoordinates[a].x < unsortedCoordinates[b].x;
+        });
+
+    sortedCoordinates.resize(unsortedCoordinates.size());
+    sortedIndices.resize(unsortedIndices.size());
+    sortedWave.resize(unsortedWave.size());
+
+    // apply the map to reorder selectedCoordinates and floodIndices
+    for (int i = 0; i < indiceMap.size(); ++i) {
+        sortedCoordinates[i] = unsortedCoordinates[indiceMap[i]];
+        sortedIndices[i] = unsortedIndices[indiceMap[i]];
+        sortedWave[i] = unsortedWave[indiceMap[i]];
+    }
+
+    qDebug() << "ExampleViewJSPlugin::orderSpatially(): spatial sorting finished";
+}
+
+void ExampleViewJSPlugin::clusterGenes()
+{
+    qDebug() << "clusterGenes start...";
+
+    std::vector<float> corr;
+    if (_isCorrSpatial) {
+        corr = _corrGeneSpatial;
+    }
+    else {
+        corr = _corrGeneWave;
+    }
+
+    auto start1 = std::chrono::high_resolution_clock::now();
+    // filter genes based on corrWave  
+    std::vector<QString> filteredDimNames;
+    std::vector<int> filteredDimIndices;
+
+    for (int i = 0; i < _enabledDimNames.size(); ++i) {
+
+        if (std::abs(corr[i]) >= _corrThreshold) {
+            filteredDimNames.push_back(_enabledDimNames[i]);
+            filteredDimIndices.push_back(i);
+        }
+    }
+    auto end1 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+    std::cout << "clusterGenes() filtering Elapsed time: " << elapsed1.count() << " ms\n";
+
+    qDebug() << "ExampleViewJSPlugin::clusterGenes(): filteredDimNames size: " << filteredDimNames.size();
+
+    if (filteredDimNames.size() < _nclust) {
+        qDebug() << "ExampleViewJSPlugin::clusterGenes(): Not enough genes for clustering";
+
+        _toClearBarchart = true;
+
+        // emit an empty payload to JS and to clear the barchart
+        QVariantList payload;
+        emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payload);
+
+        return;
+    }
+    else {
+        _toClearBarchart = false;
+    }
+
+    // compute the correlation between each pair of the filtered genes
+    // TO DO: can call computeCorrWave() here to avoid repeated code
+    auto start2 = std::chrono::high_resolution_clock::now();
+    Eigen::MatrixXf corrFilteredGene(filteredDimNames.size(), filteredDimNames.size());
+
+    std::unordered_map<QString, int> dimNameToIndex;
+    for (int i = 0; i < _enabledDimNames.size(); ++i) {
+        dimNameToIndex[_enabledDimNames[i]] = i;
+    }
+
+    if (!_sliceDataset.isValid()) {
+        // 2D 
+        for (int col1 = 0; col1 < filteredDimNames.size(); ++col1) {
+            for (int col2 = col1; col2 < filteredDimNames.size(); ++col2) {
+                int index1 = dimNameToIndex[filteredDimNames[col1]];
+                int index2 = dimNameToIndex[filteredDimNames[col2]];
+
+                float correlation = computeCorrelation(_subsetData.col(index1), _subsetData.col(index2));
+                corrFilteredGene(col1, col2) = correlation;
+                corrFilteredGene(col2, col1) = correlation;
+            }
+        }
+    } 
+    else {
+        // 3D dataset - compute correlation for all floodfill indices
+
+        std::vector<Eigen::VectorXf> centeredVectors(filteredDimNames.size());// precompute mean 
+        std::vector<float> norms(filteredDimNames.size());
+
+        for (int i = 0; i < filteredDimNames.size(); ++i) {
+            int index = dimNameToIndex[filteredDimNames[i]];
+            Eigen::VectorXf centered = _subsetData3D.col(index) - Eigen::VectorXf::Constant(_subsetData3D.col(index).size(), _subsetData3D.col(index).mean());
+            centeredVectors[i] = centered;
+            norms[i] = centered.squaredNorm();
+        }
+
+#pragma omp parallel for
+        for (int col1 = 0; col1 < filteredDimNames.size(); ++col1) {
+            for (int col2 = col1; col2 < filteredDimNames.size(); ++col2) {
+                float correlation = centeredVectors[col1].dot(centeredVectors[col2]) / std::sqrt(norms[col1] * norms[col2]);
+                if (std::isnan(correlation)) { correlation = 0.0f; } // TO DO: check if this is a good way to handle nan in corr computation
+
+                corrFilteredGene(col1, col2) = correlation;
+                corrFilteredGene(col2, col1) = correlation;
+            }
+        }
+    }
+
+    auto end2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+    std::cout << "clusterGenes() computeCorrFilteredGene Elapsed time: " << elapsed2.count() << " ms\n";
+    qDebug() << "ExampleViewJSPlugin::clusterGenes():corrFilteredGene is computed";
+
+    // substract correlation from 1 to get distance
+    auto start3 = std::chrono::high_resolution_clock::now();
+    Eigen::MatrixXf distanceMatrix = Eigen::MatrixXf::Ones(corrFilteredGene.rows(), corrFilteredGene.cols()) - corrFilteredGene;
+
+    // Format input distance for fastcluster
+    int n = distanceMatrix.rows();
+    double* distmat = new double[(n * (n - 1)) / 2]; //a condensed distance matrix, upper triangle (without the diagonal elements) of the full distance matrix
+    int k = 0;
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            distmat[k] = distanceMatrix(i, j);
+            k++;
+        }
+    }
+
+
+    // Apply clustering
+    int* merge = new int[2 * (n - 1)];// dendrogram in the encoding of the R function hclust
+    double* height = new double[n - 1];// cluster distance for each step
+    hclust_fast(n, distmat, HCLUST_METHOD_AVERAGE, merge, height);
+
+    int* labels = new int[n];// cluster label of observable x[i]
+    cutree_k(n, merge, _nclust, labels);
+
+    // inspect dendrogram ----------------------------------------begin
+    //for (int i = 0; i < n - 1; ++i) { // For each merge step
+    //    int cluster1 = merge[2 * i];
+    //    int cluster2 = merge[2 * i + 1];
+
+    //    std::cout << "Merge Step " << (i + 1) << ": ";
+
+    //    // Decode cluster1
+    //    if (cluster1 < 0) {
+    //        std::cout << "Data Point " << (-cluster1 - 1);
+    //    }
+    //    else {
+    //        std::cout << "Cluster formed at step " << (cluster1 - n);
+    //    }
+    //    std::cout << " merged with ";
+
+    //    // Decode cluster2
+    //    if (cluster2 < 0) {
+    //        std::cout << "Data Point " << (-cluster2 - 1);
+    //    }
+    //    else {
+    //        std::cout << "Cluster formed at step " << (cluster2 - n);
+    //    }
+
+    //    std::cout << std::endl;
+    //}
+    // inspect dendrogram ----------------------------------------end
+
+
+    // Mapping labels back to dimension names
+    _dimNameToClusterLabel.clear();
+    for (int i = 0; i < n; ++i) {
+        _dimNameToClusterLabel[filteredDimNames[i]] = labels[i];
+    }
+
+    auto end3 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
+    std::cout << "clusterGenes() Apply clustering Elapsed time: " << elapsed3.count() << " ms\n";
+ 
+    //qDebug() << "ExampleViewJSPlugin::clusterGenes():hcluster finished";
+
+    // temporary code: out put gene names in each cluster
+   /* for (int cluster = 0; cluster < _nclust; ++cluster) {
+        qDebug() << "Cluster " << cluster << "contains :";
+        for (int i = 0; i < filteredDimNames.size(); ++i) {
+            if (labels[i] == cluster) {
+                qDebug().noquote() << filteredDimNames[i];
+            }
+        }
+    }*/
+
+    // temporary code: output the number of genes in each cluster
+    std::map<int, int> clusterCounts;
+    for (int i = 0; i < filteredDimNames.size(); ++i) {
+        clusterCounts[labels[i]]++;
+    }
+    for (const auto& pair : clusterCounts) {
+        qDebug() << "Cluster " << pair.first << " contains " << pair.second << " genes";
+    }
+
+
+    /*auto start5 = std::chrono::high_resolution_clock::now();
+    computeEntireClusterScalars(filteredDimIndices, labels);   
+    auto end5 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed5 = end5 - start5;
+    std::cout << "computeEntireClusterScalars Elapsed time: " << elapsed5.count() << " ms\n";*/
+
+    if (_isSingleCell != true) {
+        auto start5 = std::chrono::high_resolution_clock::now();
+        computeFloodedClusterScalars(filteredDimIndices, labels);
+        auto end5 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed5 = end5 - start5;
+        std::cout << "clusterGenes() computeFloodedClusterScalars Elapsed time: " << elapsed5.count() << " ms\n";
+    }
+    else {
+        qDebug() << "ExampleViewJSPlugin::clusterGenes(): _isSingleCell is true";
+        auto start5 = std::chrono::high_resolution_clock::now();
+        computeFloodedClusterScalarsSingleCell(filteredDimIndices, labels);
+        auto end5 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed5 = end5 - start5;
+        std::cout << "clusterGenes() computeFloodedClusterScalarsSingleCell Elapsed time: " << elapsed5.count() << " ms\n";
+    }
+
+    delete[] distmat;
+    delete[] merge;
+    delete[] height;
+    delete[] labels;
+
+}
+
+void ExampleViewJSPlugin::computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
+{
+    // Compute mean expression for each cluster
+    // for the entire spaial map
+   
+    _colorScalars.clear();
+    _colorScalars.resize(_nclust, std::vector<float>(_numPoints, 0.0f));
+
+    const auto& baseData = _dataStore.getBaseData();
+
+   /* auto start1 = std::chrono::high_resolution_clock::now();
+    Eigen::MatrixXf allMeans1;
+    allMeans1.resize(_nclust, baseData.rows());
+    std::vector<int> dimensionsPerCluster1(_nclust, 0);
+
+    for (int d = 0; d < filteredDimIndices.size(); ++d) {
+        int cluster = labels[d];
+        allMeans1.row(cluster) += baseData.col(filteredDimIndices[d]);
+        dimensionsPerCluster1[cluster]++;
+    }
+    auto end1 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+    std::cout << "1 old Elapsed time: " << elapsed1.count() << " ms\n";*/
+
+    auto start11 = std::chrono::high_resolution_clock::now();
+    Eigen::MatrixXf allMeans = Eigen::MatrixXf::Zero(_nclust, _dataStore.getBaseData().rows());
+    std::vector<int> dimensionsPerCluster(_nclust, 0);
+
+    #pragma omp parallel for  
+    for (int cluster = 0; cluster < _nclust; ++cluster) {
+        for (int d = 0; d < filteredDimIndices.size(); ++d) {
+            if (labels[d] == cluster) {
+                allMeans.row(cluster) += baseData.col(filteredDimIndices[d]);
+                dimensionsPerCluster[cluster]++;
+            }
+        }
+    }
+    auto end11 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed11 = end11 - start11;
+    std::cout << "1 new Elapsed time: " << elapsed11.count() << " ms\n"; 
+
+
+   /* auto start12 = std::chrono::high_resolution_clock::now();
+    Eigen::MatrixXf allMeans12 = Eigen::MatrixXf::Zero(_nclust, _dataStore.getBaseData().rows());
+    std::vector<int> dimensionsPerCluster12(_nclust, 0);
+    std::vector<std::vector<int>> indicesPerCluster(_nclust);
+
+    for (int d = 0; d < filteredDimIndices.size(); ++d) {
+        int cluster = labels[d];
+        indicesPerCluster[cluster].push_back(filteredDimIndices[d]);
+    }
+#pragma omp parallel for
+    for (int cluster = 0; cluster < _nclust; ++cluster) {
+        for (int idx : indicesPerCluster[cluster]) {
+            allMeans12.row(cluster) += baseData.col(idx);
+            dimensionsPerCluster12[cluster]++;
+        }
+    }
+    auto end12 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed12 = end12 - start12;
+    std::cout << "1 new 2 Elapsed time: " << elapsed12.count() << " ms\n";*/
+
+
+    auto start2 = std::chrono::high_resolution_clock::now();
+    for (int cluster = 0; cluster < _nclust; ++cluster) {
+        if (dimensionsPerCluster[cluster] != 0) {
+            allMeans.row(cluster) /= dimensionsPerCluster[cluster];  // sum/num_genes
+        }
+    }
+    auto end2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+    std::cout << "2 Elapsed time: " << elapsed2.count() << " ms\n";
+
+
+
+    ////Populate _colorScalars with the data from allMeans
+    //for (int cluster = 0; cluster < _nclust; ++cluster) {
+    //    for (int i = 0; i < _numPoints; ++i) {
+    //        _colorScalars[cluster][i] = allMeans(cluster, i);
+    //    }
+    //}
+
+    auto start3 = std::chrono::high_resolution_clock::now();
+    // new Populate _colorScalars with the data from allMeans
+    for (int cluster = 0; cluster < _nclust; ++cluster) {
+        Eigen::Map<Eigen::VectorXf>(&_colorScalars[cluster][0], _numPoints) = allMeans.row(cluster);
+    }
+    auto end3 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
+    std::cout << "3 Elapsed time: " << elapsed3.count() << " ms\n";
+
+}
+
+void ExampleViewJSPlugin::computeFloodedClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
+{
+    // Compute mean expression for each cluster
+    // only for flooded cells, others are filled with the lowest value
+    _colorScalars.clear();
+    _colorScalars.resize(_nclust, std::vector<float>(_numPoints, 0.0f));
+
+    DataMatrix subsetData;
+    
+    if (!_sliceDataset.isValid()) {
+        // 2D dataset
+        subsetData = _subsetData;
+    }
+    else {
+        // 3D dataset
+        //computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, subsetData);
+        subsetData = _subsetData3D;
+    }
+
+    Eigen::MatrixXf subsetMeans = Eigen::MatrixXf::Zero(_nclust, subsetData.rows());
+    std::vector<int> dimensionsPerCluster(_nclust, 0);
+
+    #pragma omp parallel for
+    for (int d = 0; d < filteredDimIndices.size(); ++d) {
+        int cluster = labels[d];
+        #pragma omp critical
+        {
+            subsetMeans.row(cluster) += subsetData.col(filteredDimIndices[d]);
+            dimensionsPerCluster[cluster]++;
+        }
+    }
+    for (int cluster = 0; cluster < _nclust; ++cluster) {
+        subsetMeans.row(cluster) /= dimensionsPerCluster[cluster];  // sum/num_genes
+    }
+
+    // Populate _colorScalars
+    for (int cluster = 0; cluster < _nclust; ++cluster) {
+        for (int i = 0; i < _sortedFloodIndices.size(); ++i) {
+            _colorScalars[cluster][_sortedFloodIndices[i]] = subsetMeans(cluster, i);
+        }
+    }
+
+    // fill in the empty spaces with the lowest value in every row of _colorScalars
+
+#pragma omp parallel for
+    for (int clusterIndex = 0; clusterIndex < _colorScalars.size(); ++clusterIndex) {
+        std::vector<float>& clusterScalar = _colorScalars[clusterIndex];
+
+        float minValue = *std::min_element(clusterScalar.begin(), clusterScalar.end());
+        for (int i = 0; i < _numPoints; ++i) {
+            if (!_isFloodIndex[i]) {
+                clusterScalar[i] = minValue;
+            }
+        }
+    }
+}
+
+void ExampleViewJSPlugin::computeFloodedClusterScalarsSingleCell(const std::vector<int> filteredDimIndices, const int* labels) {
+    // Compute mean expression for each cluster
+    // only for flooded cells, others are filled with the lowest value
+    _colorScalars.clear();
+    _colorScalars.resize(_nclust, std::vector<float>(_numPoints, 0.0f));
+
+    std::unordered_map<int, int> clusterAliasToRowMapSubset;// ATTENTION here only cluster alias within the subset!!
+    for (int i = 0; i < _clustersToKeep.size(); ++i) {
+        clusterAliasToRowMapSubset[_clustersToKeep[i]] = i;
+    }
+
+    auto subsetData = _subsetDataAvgOri;
+
+    Eigen::MatrixXf subsetMeans = Eigen::MatrixXf::Zero(_nclust, subsetData.rows());
+    std::vector<int> dimensionsPerCluster(_nclust, 0);
+
+#pragma omp parallel for
+    for (int d = 0; d < filteredDimIndices.size(); ++d) {
+        int cluster = labels[d];
+#pragma omp critical
+        {
+            subsetMeans.row(cluster) += subsetData.col(filteredDimIndices[d]);
+            dimensionsPerCluster[cluster]++;
+        }
+    }
+
+    for (int cluster = 0; cluster < _nclust; ++cluster) {
+        subsetMeans.row(cluster) /= dimensionsPerCluster[cluster];  // sum/num_genes
+    }
+
+    // Populate _colorScalars
+    for (size_t i = 0; i < _sortedFloodIndices.size(); ++i) {
+        int cellIndex = _sortedFloodIndices[i]; // Get the actual cell index
+        int label = _cellLabels[cellIndex]; // Get the cluster alias label name of the cell
+        int columnIndex = clusterAliasToRowMapSubset[label]; // Get the column index of the cluster alias label name [in the subset]
+
+        // Assuming label is within the column range of subsetMeans2
+        for (int cluster = 0; cluster < _nclust; ++cluster) {
+            _colorScalars[cluster][cellIndex] = subsetMeans(cluster, columnIndex);
+        }
+    }
+
+#pragma omp parallel for
+    for (int clusterIndex = 0; clusterIndex < _colorScalars.size(); ++clusterIndex) {
+        std::vector<float>& clusterScalar = _colorScalars[clusterIndex];
+
+        float minValue = *std::min_element(clusterScalar.begin(), clusterScalar.end());
+        for (int i = 0; i < _numPoints; ++i) {
+            if (!_isFloodIndex[i]) {
+                clusterScalar[i] = minValue;
+            }
+        }
+    }
+}
+
+void ExampleViewJSPlugin::updateClusterScalarOutput(const std::vector<float>& scalars)
+{
+    _clusterScalars->setData<float>(scalars.data(), scalars.size(), 1);
+    events().notifyDatasetDataChanged(_clusterScalars);
+    qDebug() << "ExampleViewJSPlugin::updateClusterScalarOutput(): finished";
+}
+
+void ExampleViewJSPlugin::getFuntionalEnrichment()
+{
+    QStringList geneNamesInCluster;
+
+    for (const auto& pair : _dimNameToClusterLabel) {
+        if (pair.second == _selectedClusterIndex) {
+            geneNamesInCluster.append(pair.first);
+        }
+    }
+
+    if (!geneNamesInCluster.isEmpty()) {
+        // ToppGene
+        //_client->lookupSymbolsToppGene(geneNamesInCluster);
+
+        // gProfiler
+        QStringList backgroundGeneNames;
+        if (_isSingleCell != true) {         
+            for (const auto& name : _enabledDimNames) {
+                backgroundGeneNames.append(name);
+            }
+            qDebug() << "getFuntionalEnrichment(): ST mode, with background";
+        }
+        else {
+            // in single cell mode, background is empty
+            qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
+        }
+        qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
+        _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames); 
+
+        //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);
+    }
+
+    // output the gene names
+    int counter = 0;
+    for (const auto& item : geneNamesInCluster) {
+        if (counter >= 30) {
+            qDebug() << "more genes are not shown";
+            break;
+        }
+
+        qDebug() << item.toUtf8().constData();
+        ++counter;
+    }
+
+}
+
+void ExampleViewJSPlugin::updateEnrichmentTable(const QVariantList& data) {
+    //qDebug() << "ExampleViewJSPlugin::updateEnrichmentTable(): start";
+
+    _enrichmentResult = data;
+
+    /*for (const QVariant& item : data) {
+        QVariantMap dataMap = item.toMap();
+        for (auto key : dataMap.keys()) {
+            qDebug() << key << ":" << dataMap[key].toString();
+        }
+    }*/
+
+    // automatically extracting headers from the keys of the first item
+    QStringList headers;
+    QList<QString> keys = data.first().toMap().keys();
+    for (int i = 0; i < keys.size(); ++i) {
+        headers.append(keys[i]);
+    }
+
+    _tableWidget->clearContents();
+    _tableWidget->setRowCount(data.size());
+    _tableWidget->setColumnCount(keys.size());
+
+    _tableWidget->setHorizontalHeaderLabels(headers);
+
+    // automatically populate the table with data
+    for (int row = 0; row < data.size(); ++row) {
+        QVariantMap dataMap = data.at(row).toMap();
+
+        for (int col = 0; col < headers.size(); ++col) {
+            QString key = headers.at(col);
+            QTableWidgetItem* tableItem = new QTableWidgetItem(dataMap[key].toString());
+            _tableWidget->setItem(row, col, tableItem);
+        }
+    }
+
+    //_tableWidget->resizeRowsToContents();
+    _tableWidget->resizeColumnsToContents();
+
+    _tableWidget->show();
+
+    qDebug() << "ExampleViewJSPlugin::updateEnrichmentTable(): finished";
+}
+
+void ExampleViewJSPlugin::noDataEnrichmentTable() {
+    _tableWidget->clearContents();
+    _tableWidget->setRowCount(1);
+    _tableWidget->setColumnCount(1);
+
+    QStringList header = { "Message" };
+    _tableWidget->setHorizontalHeaderLabels(header);
+    QTableWidgetItem* item = new QTableWidgetItem("No enrichment analysis result available.");
+
+    _tableWidget->setItem(0, 0, item);
+    _tableWidget->resizeColumnsToContents();
+}
+
+void ExampleViewJSPlugin::onTableClicked(int row, int column) {
+    qDebug() << "Cell clicked in row:" << row << "column:" << column;
+
+    // get gene symbols of the selected row
+    QVariantMap selectedItemMap = _enrichmentResult[row].toMap();
+    QString geneSymbols = selectedItemMap["Symbol"].toString();
+    qDebug() << "Gene symbols in the selected item:" << geneSymbols;
+
+    QStringList geneSymbolList = geneSymbols.split(",");
+
+    // match the gene symbols with the gene names in the cluster - gene symbols returned from topGene are all capitals
+    std::vector<QString> geneNamesInTerm;
+    for (int i = 0; i < geneSymbolList.size(); ++i) {
+        // convert the symbol to lower case and the first letter to upper case
+        QString searchGeneSymbol = geneSymbolList[i].toLower();
+        searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
+
+        geneNamesInTerm.push_back(searchGeneSymbol);
+    }
+
+    for (int i = 0; i < geneNamesInTerm.size(); ++i) {
+        qDebug() << "genes" << geneNamesInTerm[i];
+    }
+
+    // highlight the genes in the bar chart
+    QVariantList geneNamesInTermVariantList;
+    for (const QString& name : geneNamesInTerm) {
+        geneNamesInTermVariantList.append(QVariant(name));
+    }
+
+    emit _chartWidget->getCommunicationObject().qt_js_highlightInJS(geneNamesInTermVariantList);
+
+}
+
+void ExampleViewJSPlugin::updateClick() {
+    for (int i = 0; i < 6; i++) {// TO DO: hard coded for the current layout
+        _scatterViews[i]->selectView(false);
+    }
+    _dimView->selectView(false);
+
+    ScatterView* selectedView = nullptr;
+    for (int i = 0; i < _nclust; i++) {
+        if (_selectedClusterIndex == i) {
+            selectedView = _scatterViews[i];
+        }
+    }
+
+    if (selectedView != nullptr)
+    {
+        // one of the scatterViews is selected
+        selectedView->selectView(true);
+        getFuntionalEnrichment();
+
+        // TO DO: seperate the enrichment analysis part and the update scalars part
+        std::vector<float> dimV = _colorScalars[_selectedClusterIndex]; // TO DO: get the dimV for 3D
+
+        // assign the lowest value to the non-flooded cells
+        float minValue = *std::min_element(dimV.begin(), dimV.end());
+#pragma omp parallel for
+        for (int i = 0; i < _numPoints; ++i) {
+            if (!_isFloodIndex[i]) {
+                dimV[i] = minValue;
+            }
+        }
+        normalizeVector(dimV);
+        updateClusterScalarOutput(dimV);
+    }
+    else {
+        // dimView is selected
+        if (_selectedClusterIndex == 6) {// TO DO: hard coded for the current layout
+            _dimView->selectView(true);
+
+            Eigen::VectorXf dimValue;
+            if (_isSingleCell != true) {
+                dimValue = _dataStore.getBaseData()(Eigen::all, _selectedDimIndex); 
+            }
+            else {
+                // for singlecell option
+
+                const Eigen::VectorXf avgValue = _avgExpr(Eigen::all, _selectedDimIndex);
+
+                //populate the avg expr values to all ST points
+                dimValue.resize(_numPoints);
+#pragma omp parallel for
+                for (int i = 0; i < _numPoints; ++i) {
+                    int label = _cellLabels[i]; // Get the cluster alias label name of the cell
+                    dimValue[i] = avgValue(_clusterAliasToRowMap[label]);
+                }
+
+            }
+
+            std::vector<float> dimV(dimValue.data(), dimValue.data() + dimValue.size());
+            normalizeVector(dimV);
+            updateClusterScalarOutput(dimV);
+        }
+    }
+}
+
+void ExampleViewJSPlugin::updateSlice() {
+   
+    int sliceIndex = _settingsAction.getSliceAction().getValue();
+    //qDebug() << "ExampleViewJSPlugin::updateSlice(): slice value: " << sliceIndex;
+
+    if (!_sliceDataset.isValid()) {
+        qDebug() << "ExampleViewJSPlugin::updateSlice(): _sliceDataset is not valid";
+        return;
+    }
+
+    //QVector<Cluster>& clusters = _sliceDataset->getClusters();
+    QString clusterName = _sliceDataset->getClusters()[sliceIndex].getName();
+
+    std::vector<uint32_t>& uindices = _sliceDataset->getClusters()[sliceIndex].getIndices();
+    std::vector<int> indices;
+    indices.assign(uindices.begin(), uindices.end());
+    //qDebug() << "ExampleViewJSPlugin::updateSlice(): clusterName: " << clusterName << " uindices size: " << uindices.size();
+
+    _onSliceIndices.clear();
+    _onSliceIndices = indices;
+    //qDebug() << "ExampleViewJSPlugin::updateSlice(): _onSliceIndices size: " << _onSliceIndices.size(); 
+    
+    _dataStore.createDataView(indices);
+
+    int xDim = _settingsAction.getXDimensionPickerAction().getCurrentDimensionIndex();
+    int yDim = _settingsAction.getYDimensionPickerAction().getCurrentDimensionIndex();
+
+    _dataStore.createProjectionView(xDim, yDim);
+
+    // Convert projection data to 2D vector list
+    std::vector<Vector2f> positions(_dataStore.getProjectionView().rows());
+    {
+        for (int i = 0; i < _dataStore.getProjectionView().rows(); i++)
+            positions[i].set(_dataStore.getProjectionView()(i, 0), _dataStore.getProjectionView()(i, 1));
+    }
+
+    updateViewData(positions);
+    //qDebug()<< "ExampleViewJSPlugin::updateViewData(): position size: " <<positions.size();   
+
+    // update floodfill mask on 2D
+    //qDebug() << "ExampleViewJSPlugin::updateSlice(): updateScatterOpacity";
+
+    if (_isFloodIndex.empty()) {
+        qDebug() << "ExampleViewJSPlugin::updateSlice(): _isFloodIndex is empty";
+    }
+    else {
+        _isFloodOnSlice.clear(); // TO DO: repeated code with updateFloodFill()
+        _isFloodOnSlice.resize(_onSliceIndices.size(), false);
+        for (int i = 0; i < _onSliceIndices.size(); i++)
+        {
+            _isFloodOnSlice[i] = _isFloodIndex[_onSliceIndices[i]];
+        }
+    }    
+
+    updateScatterOpacity();
+
+    // update color scalars on 2D
+    //qDebug() << "ExampleViewJSPlugin::updateSlice(): test update color";
+    updateScatterColors();
+
+}
+
+
+// =============================================================================
+// Plugin Factory 
+// =============================================================================
+
+QIcon ExampleViewJSPluginFactory::getIcon(const QColor& color /*= Qt::black*/) const
+{
+    return mv::Application::getIconFont("FontAwesome").getIcon("bullseye", color);
+}
+
+ViewPlugin* ExampleViewJSPluginFactory::produce()
+{
+    return new ExampleViewJSPlugin(this);
+}
+
+mv::DataTypes ExampleViewJSPluginFactory::supportedDataTypes() const
+{
+    // This example analysis plugin is compatible with points datasets
+    DataTypes supportedTypes;
+    supportedTypes.append(PointType);
+    return supportedTypes;
+}
+
+mv::gui::PluginTriggerActions ExampleViewJSPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
+{
+    PluginTriggerActions pluginTriggerActions;
+
+    const auto getPluginInstance = [this]() -> ExampleViewJSPlugin* {
+        return dynamic_cast<ExampleViewJSPlugin*>(plugins().requestViewPlugin(getKind()));
+    };
+
+    const auto numberOfDatasets = datasets.count();
+
+    if (numberOfDatasets >= 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
+        auto pluginTriggerAction = new PluginTriggerAction(const_cast<ExampleViewJSPluginFactory*>(this), this, "Example JS", "View JavaScript visualization", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
+            for (auto dataset : datasets)
+                getPluginInstance()->loadData(Datasets({ dataset }));
+
+            });
+
+        pluginTriggerActions << pluginTriggerAction;
+    }
+
+    return pluginTriggerActions;
+}
+
+

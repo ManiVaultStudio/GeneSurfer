@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+    <title>Bar Chart</title>
+    <meta content="utf-8" http-equiv="encoding">
+
+    <!-- qt connection -->
+    <script type="text/javascript" src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <script type="text/javascript" src="../js_libs/qwebchannel.tools.js"></script>
+
+    <!-- d3 -->
+    <script type="text/javascript" src="../js_libs/d3.v3.min.js"></script>
+
+    <!-- plot and communication functions // this has to be loaded after the other scripts -->
+    <script src="bar_chart.tools.js"></script>
+    <script src="https://d3js.org/d3.v4.js"></script>
+
+    <!-- auto-resizeable container for plot -->
+    <style>
+/*         .svg-container {
+            width: 100%;
+        }*/
+    </style>
+</head>
+
+<body>
+    <!-- div element to plot into -->
+    <div id="container" class="svg-container"></div>
+</body>
+</html>
+
