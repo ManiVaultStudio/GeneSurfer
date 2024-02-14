@@ -186,8 +186,6 @@ private:
     int32_t                 _numPoints;                 /** Number of point positions */
     std::vector<QString>    _enabledDimNames;
 
-    std::vector<unsigned int>   _positionDimensions;     /** Stores which dimensions of the current data are shown */
-
     bool                    _dataInitialized = false;
     std::vector<bool>       _isFloodIndex; //direct mapping for flood indices
     mv::Dataset<Points>   _floodFillDataset; // dataset for flood fill
@@ -264,8 +262,6 @@ public:
 public: 
     /** Get reference to the scatter plot widget */
     std::vector<ScatterView*>& getProjectionViews() { return _scatterViews; }
-
-    void calculatePositions(const Points& points);
 
 protected:
     std::vector<ScatterView*>    _scatterViews; // scatter plots for cluster images

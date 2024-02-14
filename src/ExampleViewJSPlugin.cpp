@@ -76,7 +76,6 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _scatterViews(6 + 1, nullptr),// TO DO: hard code max 6 scatterViews
     _dimView(nullptr),
     _positions(),
-    _positionDimensions({ 0, 1 }),
     _positionSourceDataset(),
     _numPoints(0),
     _subsetData(),
@@ -346,9 +345,6 @@ void ExampleViewJSPlugin::positionDatasetChanged()
     updateSelectedDim();
 
     _dataInitialized = true;
-
-    // might be redundant
-    calculatePositions(*_positionDataset);
 }
 
 std::pair<std::vector<QString>, std::vector<float>> ExampleViewJSPlugin::sortCorrWave()
@@ -529,7 +525,7 @@ void ExampleViewJSPlugin::updateSelectedDim() {
 
     updateViewData(positions);
 
-    // test
+    // TO DO: avoid copying
     _positions = positions;
 }
 
@@ -837,8 +833,8 @@ void ExampleViewJSPlugin::updateNumCluster()
         return;
     }
 
-    //to updateViewData
-    updateSelectedDim();// TO Do: can avoid repeatedly position calculation
+    updateViewData(_positions);
+
     updateScatterPointSize();
     updateSelection();
 }
@@ -1037,20 +1033,6 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
 
 }
 
-void ExampleViewJSPlugin::calculatePositions(const Points& points)
-{
-    // TO DO: is it needed? if use dataStore
-    int newDimX = _settingsAction.getXDimensionPickerAction().getCurrentDimensionIndex();
-    int newDimY = _settingsAction.getYDimensionPickerAction().getCurrentDimensionIndex();
-
-    if (newDimX >= 0)
-        _positionDimensions[0] = static_cast<unsigned int>(newDimX);
-
-    if (newDimY >= 0)
-        _positionDimensions[1] = static_cast<unsigned int>(newDimY);
-
-    points.extractDataForDimensions(_positions, _positionDimensions[0], _positionDimensions[1]);
-}
 
 float ExampleViewJSPlugin::computeCorrelation(const Eigen::VectorXf& a, const Eigen::VectorXf& b) {
     // TO DO: might not needed? or only for 2D dataset
@@ -2215,24 +2197,9 @@ void ExampleViewJSPlugin::updateSlice() {
     //qDebug() << "ExampleViewJSPlugin::updateSlice(): _onSliceIndices size: " << _onSliceIndices.size(); 
     
     _dataStore.createDataView(indices);
-
-    int xDim = _settingsAction.getXDimensionPickerAction().getCurrentDimensionIndex();
-    int yDim = _settingsAction.getYDimensionPickerAction().getCurrentDimensionIndex();
-
-    _dataStore.createProjectionView(xDim, yDim);
-
-    // Convert projection data to 2D vector list
-    std::vector<Vector2f> positions(_dataStore.getProjectionView().rows());
-    {
-        for (int i = 0; i < _dataStore.getProjectionView().rows(); i++)
-            positions[i].set(_dataStore.getProjectionView()(i, 0), _dataStore.getProjectionView()(i, 1));
-    }
-
-    updateViewData(positions);
-    //qDebug()<< "ExampleViewJSPlugin::updateViewData(): position size: " <<positions.size();   
+    updateSelectedDim();
 
     // update floodfill mask on 2D
-    //qDebug() << "ExampleViewJSPlugin::updateSlice(): updateScatterOpacity";
 
     if (_isFloodIndex.empty()) {
         qDebug() << "ExampleViewJSPlugin::updateSlice(): _isFloodIndex is empty";
