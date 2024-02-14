@@ -514,19 +514,16 @@ void ExampleViewJSPlugin::updateSelectedDim() {
 
     //qDebug()<< "ExampleViewJSPlugin::updateSelectedDim(): getProjectionSize()"<< _dataStore.getProjectionSize();
 
-    std::vector<Vector2f> positions(_dataStore.getProjectionView().rows());
-    //qDebug() << "ExampleViewJSPlugin::updateSelectedDim(): positions size: " << _dataStore.getProjectionView().rows();
+    _positions.clear();
+    _positions.resize(_dataStore.getProjectionView().rows());
 
     for (int i = 0; i < _dataStore.getProjectionView().rows(); i++) {
-        positions[i].set(_dataStore.getProjectionView()(i, 0), _dataStore.getProjectionView()(i, 1));
+        _positions[i].set(_dataStore.getProjectionView()(i, 0), _dataStore.getProjectionView()(i, 1));
     }
 
     //qDebug() << "ExampleViewJSPlugin::updateSelectedDim(): positions size: " << positions.size();
 
-    updateViewData(positions);
-
-    // TO DO: avoid copying
-    _positions = positions;
+    updateViewData(_positions);
 }
 
 void ExampleViewJSPlugin::updateViewData(std::vector<Vector2f>& positions) {
