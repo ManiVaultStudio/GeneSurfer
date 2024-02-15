@@ -11,6 +11,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _exampleViewJSPlugin(dynamic_cast<ExampleViewJSPlugin*>(parent)),
     _xDimensionPickerAction(this, "X"),
     _yDimensionPickerAction(this, "Y"),
+    _dimensionAction(this, "Dim"),
     _pointSizeAction(this, "Point Size", 1, 50, 10),
     _pointOpacityAction(this, "Opacity", 0.f, 1.f, 0.1f, 2),
     _numClusterAction(this, "numClusters", 1, 6, 3),
@@ -25,6 +26,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
 
     _xDimensionPickerAction.setToolTip("X dimension");
     _yDimensionPickerAction.setToolTip("Y dimension");
+    _dimensionAction.setToolTip("Dimension");
     _pointSizeAction.setToolTip("Size of individual points");
     _pointOpacityAction.setToolTip("Opacity of individual points");
     _numClusterAction.setToolTip("Number of clusters");
@@ -39,6 +41,32 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     connect(&_datasetPickerAction, &DatasetPickerAction::datasetPicked, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateFloodFillDataset);
     connect(&_corrSpatialAction, &ToggleAction::toggled, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateCorrOption);
     connect(&_singleCellAction, &ToggleAction::toggled, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateSingleCellOption);
+
+    connect(&_dimensionAction, &DimensionPickerAction::currentDimensionIndexChanged, [this](const std::uint32_t& currentDimensionIndex) {
+        if (_exampleViewJSPlugin->isDataInitialized()) {
+            _exampleViewJSPlugin->updateShowDimension();
+        }
+        });
+
+    connect(&_exampleViewJSPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this]() {
+        _dimensionAction.setPointsDataset(_exampleViewJSPlugin->getPositionSourceDataset());
+        //_dimensionAction.setCurrentDimensionIndex(0);
+        });
+
+    connect(&_singleCellAction, &ToggleAction::toggled, this, [this]() {
+        if (_exampleViewJSPlugin->isUsingSingleCell()) {
+            qDebug() << "Using Single Cell";
+            _dimensionAction.setPointsDataset(_exampleViewJSPlugin->getAvgExprDataset());
+            //_dimensionAction.setCurrentDimensionIndex(0);
+            
+        }
+        else {
+            qDebug() << "Using Spatial";
+            _dimensionAction.setPointsDataset(_exampleViewJSPlugin->getPositionSourceDataset());
+            //_dimensionAction.setCurrentDimensionIndex(0);
+            
+        }
+        });
 
 
     if (_exampleViewJSPlugin == nullptr)
@@ -110,6 +138,9 @@ SettingsAction::Widget::Widget(QWidget* parent, SettingsAction* settingsAction) 
 
     layout->addWidget(settingsAction->getYDimensionPickerAction().createLabelWidget(this));
     layout->addWidget(settingsAction->getYDimensionPickerAction().createWidget(this));
+
+    layout->addWidget(settingsAction->getDimensionAction().createLabelWidget(this));
+    layout->addWidget(settingsAction->getDimensionAction().createWidget(this));
 
     layout->addWidget(settingsAction->getPointSizeAction().createLabelWidget(this));
     layout->addWidget(settingsAction->getPointSizeAction().createWidget(this));

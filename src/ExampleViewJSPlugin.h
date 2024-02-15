@@ -85,6 +85,9 @@ public:
 
     /** Update the chosen single cell option */
     void updateSingleCellOption();
+
+    /** Update the color of _dimView */
+    void updateShowDimension();
     
 public slots:
     /** Converts ManiVault's point data to a json-like data structure that Qt can pass to the JS code */
@@ -242,10 +245,13 @@ private:
     Eigen::MatrixXf                 _subsetDataAvgWeighted; // subset of average expression of each cluster - weighted
     Eigen::MatrixXf                 _subsetDataAvgOri; // subset of average expression of each cluster - NOT weighted - TO DO
     std::vector<int>                _clustersToKeep; // clusters to keep for avg expression - same order as subset row - cluster alias name // TO DO: not needed
+
+    mv::Dataset<Points>             _avgExprDataset; // Point dataset for average expression of each cluster - test
     
 
 public:
     bool isDataInitialized() { return _dataInitialized; }
+    bool isUsingSingleCell() { return _isSingleCell; }
     //HsneHierarchy& getHierarchy() { return _hierarchy; }
 
 
@@ -256,6 +262,11 @@ public: // Data loading
 public:
     /** Get smart pointer to points dataset for point position */
     mv::Dataset<Points>& getPositionDataset() { return _positionDataset; }
+
+    /** Get smart pointer to source dataset */
+    mv::Dataset<Points>& getPositionSourceDataset() { return _positionSourceDataset; }
+
+    mv::Dataset<Points>& getAvgExprDataset() { return _avgExprDataset; }
 
     //SettingsAction& getSettingsAction() { return _settingsAction; }
 

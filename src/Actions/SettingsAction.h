@@ -31,6 +31,7 @@ public: // Action getters
     
     DimensionPickerAction& getXDimensionPickerAction() { return _xDimensionPickerAction; }
     DimensionPickerAction& getYDimensionPickerAction() { return _yDimensionPickerAction; }
+    DimensionPickerAction& getDimensionAction() { return _dimensionAction; }
     DecimalAction& getPointSizeAction() { return _pointSizeAction; }
     DecimalAction& getPointOpacityAction() { return _pointOpacityAction; }
     IntegralAction& getNumClusterAction() { return _numClusterAction; }
@@ -56,6 +57,7 @@ private:
     ExampleViewJSPlugin*    _exampleViewJSPlugin;       /** Pointer to Example OpenGL Viewer Plugin */
     DimensionPickerAction   _xDimensionPickerAction;    /** X-dimension picker action */
     DimensionPickerAction   _yDimensionPickerAction;    /** Y-dimension picker action */
+    DimensionPickerAction   _dimensionAction;           /** dimension picker action */
     DecimalAction           _pointSizeAction;           /** point size action */
     DecimalAction           _pointOpacityAction;        /** point opacity action */
     IntegralAction           _numClusterAction;        /** number of cluster action */

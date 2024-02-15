@@ -454,7 +454,7 @@ void ExampleViewJSPlugin::convertDataAndUpdateChart()
             entry["categoryColor"] = "#4b4561";
         }*/
 
-        auto it = _dimNameToClusterLabel.find(sortedDimNames[i]);
+        auto it = _dimNameToClusterLabel.find(sortedDimNames[i]);// TO DO: access the map directly instead of using find - change the map to unordered_map?
 
         if (it != _dimNameToClusterLabel.end()) {
             // Dimension name exists in the map
@@ -536,6 +536,22 @@ void ExampleViewJSPlugin::updateViewData(std::vector<Vector2f>& positions) {
 
     _dimView->setData(&positions);
 
+}
+
+void ExampleViewJSPlugin::updateShowDimension() {
+    int shownDimension = _settingsAction.getDimensionAction().getCurrentDimensionIndex();
+    qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension: " << shownDimension;
+
+    if (shownDimension < 0) {
+        return;
+    }
+
+    qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension >= 0: " << shownDimension;
+
+    QString dimName = _enabledDimNames[shownDimension];
+    qDebug() << "ExampleViewJSPlugin::updateShowDimension(): dimName: " << dimName;
+
+    updateDimView(dimName);
 }
 
 void ExampleViewJSPlugin::computeCorrSpatial() {
@@ -982,12 +998,10 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
     }
     qDebug() << "ExampleViewJSPlugin::updateDimView: selected dim Name :" << dimName << " _selectedDimIndex: " << _selectedDimIndex;
 
-    // TO DO: is it needed? if we also use dataStore for singlecell optie
     Eigen::VectorXf dimValues;
     if (_isSingleCell != true) {
         qDebug() << "Access getBaseData";
         dimValues = _dataStore.getBaseData().col(_selectedDimIndex);// TO DO: getBaseData() or getBaseNormalizedData()
-        //Eigen::VectorXf dimValues = _dataStore.getBaseNormalizedData().col(_selecedDimIdx);
     }
     else {
         qDebug() << "Access _avgExpr";
@@ -1246,13 +1260,13 @@ void ExampleViewJSPlugin::updateFloodFill()
 void ExampleViewJSPlugin::loadDataAvgExpression() {
     qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression(): start... ";
 
-    //file from Michael
-    //std::ifstream file("precomputed_stats_ABC_revision_230821_alias.csv"); // in this file column:gene identifier, row:cluster alias
+    /*load file of avg expr - file from Michael */
+    //std::ifstream file("precomputed_stats_ABC_revision_230821_alias_identifier.csv"); // in this file column:gene identifier, row:cluster alias
     std::ifstream file("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
     //std::ifstream file("avg_MERFISH_aliasgenesymbol_august.csv");// august data, self computed from MERFISH data
 
     if (!file.is_open()) {
-        std::cerr << "ExampleViewJSPlugin::loadDataForLabels(): Error: Could not open the file." << std::endl;
+        qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression Error: Could not open the avg expr file.";
         return;
     }
 
@@ -1324,6 +1338,16 @@ void ExampleViewJSPlugin::loadDataAvgExpression() {
 
     qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression()" << numGenes << " genes and " << numClusters << " clusters"; 
     qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression(): finished";
+
+    // temp: store avg expr dimension names as a Point dataset - TO DO: only one row is stored
+    _avgExprDataset = mv::data().createDataset<Points>("Points", "avgExprDataset");
+    std::vector<float> firstRow;
+    for (int j = 0; j < numGenes; ++j) {
+        firstRow.push_back(_avgExpr(0, j));
+    }
+    _avgExprDataset->setData(firstRow.data(), 1, firstRow.size());
+    _avgExprDataset->setDimensionNames(_geneNamesAvgExpr);
+
 }
 
 void ExampleViewJSPlugin::loadDataForLabels() {
@@ -1387,7 +1411,7 @@ void ExampleViewJSPlugin::countLabelDistribution() {
         clusterWaveAvg[label] = average;
         i++;
     }
-    _clusterWaveNumbers.clear(); // TO DO: can direct assign to _countsLabel - avoid copy
+    _clusterWaveNumbers.clear(); // TO DO: can direct assign to _clusterWaveNumbers - avoid copy
     _clusterWaveNumbers = clusterWaveAvg;
 
     // output the distribution of wave numbers within each cluster
