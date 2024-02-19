@@ -388,7 +388,7 @@ void ExampleViewJSPlugin::convertDataAndUpdateChart()
                 return a.second < b.second;
          });
 
-    // convert data from ManiVault PointData to a JSON structure
+    // convert data to a JSON structure
     QVariantList payload;
     for (const auto& genePair : filteredAndSortedGenes) {
         QVariantMap entry;
@@ -1244,7 +1244,6 @@ void ExampleViewJSPlugin::loadDataAvgExpression() {
             }
             catch (const std::exception& e) {
                 std::cerr << "Error converting cell to float: " << e.what() << std::endl;
-                // Handle error or use a default value
             }
         }
 
@@ -1270,6 +1269,19 @@ void ExampleViewJSPlugin::loadDataAvgExpression() {
 
     qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression()" << numGenes << " genes and " << numClusters << " clusters"; 
     qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression(): finished";
+
+    // identify duplicate gene symbols and append an index to them
+    std::map<QString, int> geneSymbolCount;
+    for (const auto& geneName : _geneNamesAvgExpr) {
+        geneSymbolCount[geneName]++;
+    }
+    std::map<QString, int> geneSymbolIndex;
+    for (auto& geneName : _geneNamesAvgExpr) {
+        if (geneSymbolCount[geneName] > 1) {
+            geneSymbolIndex[geneName]++;// Duplicate found
+            geneName += "_copy" + QString::number(geneSymbolIndex[geneName]);// Append index to the gene symbol
+        }
+    }
 
     // temp: store avg expr dimension names as a Point dataset - TO DO: only one row is stored
     _avgExprDataset = mv::data().createDataset<Points>("Points", "avgExprDataset");
@@ -1929,10 +1941,30 @@ void ExampleViewJSPlugin::updateClusterScalarOutput(const std::vector<float>& sc
 void ExampleViewJSPlugin::getFuntionalEnrichment()
 {
     QStringList geneNamesInCluster;
-
+    _simplifiedToIndexGeneMapping.clear();
     for (const auto& pair : _dimNameToClusterLabel) {
         if (pair.second == _selectedClusterIndex) {
-            geneNamesInCluster.append(pair.first);
+            QString geneName = pair.first;
+            QString simplifiedGeneName = geneName;// copy for potential modification
+
+            // check if gene name contains an _copy index - for modified duplicate gene symbols in ABC Atlas
+            int index = geneName.lastIndexOf("_copy");
+            if (index != -1) {
+                simplifiedGeneName = geneName.left(index);// remove the index
+                _simplifiedToIndexGeneMapping[simplifiedGeneName].append(geneName);
+            }
+
+            geneNamesInCluster.append(simplifiedGeneName);
+        }
+    }
+
+    // output _simplifiedToIndexGeneMapping if not empty
+    if (!_simplifiedToIndexGeneMapping.empty()) {
+        for (auto it = _simplifiedToIndexGeneMapping.constBegin(); it != _simplifiedToIndexGeneMapping.constEnd(); ++it) {
+            qDebug() << it.key() << ":";
+            for (const QString& value : it.value()) {
+                qDebug() << value;
+            }
         }
     }
 
@@ -2040,27 +2072,29 @@ void ExampleViewJSPlugin::onTableClicked(int row, int column) {
     QStringList geneSymbolList = geneSymbols.split(",");
 
     // match the gene symbols with the gene names in the cluster - gene symbols returned from topGene are all capitals
-    std::vector<QString> geneNamesInTerm;
-    for (int i = 0; i < geneSymbolList.size(); ++i) {
-        // convert the symbol to lower case and the first letter to upper case
-        QString searchGeneSymbol = geneSymbolList[i].toLower();
-        searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
+    QVariantList geneNamesForHighlighting;
+    for (const QString& symbol : geneSymbolList) {
+        // Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from topGene are all capitals -not needed using gProfiler
+        /*QString searchGeneSymbol = symbol.toLower();
+        searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();*/
+        QString searchGeneSymbol = symbol; // TO DO: check if the gene symbols are already in the correct format
 
-        geneNamesInTerm.push_back(searchGeneSymbol);
+        // Attempt to find original, indexed gene names using the reverse mapping
+        QStringList originalGeneNames = _simplifiedToIndexGeneMapping.value(searchGeneSymbol);
+
+        if (!originalGeneNames.isEmpty()) {
+            qDebug() << "Original gene names found for symbol" << searchGeneSymbol << ":" << originalGeneNames;
+            // original, indexed versions exist, add them for highlighting
+            for (const QString& originalGeneName : originalGeneNames) {
+                geneNamesForHighlighting.append(QVariant(originalGeneName));
+            }          
+        }
+        else {
+            // no indexed version found, use the modified search symbol
+            geneNamesForHighlighting.append(QVariant(searchGeneSymbol));
+        }
     }
-
-    for (int i = 0; i < geneNamesInTerm.size(); ++i) {
-        qDebug() << "genes" << geneNamesInTerm[i];
-    }
-
-    // highlight the genes in the bar chart
-    QVariantList geneNamesInTermVariantList;
-    for (const QString& name : geneNamesInTerm) {
-        geneNamesInTermVariantList.append(QVariant(name));
-    }
-
-    emit _chartWidget->getCommunicationObject().qt_js_highlightInJS(geneNamesInTermVariantList);
-
+    emit _chartWidget->getCommunicationObject().qt_js_highlightInJS(geneNamesForHighlighting);
 }
 
 void ExampleViewJSPlugin::updateClick() {

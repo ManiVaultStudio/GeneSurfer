@@ -243,6 +243,8 @@ private:
     std::vector<int>                _clustersToKeep; // clusters to keep for avg expression - same order as subset row - cluster alias name // TO DO: not needed
 
     mv::Dataset<Points>             _avgExprDataset; // Point dataset for average expression of each cluster - test
+    std::unordered_map<QString, QString> _identifierToSymbolMap; // map from gene identifier to gene symbol
+    QMap<QString, QStringList>      _simplifiedToIndexGeneMapping; // map for simplified gene names to extra indexed gene names - for duplicate gene symbols 
     
 
 public:
