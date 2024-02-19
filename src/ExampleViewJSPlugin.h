@@ -136,9 +136,6 @@ private:
     /** Compute the correlation between two vectors using Eigen */
     float computeCorrelation(const Eigen::VectorXf& a, const Eigen::VectorXf& b);
 
-    /** Sort the correlation by its value */
-    std::pair<std::vector<QString>, std::vector<float>> sortCorr(const std::vector<float>& corr, const std::vector<QString>& dimNames);
-
     /** Cluster genes based on their pairwise correlations */
     void clusterGenes();
 
@@ -206,7 +203,7 @@ private:
     float                   _corrThreshold;
 
     int                     _nclust;// number of clusters
-    std::map<QString, int>  _dimNameToClusterLabel; // map dimension name to cluster label
+    std::unordered_map<QString, int>  _dimNameToClusterLabel; // map dimension name to cluster label
 
     int                     _selectedClusterIndex;
     int                     _selectedDimIndex; // current selected dimension index for _dimView

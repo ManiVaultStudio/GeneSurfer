@@ -347,63 +347,20 @@ void ExampleViewJSPlugin::positionDatasetChanged()
     _dataInitialized = true;
 }
 
-std::pair<std::vector<QString>, std::vector<float>> ExampleViewJSPlugin::sortCorr(const std::vector<float>& corr, const std::vector<QString>& dimNames)
-{
-    // sort _corr and dimNames for plotting the barchart
-    std::vector<int> indices(dimNames.size());
-    std::iota(indices.begin(), indices.end(), 0);
-
-    std::sort(indices.begin(), indices.end(), [&corr](int a, int b) {
-        return corr[a] < corr[b];
-    });
-
-    std::vector<QString> sortedDimNames(dimNames.size());
-    std::vector<float> sortedCorr(corr.size());
-
-    for (int i = 0; i < indices.size(); ++i) {
-        sortedDimNames[i] = dimNames[indices[i]];
-        sortedCorr[i] = corr[indices[i]];
-    }
-
-    qDebug() << "ExampleViewJSPlugin::sortCorr(): Sorting finished";
-
-    return { sortedDimNames, sortedCorr };
-}
-
 void ExampleViewJSPlugin::convertDataAndUpdateChart()
 {
-    if (!_positionDataset.isValid())
+    if (!_positionDataset.isValid()) {
+        qDebug() << "ExampleViewJSPlugin::convertDataAndUpdateChart: No data to convert";
         return;
+    }
 
     if (_toClearBarchart) {
+        qDebug() << "ExampleViewJSPlugin::convertDataAndUpdateChart: Clear barchart";
         return;
     }
 
-    std::vector<QString> sortedDimNames; 
-    std::vector<float> sortedCorr;
-
-    // TO DO: can save time to only sort avaliable genes in _dimNameToClusterLabel
-    if (_isCorrSpatial) {
-        std::tie(sortedDimNames, sortedCorr) = sortCorr(_corrGeneSpatial, _enabledDimNames);
-    }
-    else {
-        std::tie(sortedDimNames, sortedCorr) = sortCorr(_corrGeneWave, _enabledDimNames);
-    }
-
-
-    qDebug() << "sortedDimNames size" << sortedDimNames.size();
-    qDebug() << "_dimNameToClusterLabel size" << _dimNameToClusterLabel.size();
-
-    // debugging for checking duplicates - Warning: duplicates in ABC Atlas gene symbols
-    /*std::unordered_set<QString> uniqueCheck;
-    for (const auto& dimName : sortedDimNames) {
-        if (!uniqueCheck.insert(dimName).second) {
-            qDebug() << "Duplicate gene found:" << dimName;
-        }
-    }*/
-
     // set colors for clustering labels
-    std::vector<std::string> plotlyT10Palette = {
+    std::vector<QString> plotlyT10Palette = {
     "#4C78A8", // blue
     "#72B7B2", // cyan
     "#FF9DA6", // pink
@@ -415,36 +372,33 @@ void ExampleViewJSPlugin::convertDataAndUpdateChart()
     "#9D755D"  // brown
     };
 
+    // only process genes present in _dimNameToClusterLabel
+    std::vector<std::pair<QString, float>> filteredAndSortedGenes;
+
+    const auto& corrVector = _isCorrSpatial ? _corrGeneSpatial : _corrGeneWave;
+    for (size_t i = 0; i < _enabledDimNames.size(); ++i) {
+        if (_dimNameToClusterLabel.find(_enabledDimNames[i]) != _dimNameToClusterLabel.end()) {
+            filteredAndSortedGenes.emplace_back(_enabledDimNames[i], corrVector[i]);
+        }
+    }
+
+    // Sort the filtered genes by their correlation values
+    std::sort(filteredAndSortedGenes.begin(), filteredAndSortedGenes.end(),
+         [](const std::pair<QString, float>& a, const std::pair<QString, float>& b) {
+                return a.second < b.second;
+         });
+
     // convert data from ManiVault PointData to a JSON structure
     QVariantList payload;
-    QVariantMap entry;
+    for (const auto& genePair : filteredAndSortedGenes) {
+        QVariantMap entry;
+        entry["Gene"] = genePair.first;
+        entry["Value"] = genePair.second;
 
-    for (int i = 0; i < sortedDimNames.size(); ++i) {
+        int clusterLabel = _dimNameToClusterLabel[genePair.first];
+        entry["categoryColor"] = plotlyT10Palette[clusterLabel % plotlyT10Palette.size()];
+        entry["cluster"] = "Gene cluster " + QString::number(clusterLabel);
 
-        entry["Gene"] = sortedDimNames[i];
-        entry["Value"] = sortedCorr[i];
-
-        // set color based on threshold
-        /*if (std::abs(sortedCorrGeneWave[i]) < _corrThreshold) {
-            entry["categoryColor"] = "#b7b5c0";
-        }
-        else {
-            entry["categoryColor"] = "#4b4561";
-        }*/
-
-        auto it = _dimNameToClusterLabel.find(sortedDimNames[i]);// TO DO: access the map directly instead of using find - change the map to unordered_map?
-
-        if (it != _dimNameToClusterLabel.end()) {
-            // Dimension name exists in the map
-            int clusterLabel = it->second;
-            entry["categoryColor"] = QString::fromStdString(plotlyT10Palette[clusterLabel % plotlyT10Palette.size()]);
-            entry["cluster"] = "Gene cluster " + QString::number(clusterLabel);
-        }
-        else {
-            // Dimension name doesn't exist in the map, assign grey color
-            entry["categoryColor"] = "#7F7F7F";// Middle Gray
-            entry["cluster"] = "Unclustered";
-        }
         payload.push_back(entry);
     }
 
