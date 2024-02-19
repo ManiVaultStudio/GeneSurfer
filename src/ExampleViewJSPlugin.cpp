@@ -246,7 +246,7 @@ void ExampleViewJSPlugin::init()
                         _sliceDataset = candidateDataset;
                         updateSlice();
 
-                        loadDataAvgExpression();
+                        loadDataAvgExpression();// TO DO: only for ABC Atlas
                         loadDataForLabels();
                     });
             }
@@ -347,50 +347,27 @@ void ExampleViewJSPlugin::positionDatasetChanged()
     _dataInitialized = true;
 }
 
-std::pair<std::vector<QString>, std::vector<float>> ExampleViewJSPlugin::sortCorrWave()
+std::pair<std::vector<QString>, std::vector<float>> ExampleViewJSPlugin::sortCorr(const std::vector<float>& corr, const std::vector<QString>& dimNames)
 {
-    // sort _corrGeneWave and dimNames for plotting the barchart
-    std::vector<int> indices(_enabledDimNames.size());
+    // sort _corr and dimNames for plotting the barchart
+    std::vector<int> indices(dimNames.size());
     std::iota(indices.begin(), indices.end(), 0);
 
-    std::sort(indices.begin(), indices.end(), [this](int a, int b) {
-        return _corrGeneWave[a] < _corrGeneWave[b];
-        });
+    std::sort(indices.begin(), indices.end(), [&corr](int a, int b) {
+        return corr[a] < corr[b];
+    });
 
-    std::vector<QString> sortedDimNames(_enabledDimNames.size());
-    std::vector<float> sortedCorrGeneWave(_corrGeneWave.size());
-
-    for (int i = 0; i < indices.size(); ++i) {
-        sortedDimNames[i] = _enabledDimNames[indices[i]];
-        sortedCorrGeneWave[i] = _corrGeneWave[indices[i]];
-    }
-
-    qDebug() << "ExampleViewJSPlugin::sortCorrWave(): Sorting finished";
-
-    return { sortedDimNames, sortedCorrGeneWave };
-}
-
-std::pair<std::vector<QString>, std::vector<float>> ExampleViewJSPlugin::sortCorrSpatial()
-{
-    // sort _corrGeneWave and dimNames for plotting the barchart
-    std::vector<int> indices(_enabledDimNames.size());
-    std::iota(indices.begin(), indices.end(), 0);
-
-    std::sort(indices.begin(), indices.end(), [this](int a, int b) {
-        return _corrGeneSpatial[a] < _corrGeneSpatial[b];
-        });
-
-    std::vector<QString> sortedDimNames(_enabledDimNames.size());
-    std::vector<float> sortedCorrGeneSpatial(_corrGeneSpatial.size());
+    std::vector<QString> sortedDimNames(dimNames.size());
+    std::vector<float> sortedCorr(corr.size());
 
     for (int i = 0; i < indices.size(); ++i) {
-        sortedDimNames[i] = _enabledDimNames[indices[i]];
-        sortedCorrGeneSpatial[i] = _corrGeneSpatial[indices[i]];
+        sortedDimNames[i] = dimNames[indices[i]];
+        sortedCorr[i] = corr[indices[i]];
     }
 
-    qDebug() << "ExampleViewJSPlugin::sortCorrSpatial(): Sorting finished";
+    qDebug() << "ExampleViewJSPlugin::sortCorr(): Sorting finished";
 
-    return { sortedDimNames, sortedCorrGeneSpatial };
+    return { sortedDimNames, sortedCorr };
 }
 
 void ExampleViewJSPlugin::convertDataAndUpdateChart()
@@ -407,11 +384,12 @@ void ExampleViewJSPlugin::convertDataAndUpdateChart()
 
     // TO DO: can save time to only sort avaliable genes in _dimNameToClusterLabel
     if (_isCorrSpatial) {
-        std::tie(sortedDimNames, sortedCorr) = sortCorrSpatial();
+        std::tie(sortedDimNames, sortedCorr) = sortCorr(_corrGeneSpatial, _enabledDimNames);
     }
     else {
-        std::tie(sortedDimNames, sortedCorr) = sortCorrWave();
+        std::tie(sortedDimNames, sortedCorr) = sortCorr(_corrGeneWave, _enabledDimNames);
     }
+
 
     qDebug() << "sortedDimNames size" << sortedDimNames.size();
     qDebug() << "_dimNameToClusterLabel size" << _dimNameToClusterLabel.size();

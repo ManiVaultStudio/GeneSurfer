@@ -136,9 +136,8 @@ private:
     /** Compute the correlation between two vectors using Eigen */
     float computeCorrelation(const Eigen::VectorXf& a, const Eigen::VectorXf& b);
 
-    std::pair<std::vector<QString>, std::vector<float>> sortCorrWave();
-
-    std::pair<std::vector<QString>, std::vector<float>> sortCorrSpatial();
+    /** Sort the correlation by its value */
+    std::pair<std::vector<QString>, std::vector<float>> sortCorr(const std::vector<float>& corr, const std::vector<QString>& dimNames);
 
     /** Cluster genes based on their pairwise correlations */
     void clusterGenes();
