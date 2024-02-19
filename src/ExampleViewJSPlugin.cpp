@@ -326,6 +326,7 @@ void ExampleViewJSPlugin::positionDatasetChanged()
     }
 
     qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): enabledDimensions size: " << _enabledDimNames.size();
+    qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): enabledDimensions[0]: " << _enabledDimNames[0];
 
 
     if (!_clusterScalars.isValid())
@@ -480,7 +481,11 @@ void ExampleViewJSPlugin::updateShowDimension() {
 
     qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension >= 0: " << shownDimension;
 
-    QString dimName = _enabledDimNames[shownDimension];
+    //QString dimName = _enabledDimNames[shownDimension]; // align with _enabledDimNames
+
+    const std::vector<QString> dimNamesSource = _isSingleCell ? _geneNamesAvgExpr : _positionSourceDataset->getDimensionNames();// align with positionSourceDataset, NOT _enabledDimNames
+
+    QString dimName = dimNamesSource[shownDimension];
     qDebug() << "ExampleViewJSPlugin::updateShowDimension(): dimName: " << dimName;
 
     updateDimView(dimName);
@@ -922,26 +927,35 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
     QString dimName = selectedDimName;
     _dimView->setProjectionName("Selected: " + selectedDimName);
 
-    for (int i = 0; i < _enabledDimNames.size(); ++i) {
-        if (_enabledDimNames[i] == selectedDimName) {
-            _selectedDimIndex = i;
-            break;
-        }
-    }
-    qDebug() << "ExampleViewJSPlugin::updateDimView: selected dim Name :" << dimName << " _selectedDimIndex: " << _selectedDimIndex;
-
     Eigen::VectorXf dimValues;
+    std::vector<float> dimV;
     if (_isSingleCell != true) {
-        qDebug() << "Access getBaseData";
-        dimValues = _dataStore.getBaseData().col(_selectedDimIndex);// TO DO: getBaseData() or getBaseNormalizedData()
+        const std::vector<QString> dimNames = _positionSourceDataset->getDimensionNames();
+        for (int i = 0; i < dimNames.size(); ++i) {
+            if (dimNames[i] == selectedDimName) {
+                _selectedDimIndex = i;
+                break;
+            }
+        }
+
+        qDebug() << "Access _positionSourceData";
+        //dimValues = _dataStore.getBaseData().col(_selectedDimIndex);// align with _enabledDimNames
+        _positionSourceDataset->extractDataForDimension(dimV, _selectedDimIndex);// align with _positionSourceDataset
     }
     else {
+        for (int i = 0; i < _enabledDimNames.size(); ++i) {
+            if (_enabledDimNames[i] == selectedDimName) {
+                _selectedDimIndex = i;
+                break;
+            }
+        }
+
         qDebug() << "Access _avgExpr";
         dimValues = _avgExpr(Eigen::all, _selectedDimIndex);
+        dimV.assign(dimValues.data(), dimValues.data() + dimValues.size());
     }
     
-    std::vector<float> dimV(dimValues.data(), dimValues.data() + dimValues.size());
-
+    qDebug() << "ExampleViewJSPlugin::updateDimView: selected dim Name :" << dimName << " _selectedDimIndex: " << _selectedDimIndex;
     qDebug() << "ExampleViewJSPlugin::updateDimView: dimV size: " << dimV.size();
 
     if(!_sliceDataset.isValid()) {
