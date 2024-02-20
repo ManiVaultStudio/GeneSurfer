@@ -272,16 +272,15 @@ void ExampleViewJSPlugin::init()
     // Update point selection when the position dataset data changes
     //connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, &ExampleViewJSPlugin::updateSelection);// TO DO
 
-
     // disable the clicked frame when selection changed
-    connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, [this]() {
+    /*connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, [this]() {
         if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
             _scatterViews[_selectedClusterIndex]->selectView(false);
         }
         else if (_selectedClusterIndex == 6) {
             _dimView->selectView(false);
         }
-        });
+        });*/
 
     connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, &ExampleViewJSPlugin::updateFloodFill);
 
@@ -332,6 +331,10 @@ void ExampleViewJSPlugin::positionDatasetChanged()
     if (!_clusterScalars.isValid())
     {
        _clusterScalars = mv::data().createDataset<Points>("Points", "Clusters");
+       // initialize the clusterScalars dataset with 0s
+       std::vector<float> tempInit(_numPoints, 0.0f);
+       _clusterScalars->setData(tempInit.data(), tempInit.size(), 1);
+
     }
 
     qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): start converting dataset ... ";
@@ -607,7 +610,7 @@ void ExampleViewJSPlugin::updateSelection()
 
     for (int i = 0; i < _nclust; i++) {
         QString clusterIdx = QString::number(i);
-        _scatterViews[i]->setProjectionName("Gene cluster: " + clusterIdx);
+        _scatterViews[i]->setProjectionName("Gene cluster: " + clusterIdx); // TO DO: remove redundant code
     }
 
     // compute subset and correlation
@@ -765,9 +768,6 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
 
 void ExampleViewJSPlugin::updateNumCluster()
 {
-    // Clear clicked frame
-    _scatterViews[_selectedClusterIndex]->selectView(false);
-
     int newNCluster = _settingsAction.getNumClusterAction().getValue();
     if (newNCluster < _nclust) {
         int diff = _nclust - newNCluster;
@@ -881,6 +881,12 @@ void ExampleViewJSPlugin::updateScatterColors()
     if (!_positionDataset.isValid())
         return;
 
+    // Clear clicked frame - _scatterViews
+    if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
+        _scatterViews[_selectedClusterIndex]->selectView(false);
+        qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
+    }
+
     std::vector<uint32_t>& selection = _positionDataset->getSelectionIndices();
 
     if (!_sliceDataset.isValid()) {
@@ -924,6 +930,12 @@ void ExampleViewJSPlugin::updateScatterColors()
 
 void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
 {
+    // Clear clicked frame - _dimView
+    if (_selectedClusterIndex == 6) {
+        _dimView->selectView(false);
+        qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
+    }
+
     QString dimName = selectedDimName;
     _dimView->setProjectionName("Selected: " + selectedDimName);
 
@@ -2149,13 +2161,17 @@ void ExampleViewJSPlugin::updateClick() {
         if (_selectedClusterIndex == 6) {// TO DO: hard coded for the current layout
             _dimView->selectView(true);
 
+            if (!_sliceDataset.isValid()) // only for 3D dataset + VolumeViewer
+                return;
+
             Eigen::VectorXf dimValue;
-            if (_isSingleCell != true) {
-                dimValue = _dataStore.getBaseData()(Eigen::all, _selectedDimIndex); 
+            std::vector<float> dimV;
+            if (!_isSingleCell) {
+                //dimValue = _dataStore.getBaseData()(Eigen::all, _selectedDimIndex); //align with _enabledDimNames
+                _positionSourceDataset->extractDataForDimension(dimV, _selectedDimIndex);// align with _positionSourceDataset
             }
             else {
                 // for singlecell option
-
                 const Eigen::VectorXf avgValue = _avgExpr(Eigen::all, _selectedDimIndex);
 
                 //populate the avg expr values to all ST points
@@ -2165,10 +2181,9 @@ void ExampleViewJSPlugin::updateClick() {
                     int label = _cellLabels[i]; // Get the cluster alias label name of the cell
                     dimValue[i] = avgValue(_clusterAliasToRowMap[label]);
                 }
-
+                dimV.assign(dimValue.data(), dimValue.data() + dimValue.size());
             }
 
-            std::vector<float> dimV(dimValue.data(), dimValue.data() + dimValue.size());
             normalizeVector(dimV);
             updateClusterScalarOutput(dimV);
         }
