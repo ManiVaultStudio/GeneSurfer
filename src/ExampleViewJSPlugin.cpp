@@ -330,7 +330,7 @@ void ExampleViewJSPlugin::positionDatasetChanged()
 
     if (!_clusterScalars.isValid())
     {
-       _clusterScalars = mv::data().createDataset<Points>("Points", "Clusters");
+       _clusterScalars = mv::data().createDataset<Points>("Points", "Scalars");
        // initialize the clusterScalars dataset with 0s
        std::vector<float> tempInit(_numPoints, 0.0f);
        _clusterScalars->setData(tempInit.data(), tempInit.size(), 1);
