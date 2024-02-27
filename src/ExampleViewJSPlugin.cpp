@@ -432,7 +432,7 @@ void ExampleViewJSPlugin::updateFloodFillDataset()
     // read floodFillData from data hierarchy
     for (const auto& data : mv::data().getAllDatasets())
     {
-        if (data->getGuiName() == "allFloodNodes") {
+        if (data->getGuiName() == "allFloodNodesIndices") {
             _floodFillDataset = data;
         }
     }
