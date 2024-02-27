@@ -348,6 +348,8 @@ void ExampleViewJSPlugin::positionDatasetChanged()
     _dataStore.createDataView();
     updateSelectedDim();
 
+    updateFloodFillDataset();
+
     _dataInitialized = true;
 }
 
@@ -427,14 +429,16 @@ QString ExampleViewJSPlugin::getCurrentDataSetID() const
 
 void ExampleViewJSPlugin::updateFloodFillDataset()
 {
-    // TO DO: type thing in setData
-    _floodFillDataset = _settingsAction.getDatasetPickerAction().getCurrentDataset<Points>();
+    // read floodFillData from data hierarchy
+    for (const auto& data : mv::data().getAllDatasets())
+    {
+        if (data->getGuiName() == "allFloodNodes") {
+            _floodFillDataset = data;
+        }
+    }
 
     qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets name: " << _floodFillDataset->text();
     qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets size: " << _floodFillDataset->getNumPoints();
-
-    if (_floodFillDataset->text() != "allFloodNodes")
-        return;
      
     updateFloodFill();
 }

@@ -38,7 +38,6 @@ public: // Action getters
     DecimalAction& getCorrThresholdAction() { return _corrThresholdAction; }
     VariantAction& getFloodFillAction() { return _floodFillAction; }
     IntegralAction& getSliceAction() { return _sliceAction; }
-    DatasetPickerAction& getDatasetPickerAction() { return _datasetPickerAction; }
     ToggleAction& getCorrSpatialAction() { return _corrSpatialAction; }
     ToggleAction& getSingleCellAction() { return _singleCellAction; }
 
@@ -64,7 +63,6 @@ private:
     DecimalAction           _corrThresholdAction;        /** correlation threshold action */
     VariantAction           _floodFillAction;           /** flood fill action */
     IntegralAction           _sliceAction;           /** slice action */
-    DatasetPickerAction     _datasetPickerAction;       /** dataset picker action */
     ToggleAction            _corrSpatialAction;          /** correlation option action */
     ToggleAction            _singleCellAction;          /** single cell option action */
 };

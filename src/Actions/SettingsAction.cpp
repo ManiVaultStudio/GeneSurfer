@@ -18,7 +18,6 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _corrThresholdAction(this, "CorrT", 0.f, 1.0f, 0.15f, 2),
     _floodFillAction(this, "Flood Fill"),
     _sliceAction(this, "Slice"),
-    _datasetPickerAction(this, "Dataset"),
     _corrSpatialAction(this, "Spatial", false),
     _singleCellAction(this, "Single Cell", false)
 {
@@ -32,13 +31,11 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _numClusterAction.setToolTip("Number of clusters");
     _corrThresholdAction.setToolTip("Correlation Threshold");
     _floodFillAction.setToolTip("Flood Fill");
-    _datasetPickerAction.setToolTip("Dataset");
     _corrSpatialAction.setToolTip("Spatial or HD");
     _singleCellAction.setToolTip("Single Cell or ST");
 
     connect(&_floodFillAction, &VariantAction::variantChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateFloodFill);
     connect(&_sliceAction, &IntegralAction::valueChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateSlice);
-    connect(&_datasetPickerAction, &DatasetPickerAction::datasetPicked, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateFloodFillDataset);
     connect(&_corrSpatialAction, &ToggleAction::toggled, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateCorrOption);
     connect(&_singleCellAction, &ToggleAction::toggled, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateSingleCellOption);
 
@@ -153,9 +150,6 @@ SettingsAction::Widget::Widget(QWidget* parent, SettingsAction* settingsAction) 
 
     layout->addWidget(settingsAction->getCorrThresholdAction().createLabelWidget(this));
     layout->addWidget(settingsAction->getCorrThresholdAction().createWidget(this));
-
-    layout->addWidget(settingsAction->getDatasetPickerAction().createLabelWidget(this));
-    layout->addWidget(settingsAction->getDatasetPickerAction().createWidget(this));
 
     layout->addWidget(settingsAction->getCorrSpatialAction().createLabelWidget(this));
     layout->addWidget(settingsAction->getCorrSpatialAction().createWidget(this));

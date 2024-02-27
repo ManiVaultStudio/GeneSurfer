@@ -67,8 +67,6 @@ public:
     /** update the selected dim in the scatter plot */
     void updateSelectedDim();
 
-    void updateFloodFillDataset();
-
     /** Update the selection of mouse of floodfill data */
     void updateFloodFill();
 
@@ -109,6 +107,9 @@ private:
     void publishSelection(const QString& selection);
 
     QString getCurrentDataSetID() const;
+
+    /** Read _floodFillDataset from data hierarchy */
+    void updateFloodFillDataset();
 
     /** Update the selection of mouse in GradientViewer */
     void updateSelection();
