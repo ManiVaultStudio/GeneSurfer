@@ -88,12 +88,20 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _client(nullptr),
     _dropWidget(nullptr),
     _settingsAction(this, "Settings Action"),
+    _primaryToolbarAction(this, "PrimaryToolbar"),
     _currentDataSet(nullptr), // TO DO: Not used anymore
     _selectedDimIndex(0),
     _selectedClusterIndex(0),
     _colorMapAction(this, "Color map", "RdYlBu")
 
 {
+    _primaryToolbarAction.addAction(&_settingsAction.getPositionAction(), 0, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), 0, GroupAction::Horizontal); 
+    _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 0, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getDimensionAction(), 0, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), 0, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction(), 0, GroupAction::Horizontal);
+
     for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
     {
         _scatterViews[i] = new ScatterView();
@@ -123,9 +131,19 @@ void ExampleViewJSPlugin::init()
     layout->setContentsMargins(0, 0, 0, 0);
 
     //setting widget
-    auto settingsWidget = _settingsAction.createWidget(&getWidget());
+    /*auto settingsWidget = _settingsAction.createWidget(&getWidget());
     settingsWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    layout->addWidget(settingsWidget);
+    layout->addWidget(settingsWidget);*/
+
+    //test
+    layout->addWidget(_primaryToolbarAction.createWidget(&getWidget()));
+
+    //test
+    /*auto settingsLayout = new QHBoxLayout();
+    settingsLayout->addWidget(settingsWidget);
+    auto correlationWidget = _settingsAction.getCorrelationModeAction().createCollapsedWidget(&getWidget());
+    settingsLayout->addWidget(correlationWidget);
+    layout->addLayout(settingsLayout);*/
 
     // Create barchart widget and set html contents of webpage 
     _chartWidget = new ChartWidget(this);
@@ -429,12 +447,21 @@ QString ExampleViewJSPlugin::getCurrentDataSetID() const
 
 void ExampleViewJSPlugin::updateFloodFillDataset()
 {
+    bool floodFillDatasetFound = false;
+
     // read floodFillData from data hierarchy
     for (const auto& data : mv::data().getAllDatasets())
     {
         if (data->getGuiName() == "allFloodNodesIndices") {
             _floodFillDataset = data;
+            floodFillDatasetFound = true;
+            break;
         }
+    }
+
+    if (!floodFillDatasetFound) {
+        qDebug() << "Warning: No floodFillDataset named allFloodNodesIndices found!";
+        return;
     }
 
     qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets name: " << _floodFillDataset->text();
@@ -444,9 +471,8 @@ void ExampleViewJSPlugin::updateFloodFillDataset()
 }
 
 void ExampleViewJSPlugin::updateSelectedDim() {
-
-    int xDim = _settingsAction.getXDimensionPickerAction().getCurrentDimensionIndex();
-    int yDim = _settingsAction.getYDimensionPickerAction().getCurrentDimensionIndex();
+    int xDim = _settingsAction.getPositionAction().getXDimensionPickerAction().getCurrentDimensionIndex();
+    int yDim = _settingsAction.getPositionAction().getYDimensionPickerAction().getCurrentDimensionIndex();
 
     //qDebug() << "ExampleViewJSPlugin::updateSelectedDim(): xDim: " << xDim << " yDim: " << yDim;
 
@@ -496,6 +522,19 @@ void ExampleViewJSPlugin::updateShowDimension() {
     qDebug() << "ExampleViewJSPlugin::updateShowDimension(): dimName: " << dimName;
 
     updateDimView(dimName);
+}
+
+void ExampleViewJSPlugin::computeAvgExpression() {
+    qDebug() << "computeAvgExpression() is triggered ";
+
+    qDebug() << "PLACEHOLDER: NOT IMPLEMENTED YET ";
+
+}
+
+void ExampleViewJSPlugin::loadAvgExpression() {
+    qDebug() << "loadAvgExpression() is triggered ";
+
+    qDebug() << "PLACEHOLDER: NOT IMPLEMENTED YET ";
 }
 
 void ExampleViewJSPlugin::computeCorrSpatial() {
@@ -729,22 +768,28 @@ void ExampleViewJSPlugin::updateSelection()
 
 }
 
-void ExampleViewJSPlugin::updateCorrOption() {
-    _settingsAction.getCorrSpatialAction().isChecked() ? _isCorrSpatial = true : _isCorrSpatial = false;
-    qDebug() << "ExampleViewJSPlugin::updateCorrOption(): _isCorrSpatial: " << _isCorrSpatial;
+void ExampleViewJSPlugin::setCorrelationMode(bool mode) {
+    _isCorrSpatial = mode;
+    qDebug() << "ExampleViewJSPlugin::setCorrelationMode(): _isCorrSpatial: " << _isCorrSpatial;
 
     updateSelection();
 }
 
 void ExampleViewJSPlugin::updateSingleCellOption() {
-    _settingsAction.getSingleCellAction().isChecked() ? _isSingleCell = true : _isSingleCell = false;
+    qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): start... ";
+
+    _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().isChecked() ? _isSingleCell = true : _isSingleCell = false;
     qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _isSingleCell: " << _isSingleCell;
 
     if (_isSingleCell) {
+        qDebug() << "Using Single Cell";
+
         if (_avgExpr.size() == 0) {
             qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr is empty";
             return;
         } 
+
+        _settingsAction.getDimensionAction().setPointsDataset(_avgExprDataset);
 
         // update _enabledDimNames
         _enabledDimNames.clear();
@@ -755,6 +800,9 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
 
     }
     else {
+        qDebug() << "Using Spatial";
+        _settingsAction.getDimensionAction().setPointsDataset(_positionSourceDataset);
+
         const auto& dimNames = _positionSourceDataset->getDimensionNames();
         auto enabledDimensions = _positionSourceDataset->getDimensionsPickerAction().getEnabledDimensions();
         _enabledDimNames.clear();
@@ -772,7 +820,7 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
 
 void ExampleViewJSPlugin::updateNumCluster()
 {
-    int newNCluster = _settingsAction.getNumClusterAction().getValue();
+    int newNCluster = _settingsAction.getClusteringAction().getNumClusterAction().getValue();
     if (newNCluster < _nclust) {
         int diff = _nclust - newNCluster;
         for (int i = newNCluster; i < _nclust; i++) {
@@ -794,7 +842,7 @@ void ExampleViewJSPlugin::updateNumCluster()
 }
 
 void ExampleViewJSPlugin::updateCorrThreshold() {
-    _corrThreshold = _settingsAction.getCorrThresholdAction().getValue();
+    _corrThreshold = _settingsAction.getClusteringAction().getCorrThresholdAction().getValue();
 
     // cannot be changed before plotting
     if (_isFloodIndex.empty()) {
@@ -808,9 +856,9 @@ void ExampleViewJSPlugin::updateCorrThreshold() {
 void ExampleViewJSPlugin::updateScatterPointSize()
 {
     for (int i = 0; i < _nclust; i++) {
-        _scatterViews[i]->setSourcePointSize(_settingsAction.getPointSizeAction().getValue());
+        _scatterViews[i]->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
     }
-    _dimView->setSourcePointSize(_settingsAction.getPointSizeAction().getValue());
+    _dimView->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
 }
 
 void ExampleViewJSPlugin::updateScatterSelection()
@@ -850,7 +898,7 @@ void ExampleViewJSPlugin::updateScatterOpacity()
     if (!_sliceDataset.isValid()) {
         // for 2D dataset
         std::vector<float> opacityScalars(_isFloodIndex.size());
-        float defaultOpacity = _settingsAction.getPointOpacityAction().getValue();
+        float defaultOpacity = _settingsAction.getPointPlotAction().getPointOpacityAction().getValue();
 #pragma omp parallel for
         for (int i = 0; i < _isFloodIndex.size(); ++i) {
             opacityScalars[i] = _isFloodIndex[i] ? 1.0f : defaultOpacity;
@@ -865,7 +913,7 @@ void ExampleViewJSPlugin::updateScatterOpacity()
     else {
         // for 3D dataset
         std::vector<float> opacityScalars(_isFloodOnSlice.size());
-        float defaultOpacity = _settingsAction.getPointOpacityAction().getValue();
+        float defaultOpacity = _settingsAction.getPointPlotAction().getPointOpacityAction().getValue();
 #pragma omp parallel for
         for (int i = 0; i < _isFloodOnSlice.size(); ++i) {
             opacityScalars[i] = _isFloodOnSlice[i] ? 1.0f : defaultOpacity;

@@ -9,6 +9,7 @@
 
 #include "Actions/SettingsAction.h"
 
+#include <actions/HorizontalToolbarAction.h>
 #include <actions/ColorMap1DAction.h>
 #include <Dataset.h>
 #include <PointData/PointData.h>
@@ -78,11 +79,16 @@ public:
 
     void updateSlice();
 
-    /** Update the chosen correlation option */
-    void updateCorrOption();
+    void setCorrelationMode(bool mode);// test
 
     /** Update the chosen single cell option */
     void updateSingleCellOption();
+
+    /** Update the average expression of each cluster */
+    void computeAvgExpression();
+
+    /** Load the average expression of each cluster */
+    void loadAvgExpression();
 
     /** Update the color of _dimView */
     void updateShowDimension();
@@ -278,6 +284,7 @@ protected:
     ScatterView*                 _dimView; // scatter plot for selected dimensions
     SettingsAction               _settingsAction;/** Settings action */
     ColorMap1DAction             _colorMapAction;/** Color map action */
+    HorizontalToolbarAction      _primaryToolbarAction;      /** Horizontal toolbar for primary content */
 
 };
 

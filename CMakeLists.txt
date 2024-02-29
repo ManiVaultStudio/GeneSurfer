@@ -68,6 +68,16 @@ set(Compute
 set(Actions
     src/Actions/SettingsAction.cpp
     src/Actions/SettingsAction.h
+	src/Actions/CorrelationModeAction.cpp
+    src/Actions/CorrelationModeAction.h
+	src/Actions/PointPlotAction.cpp
+    src/Actions/PointPlotAction.h
+	src/Actions/PositionAction.cpp
+    src/Actions/PositionAction.h
+	src/Actions/SingleCellModeAction.cpp
+    src/Actions/SingleCellModeAction.h
+	src/Actions/ClusteringAction.cpp
+    src/Actions/ClusteringAction.h
 )
 
 

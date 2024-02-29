@@ -1,13 +1,18 @@
 #pragma once
 
+#include <actions/GroupAction.h>
 #include <actions/WidgetAction.h>
-#include <actions/DecimalAction.h>
 #include <actions/IntegralAction.h>
 #include <actions/VariantAction.h>
 #include <actions/DatasetPickerAction.h>
 #include <PointData/DimensionPickerAction.h>
 #include <PointData/DimensionsPickerAction.h>
-#include <actions/ToggleAction.h>
+
+#include "CorrelationModeAction.h"
+#include "PositionAction.h"
+#include "PointPlotAction.h"
+#include "SingleCellModeAction.h"
+#include "ClusteringAction.h"
 
 using namespace mv::gui;
 
@@ -17,7 +22,7 @@ class ExampleViewJSPlugin;
  *
  * Action class for configuring settings
  */
-class SettingsAction : public WidgetAction
+class SettingsAction : public GroupAction
 {
 public:
     /**
@@ -27,42 +32,44 @@ public:
      */
     Q_INVOKABLE SettingsAction(QObject* parent, const QString& title);
 
+    ///**
+    // * Get action context menu
+    // * @return Pointer to menu
+    // */
+    //QMenu* getContextMenu();
+
 public: // Action getters
-    
-    DimensionPickerAction& getXDimensionPickerAction() { return _xDimensionPickerAction; }
-    DimensionPickerAction& getYDimensionPickerAction() { return _yDimensionPickerAction; }
+
+    PositionAction& getPositionAction() { return _positionAction; }
+
     DimensionPickerAction& getDimensionAction() { return _dimensionAction; }
-    DecimalAction& getPointSizeAction() { return _pointSizeAction; }
-    DecimalAction& getPointOpacityAction() { return _pointOpacityAction; }
-    IntegralAction& getNumClusterAction() { return _numClusterAction; }
-    DecimalAction& getCorrThresholdAction() { return _corrThresholdAction; }
+
+    PointPlotAction& getPointPlotAction() { return _pointPlotAction; }
+
+    SingleCellModeAction& getSingleCellModeAction() { return _singleCellModeAction; }
+
+    ClusteringAction& getClusteringAction() { return _clusteringAction; }
+
+    CorrelationModeAction& getCorrelationModeAction() { return _correlationModeAction; }
+
     VariantAction& getFloodFillAction() { return _floodFillAction; }
-    IntegralAction& getSliceAction() { return _sliceAction; }
-    ToggleAction& getCorrSpatialAction() { return _corrSpatialAction; }
-    ToggleAction& getSingleCellAction() { return _singleCellAction; }
-
-protected:
-
-    class Widget : public WidgetActionWidget {
-    public:
-        Widget(QWidget* parent, SettingsAction* settingsAction);
-    };
-
-    QWidget* getWidget(QWidget* parent, const std::int32_t& widgetFlags) override {
-        return new SettingsAction::Widget(parent, this);
-    };
+    IntegralAction& getSliceAction() { return _sliceAction; }   
 
 private:
     ExampleViewJSPlugin*    _exampleViewJSPlugin;       /** Pointer to Example OpenGL Viewer Plugin */
-    DimensionPickerAction   _xDimensionPickerAction;    /** X-dimension picker action */
-    DimensionPickerAction   _yDimensionPickerAction;    /** Y-dimension picker action */
+
+    PositionAction          _positionAction;            /** position action */
+
     DimensionPickerAction   _dimensionAction;           /** dimension picker action */
-    DecimalAction           _pointSizeAction;           /** point size action */
-    DecimalAction           _pointOpacityAction;        /** point opacity action */
-    IntegralAction           _numClusterAction;        /** number of cluster action */
-    DecimalAction           _corrThresholdAction;        /** correlation threshold action */
+
+    PointPlotAction         _pointPlotAction;           /** point plot action */
+
+    CorrelationModeAction   _correlationModeAction;     /** correlation mode action */
+
+    SingleCellModeAction    _singleCellModeAction;      /** single cell mode action */
+    
+    ClusteringAction        _clusteringAction;          /** clustering action */
+
     VariantAction           _floodFillAction;           /** flood fill action */
-    IntegralAction           _sliceAction;           /** slice action */
-    ToggleAction            _corrSpatialAction;          /** correlation option action */
-    ToggleAction            _singleCellAction;          /** single cell option action */
+    IntegralAction          _sliceAction;           /** slice action */
 };
