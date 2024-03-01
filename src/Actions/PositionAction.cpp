@@ -87,20 +87,20 @@ connect(&_xDimensionPickerAction, &DimensionPickerAction::currentDimensionIndexC
     // OptionAction::disconnectFromPublicAction(recursive);
 // }
 
-//void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
-//{
-//    OptionAction::fromVariantMap(variantMap);
-//
-//    _spatialCorrelationAction.fromParentVariantMap(variantMap);
-//    _hdCorrelationAction.fromParentVariantMap(variantMap);
-//}
-//
-//QVariantMap CorrelationModeAction::toVariantMap() const
-//{
-//    auto variantMap = OptionAction::toVariantMap();
-//
-//    _spatialCorrelationAction.insertIntoVariantMap(variantMap);
-//    _hdCorrelationAction.insertIntoVariantMap(variantMap);
-//
-//    return variantMap;
-//}
+void PositionAction::fromVariantMap(const QVariantMap& variantMap)
+{
+    VerticalGroupAction::fromVariantMap(variantMap);
+
+    _xDimensionPickerAction.fromParentVariantMap(variantMap);
+    _yDimensionPickerAction.fromParentVariantMap(variantMap);
+}
+
+QVariantMap PositionAction::toVariantMap() const
+{
+    auto variantMap = VerticalGroupAction::toVariantMap();
+
+    _xDimensionPickerAction.insertIntoVariantMap(variantMap);
+    _yDimensionPickerAction.insertIntoVariantMap(variantMap);
+
+    return variantMap;
+}

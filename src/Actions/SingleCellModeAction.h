@@ -39,23 +39,20 @@ public:
 
     void initialize(ExampleViewJSPlugin* exampleViewJSPlugin);
 
+public: // Serialization
 
+    /**
+     * Load widget action from variant map
+     * @param Variant map representation of the widget action
+     */
+    void fromVariantMap(const QVariantMap& variantMap) override;
 
+    /**
+     * Save widget action to variant map
+     * @return Variant map representation of the widget action
+     */
 
-//public: // Serialization
-//
-//    /**
-//     * Load widget action from variant map
-//     * @param Variant map representation of the widget action
-//     */
-//    void fromVariantMap(const QVariantMap& variantMap) override;
-//
-//    /**
-//     * Save widget action to variant map
-//     * @return Variant map representation of the widget action
-//     */
-//
-//    QVariantMap toVariantMap() const override;
+    QVariantMap toVariantMap() const override;
 
 public: // Action getters
 

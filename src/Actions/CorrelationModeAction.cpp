@@ -31,34 +31,6 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
         });
 }
 
-//void CorrelationModeAction::initialize(ExampleViewJSPlugin* scatterplotPlugin)
-//{
-//    Q_ASSERT(scatterplotPlugin != nullptr);
-//
-//    if (scatterplotPlugin == nullptr)
-//        return;
-//
-//    _scatterplotPlugin = scatterplotPlugin;
-//
-//    _scatterplotPlugin->getWidget().addAction(&_spatialCorrelationAction);
-//    _scatterplotPlugin->getWidget().addAction(&_hdCorrelationAction);
-//
-//    //_scatterplotPlugin->setCorrelationMode(false); 
-//
-//    connect(&_spatialCorrelationAction, &QAction::toggled, this, [this](bool toggled) {
-//        if (toggled) {
-//            _scatterplotPlugin->setCorrelationMode(true); 
-//        }
-//        });
-//
-//    connect(&_hdCorrelationAction, &QAction::toggled, this, [this](bool toggled) {
-//        if (toggled) {
-//            _scatterplotPlugin->setCorrelationMode(false); 
-//        }
-//        });
-//}
-
-
 
 // void CorrelationModeAction::connectToPublicAction(WidgetAction* publicAction, bool recursive)
 // {
@@ -92,20 +64,20 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     // OptionAction::disconnectFromPublicAction(recursive);
 // }
 
-//void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
-//{
-//    OptionAction::fromVariantMap(variantMap);
-//
-//    _spatialCorrelationAction.fromParentVariantMap(variantMap);
-//    _hdCorrelationAction.fromParentVariantMap(variantMap);
-//}
-//
-//QVariantMap CorrelationModeAction::toVariantMap() const
-//{
-//    auto variantMap = OptionAction::toVariantMap();
-//
-//    _spatialCorrelationAction.insertIntoVariantMap(variantMap);
-//    _hdCorrelationAction.insertIntoVariantMap(variantMap);
-//
-//    return variantMap;
-//}
+void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
+{
+    VerticalGroupAction::fromVariantMap(variantMap);
+
+    _spatialCorrelationAction.fromParentVariantMap(variantMap);
+    _hdCorrelationAction.fromParentVariantMap(variantMap);
+}
+
+QVariantMap CorrelationModeAction::toVariantMap() const
+{
+    auto variantMap = VerticalGroupAction::toVariantMap();
+
+    _spatialCorrelationAction.insertIntoVariantMap(variantMap);
+    _hdCorrelationAction.insertIntoVariantMap(variantMap);
+
+    return variantMap;
+}

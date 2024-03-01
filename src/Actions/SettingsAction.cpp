@@ -9,8 +9,13 @@ using namespace mv::gui;
 SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     GroupAction(parent, title),
     _exampleViewJSPlugin(dynamic_cast<ExampleViewJSPlugin*>(parent)),
-    _positionAction(this, "Position"),
 
+    _positionDatasetPickerAction(this, "PositionDataset"),
+    _sliceDatasetPickerAction(this, "SliceDataset"),
+
+    _avgExprDatasetPickerAction(this, "AvgExprDataset"),
+
+    _positionAction(this, "Position"),
     _dimensionAction(this, "Dim"),
 
     _pointPlotAction(this, "Point Plot"),
@@ -24,6 +29,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _correlationModeAction(this, "Correlation Mode")
 {
     setText("Settings");
+    setSerializationName("SettingsAction");
     
     setShowLabels(true);
     setLabelSizingType(LabelSizingType::Auto);
@@ -58,6 +64,19 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
 
     updateEnabled();
 
+    connect(&_positionDatasetPickerAction, &DatasetPickerAction::datasetPicked, [this](Dataset<DatasetImpl> pickedDataset) -> void {
+        _exampleViewJSPlugin->getPositionDataset() = pickedDataset;
+        });
+    connect(&_exampleViewJSPlugin->getPositionDataset(), &Dataset<Points>::changed, this, [this](DatasetImpl* dataset) -> void {
+        _positionDatasetPickerAction.setCurrentDataset(dataset);
+        });
+    connect(&_exampleViewJSPlugin->getSliceDataset(), &Dataset<Clusters>::changed, this, [this](DatasetImpl* dataset) -> void {
+        _sliceDatasetPickerAction.setCurrentDataset(dataset);
+        });
+    connect(&_exampleViewJSPlugin->getAvgExprDataset(), &Dataset<Clusters>::changed, this, [this](DatasetImpl* dataset) -> void {
+        _avgExprDatasetPickerAction.setCurrentDataset(dataset);
+        });
+
  
     connect(&_floodFillAction, &VariantAction::variantChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateFloodFill);
     connect(&_sliceAction, &IntegralAction::valueChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateSlice);
@@ -74,3 +93,67 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         });
 
 }
+
+void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
+{
+    WidgetAction::fromVariantMap(variantMap);
+
+    _positionDatasetPickerAction.fromParentVariantMap(variantMap);
+    _sliceDatasetPickerAction.fromParentVariantMap(variantMap);
+    // Load position dataset
+    auto positionDataset = _positionDatasetPickerAction.getCurrentDataset();
+    if (positionDataset.isValid())
+    {
+        Dataset pickedDataset = mv::data().getDataset(positionDataset.getDatasetId());
+        _exampleViewJSPlugin->getPositionDataset() = pickedDataset;
+    }
+
+    // Load slice dataset
+    auto sliceDataset = _sliceDatasetPickerAction.getCurrentDataset();
+    if (sliceDataset.isValid())
+    {
+        qDebug() << ">>>>> Found a slice dataset " << sliceDataset->getGuiName();
+        Dataset pickedDataset = mv::data().getDataset(sliceDataset.getDatasetId());
+        _exampleViewJSPlugin->getSliceDataset() = pickedDataset;
+    }
+
+    // Load average expression dataset
+    /*auto avgExprDataset = _avgExprDatasetPickerAction.getCurrentDataset();
+    if (avgExprDataset.isValid())
+    {
+        qDebug() << ">>>>> Found Avg Expression dataset " << avgExprDataset->getGuiName();
+        Dataset pickedDataset = mv::data().getDataset(avgExprDataset.getDatasetId());
+        _exampleViewJSPlugin->getAvgExprDataset() = pickedDataset;
+    }*/
+
+    _floodFillAction.fromParentVariantMap(variantMap);
+    //_correlationModeAction.fromParentVariantMap(variantMap);
+    _singleCellModeAction.fromParentVariantMap(variantMap);
+    _clusteringAction.fromParentVariantMap(variantMap);
+    _positionAction.fromParentVariantMap(variantMap);  
+    _pointPlotAction.fromParentVariantMap(variantMap); 
+    _sliceAction.fromParentVariantMap(variantMap);
+    _dimensionAction.fromParentVariantMap(variantMap);
+}
+
+QVariantMap SettingsAction::toVariantMap() const
+{
+    auto variantMap = WidgetAction::toVariantMap();
+
+    _positionDatasetPickerAction.insertIntoVariantMap(variantMap);
+    _sliceDatasetPickerAction.insertIntoVariantMap(variantMap);
+
+    //_avgExprDatasetPickerAction.insertIntoVariantMap(variantMap);
+
+    _positionAction.insertIntoVariantMap(variantMap);
+    _dimensionAction.insertIntoVariantMap(variantMap);
+    _pointPlotAction.insertIntoVariantMap(variantMap);
+    _singleCellModeAction.insertIntoVariantMap(variantMap);
+    _clusteringAction.insertIntoVariantMap(variantMap);
+    _floodFillAction.insertIntoVariantMap(variantMap);
+    _sliceAction.insertIntoVariantMap(variantMap);
+    //_correlationModeAction.insertIntoVariantMap(variantMap);
+
+    return variantMap;
+}
+

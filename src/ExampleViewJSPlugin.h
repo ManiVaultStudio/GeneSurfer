@@ -229,6 +229,7 @@ private:
 
     Dataset<Points>                 _clusterScalars; // scalars for plotting in volume viewer
 
+    int                             _currentSliceIndex = 0; // current slice index for 3D slice dataset
     Dataset<Clusters>               _sliceDataset; // dataset for 3D slices
     std::vector<int>                _onSliceIndices; // pt indices on the slice
     std::vector<int>                _onSliceFloodIndices; // flood indices on the slice
@@ -264,6 +265,9 @@ private:
     std::map<QString, int>          _countsLabel; // count distribution of labels within floodfill, first element is the label 
     std::map<QString, float>        _clusterWaveNumbers; // avg of wave numbers for each cluster, first element is the label
     std::vector<QString>                _clustersToKeep;// clusters to keep for avg expression - same order as subset row - cluster alias name 
+
+    // serialization
+    bool                    _loadingFromProject = false;
     
 
 public:
@@ -285,11 +289,26 @@ public:
 
     mv::Dataset<Points>& getAvgExprDataset() { return _avgExprDataset; }
 
+    mv::Dataset<Clusters>& getSliceDataset() { return _sliceDataset; }
+
     //SettingsAction& getSettingsAction() { return _settingsAction; }
 
 public: 
     /** Get reference to the scatter plot widget */
     std::vector<ScatterView*>& getProjectionViews() { return _scatterViews; }
+
+public: // Serialization
+    /**
+    * Load plugin from variant map
+    * @param Variant map representation of the plugin
+    */
+    void fromVariantMap(const QVariantMap& variantMap) override;
+
+    /**
+    * Save plugin to variant map
+    * @return Variant map representation of the plugin
+    */
+    QVariantMap toVariantMap() const override;
 
 signals:
     void avgExprDatasetExistsChanged(bool exists);

@@ -324,6 +324,8 @@ void ExampleViewJSPlugin::positionDatasetChanged()
 
     qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): New data dropped";
 
+    _dropWidget->setShowDropIndicator(!_positionDataset.isValid());
+
     _positionSourceDataset = _positionDataset->getSourceDataset<Points>();
 
     _numPoints = _positionDataset->getNumPoints();
@@ -345,12 +347,21 @@ void ExampleViewJSPlugin::positionDatasetChanged()
 
     if (!_clusterScalars.isValid())
     {
-       _clusterScalars = mv::data().createDataset<Points>("Points", "Scalars");
-       // initialize the clusterScalars dataset with 0s
-       std::vector<float> tempInit(_numPoints, 0.0f);
-       _clusterScalars->setData(tempInit.data(), tempInit.size(), 1);
-
+        if (!_loadingFromProject)
+        {
+            _clusterScalars = mv::data().createDataset<Points>("Points", "Clusters");
+            // initialize the clusterScalars dataset with 0s
+            std::vector<float> tempInit(_numPoints, 0.0f);
+            _clusterScalars->setData(tempInit.data(), tempInit.size(), 1);
+        }
     }
+
+    //if (_avgExprDataset.isValid())
+    //{
+    //    if (_loadingFromProject)
+    //        convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);
+    //}
+   
 
     qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): start converting dataset ... ";
     convertToEigenMatrix(_positionDataset, _positionSourceDataset, _dataStore.getBaseData());
@@ -2513,8 +2524,7 @@ void ExampleViewJSPlugin::updateClick() {
 
 void ExampleViewJSPlugin::updateSlice() {
    
-    int sliceIndex = _settingsAction.getSliceAction().getValue();
-    //qDebug() << "ExampleViewJSPlugin::updateSlice(): slice value: " << sliceIndex;
+    _currentSliceIndex = _settingsAction.getSliceAction().getValue();
 
     if (!_sliceDataset.isValid()) {
         qDebug() << "ExampleViewJSPlugin::updateSlice(): _sliceDataset is not valid";
@@ -2522,9 +2532,9 @@ void ExampleViewJSPlugin::updateSlice() {
     }
 
     //QVector<Cluster>& clusters = _sliceDataset->getClusters();
-    QString clusterName = _sliceDataset->getClusters()[sliceIndex].getName();
+    QString clusterName = _sliceDataset->getClusters()[_currentSliceIndex].getName();
 
-    std::vector<uint32_t>& uindices = _sliceDataset->getClusters()[sliceIndex].getIndices();
+    std::vector<uint32_t>& uindices = _sliceDataset->getClusters()[_currentSliceIndex].getIndices();
     std::vector<int> indices;
     indices.assign(uindices.begin(), uindices.end());
     //qDebug() << "ExampleViewJSPlugin::updateSlice(): clusterName: " << clusterName << " uindices size: " << uindices.size();
@@ -2551,11 +2561,60 @@ void ExampleViewJSPlugin::updateSlice() {
     }    
 
     updateScatterOpacity();
-
-    // update color scalars on 2D
-    //qDebug() << "ExampleViewJSPlugin::updateSlice(): test update color";
     updateScatterColors();
 
+}
+
+// serialization
+void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
+{
+    qDebug() << "ExampleViewJSPlugin::fromVariantMap() 1 ";
+    _loadingFromProject = true;
+
+    ViewPlugin::fromVariantMap(variantMap);
+
+    variantMapMustContain(variantMap, "SettingsAction");
+
+    _primaryToolbarAction.fromParentVariantMap(variantMap);
+    _settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
+
+
+    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _sliceDataset.isValid()" << _sliceDataset.isValid();
+    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _avgExpr.size() " << _avgExpr.size();
+    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _avgExprDataset.isValid() " << _avgExprDataset.isValid();
+    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _cellLabels.size() " << _cellLabels.size();
+
+    QString clusterScalarsId = variantMap["ClusterScalars"].toString();
+    _clusterScalars = mv::data().getDataset<Points>(clusterScalarsId);
+
+    if (_sliceDataset.isValid())
+    {
+        qDebug() << "ExampleViewJSPlugin::fromVariantMap() 3 ";
+        _currentSliceIndex = variantMap["CurrentSliceIdx"].toInt();
+        updateSlice();
+    }
+
+    qDebug() << "ExampleViewJSPlugin::fromVariantMap() 4 ";
+    _loadingFromProject = false;
+
+}
+
+QVariantMap ExampleViewJSPlugin::toVariantMap() const
+{
+    QVariantMap variantMap = ViewPlugin::toVariantMap();
+
+    _primaryToolbarAction.insertIntoVariantMap(variantMap);
+    _settingsAction.insertIntoVariantMap(variantMap);
+
+    variantMap.insert("ClusterScalars", _clusterScalars.getDatasetId());
+
+    if (_sliceDataset.isValid())
+    {
+        variantMap.insert("CurrentSliceIdx", _currentSliceIndex);
+    }
+
+
+    return variantMap;
 }
 
 

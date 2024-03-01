@@ -66,20 +66,20 @@ ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
     // OptionAction::disconnectFromPublicAction(recursive);
 // }
 
-//void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
-//{
-//    OptionAction::fromVariantMap(variantMap);
-//
-//    _spatialCorrelationAction.fromParentVariantMap(variantMap);
-//    _hdCorrelationAction.fromParentVariantMap(variantMap);
-//}
-//
-//QVariantMap CorrelationModeAction::toVariantMap() const
-//{
-//    auto variantMap = OptionAction::toVariantMap();
-//
-//    _spatialCorrelationAction.insertIntoVariantMap(variantMap);
-//    _hdCorrelationAction.insertIntoVariantMap(variantMap);
-//
-//    return variantMap;
-//}
+void ClusteringAction::fromVariantMap(const QVariantMap& variantMap)
+{
+    VerticalGroupAction::fromVariantMap(variantMap);
+
+    _numClusterAction.fromParentVariantMap(variantMap);
+    _corrThresholdAction.fromParentVariantMap(variantMap);
+}
+
+QVariantMap ClusteringAction::toVariantMap() const
+{
+    auto variantMap = VerticalGroupAction::toVariantMap();
+
+    _numClusterAction.insertIntoVariantMap(variantMap);
+    _corrThresholdAction.insertIntoVariantMap(variantMap);
+
+    return variantMap;
+}

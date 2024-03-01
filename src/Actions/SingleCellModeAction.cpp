@@ -22,8 +22,6 @@ SingleCellModeAction::SingleCellModeAction(QObject* parent, const QString& title
     _loadAvgExpressionAction.setToolTip("Load average expression");
     _labelDatasetPickerAction.setToolTip("Label Dataset used for mapping to ST");
 
-
-
 }
 
 void SingleCellModeAction::initialize(ExampleViewJSPlugin* exampleViewJSPlugin)
@@ -70,20 +68,24 @@ SingleCellModeAction::Widget::Widget(QWidget* parent, SingleCellModeAction* sing
 }
 
 
-//void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
-//{
-//    OptionAction::fromVariantMap(variantMap);
-//
-//    _spatialCorrelationAction.fromParentVariantMap(variantMap);
-//    _hdCorrelationAction.fromParentVariantMap(variantMap);
-//}
-//
-//QVariantMap CorrelationModeAction::toVariantMap() const
-//{
-//    auto variantMap = OptionAction::toVariantMap();
-//
-//    _spatialCorrelationAction.insertIntoVariantMap(variantMap);
-//    _hdCorrelationAction.insertIntoVariantMap(variantMap);
-//
-//    return variantMap;
-//}
+void SingleCellModeAction::fromVariantMap(const QVariantMap& variantMap)
+{
+    WidgetAction::fromVariantMap(variantMap);
+
+    _labelDatasetPickerAction.fromParentVariantMap(variantMap);
+    //_loadAvgExpressionAction.fromParentVariantMap(variantMap);
+    //_computeAvgExpressionAction.fromParentVariantMap(variantMap);
+    //_singleCellOptionAction.fromParentVariantMap(variantMap);  
+}
+
+QVariantMap SingleCellModeAction::toVariantMap() const
+{
+    auto variantMap = WidgetAction::toVariantMap();
+
+    //_singleCellOptionAction.insertIntoVariantMap(variantMap);
+    //_computeAvgExpressionAction.insertIntoVariantMap(variantMap);
+    //_loadAvgExpressionAction.insertIntoVariantMap(variantMap);
+    _labelDatasetPickerAction.insertIntoVariantMap(variantMap);
+
+    return variantMap;
+}

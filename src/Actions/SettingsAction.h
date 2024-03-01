@@ -38,6 +38,21 @@ public:
     // */
     //QMenu* getContextMenu();
 
+public: // Serialization
+
+    /**
+     * Load widget action from variant map
+     * @param Variant map representation of the widget action
+     */
+    void fromVariantMap(const QVariantMap& variantMap) override;
+
+    /**
+     * Save widget action to variant map
+     * @return Variant map representation of the widget action
+     */
+
+    QVariantMap toVariantMap() const override;
+
 public: // Action getters
 
     PositionAction& getPositionAction() { return _positionAction; }
@@ -57,6 +72,11 @@ public: // Action getters
 
 private:
     ExampleViewJSPlugin*    _exampleViewJSPlugin;       /** Pointer to Example OpenGL Viewer Plugin */
+
+    DatasetPickerAction     _positionDatasetPickerAction;
+    DatasetPickerAction     _sliceDatasetPickerAction;
+
+    DatasetPickerAction     _avgExprDatasetPickerAction;
 
     PositionAction          _positionAction;            /** position action */
 

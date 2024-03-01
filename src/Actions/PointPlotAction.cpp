@@ -66,20 +66,20 @@ PointPlotAction::PointPlotAction(QObject* parent, const QString& title) :
     // OptionAction::disconnectFromPublicAction(recursive);
 // }
 
-//void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
-//{
-//    OptionAction::fromVariantMap(variantMap);
-//
-//    _spatialCorrelationAction.fromParentVariantMap(variantMap);
-//    _hdCorrelationAction.fromParentVariantMap(variantMap);
-//}
-//
-//QVariantMap CorrelationModeAction::toVariantMap() const
-//{
-//    auto variantMap = OptionAction::toVariantMap();
-//
-//    _spatialCorrelationAction.insertIntoVariantMap(variantMap);
-//    _hdCorrelationAction.insertIntoVariantMap(variantMap);
-//
-//    return variantMap;
-//}
+void PointPlotAction::fromVariantMap(const QVariantMap& variantMap)
+{
+    VerticalGroupAction::fromVariantMap(variantMap);
+
+    _pointSizeAction.fromParentVariantMap(variantMap);
+    _pointOpacityAction.fromParentVariantMap(variantMap);
+}
+
+QVariantMap PointPlotAction::toVariantMap() const
+{
+    auto variantMap = VerticalGroupAction::toVariantMap();
+
+    _pointSizeAction.insertIntoVariantMap(variantMap);
+    _pointOpacityAction.insertIntoVariantMap(variantMap);
+
+    return variantMap;
+}
