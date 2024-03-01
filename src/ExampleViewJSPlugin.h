@@ -84,6 +84,9 @@ public:
     /** Update the chosen single cell option */
     void updateSingleCellOption();
 
+    /** Set the single cell dataset - which label to use for computing average expression*/
+    void setLabelDataset();
+
     /** Update the average expression of each cluster */
     void computeAvgExpression();
 
@@ -92,6 +95,8 @@ public:
 
     /** Update the color of _dimView */
     void updateShowDimension();
+
+
     
 public slots:
     /** Converts ManiVault's point data to a json-like data structure that Qt can pass to the JS code */
@@ -169,11 +174,14 @@ private:
     /** count distribution of labels within floodfill */
     void countLabelDistribution();
 
-    /** load data for labels */
-    void loadDataForLabels();
+    /** load data for labels from ST dataset*/
+    void loadLabelsFromSTDataset();
 
-    /** load data for average expression of each cluster */
-    void loadDataAvgExpression();
+    /** load data for labels from ST dataset - ONLY FOR ABCAtlas*/
+    void loadLabelsFromSTDatasetABCAtlas();
+
+    /** load data for average expression of each cluster - ONLY FOR ABCAtlas*/
+    void loadAvgExpressionABCAtlas();
 
     /** get a subset of average expression of each cluster */
     void computeAvgExprSubset();
@@ -235,23 +243,27 @@ private:
     bool                            _isSingleCell = false; // whether to use avg expression from single cell data
     bool                            _toClearBarchart = false; //whether to clear the bar chart
 
-    std::vector<int>            _cellLabels; // labels for each point
-    std::map<int, int>          _countsLabel; // count distribution of labels within floodfill, first element is the label (ID)
-    std::map<int, float>        _clusterWaveNumbers; // avg of wave numbers for each cluster, first element is the label (ID)
+
     std::vector<float>          _waveAvg; // avg of wave numbers for each cluster - same order as subset columns
 
     // for avg expression of single cell data
-    std::vector<int>                _clusterNamesAvgExpr; // from avg expr single cell data
-    std::unordered_map<int, int>    _clusterAliasToRowMap; // first element is cluster alias, second element is row index in _avgExpr
     std::vector<QString>            _geneNamesAvgExpr; // from avg expr single cell data
     Eigen::MatrixXf                 _avgExpr; // average expression of each cluster
     Eigen::MatrixXf                 _subsetDataAvgWeighted; // subset of average expression of each cluster - weighted
     Eigen::MatrixXf                 _subsetDataAvgOri; // subset of average expression of each cluster - NOT weighted - TO DO
-    std::vector<int>                _clustersToKeep; // clusters to keep for avg expression - same order as subset row - cluster alias name // TO DO: not needed
 
+    bool                            _avgExprDatasetExists = false; // whether the avg expression dataset exists
     mv::Dataset<Points>             _avgExprDataset; // Point dataset for average expression of each cluster - test
     std::unordered_map<QString, QString> _identifierToSymbolMap; // map from gene identifier to gene symbol
     QMap<QString, QStringList>      _simplifiedToIndexGeneMapping; // map for simplified gene names to extra indexed gene names - for duplicate gene symbols 
+
+    // TEST: generalize singlecell option 
+    std::vector<QString>                _clusterNamesAvgExpr;// from avg expr single cell data
+    std::unordered_map<QString, int>    _clusterAliasToRowMap; // first element is label as a QString, second element is row index in _avgExpr
+    std::vector<QString>            _cellLabels;// labels for each point
+    std::map<QString, int>          _countsLabel; // count distribution of labels within floodfill, first element is the label 
+    std::map<QString, float>        _clusterWaveNumbers; // avg of wave numbers for each cluster, first element is the label
+    std::vector<QString>                _clustersToKeep;// clusters to keep for avg expression - same order as subset row - cluster alias name 
     
 
 public:
@@ -278,6 +290,9 @@ public:
 public: 
     /** Get reference to the scatter plot widget */
     std::vector<ScatterView*>& getProjectionViews() { return _scatterViews; }
+
+signals:
+    void avgExprDatasetExistsChanged(bool exists);
 
 protected:
     std::vector<ScatterView*>    _scatterViews; // scatter plots for cluster images

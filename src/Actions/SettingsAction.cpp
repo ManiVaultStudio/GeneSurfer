@@ -28,22 +28,37 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     setShowLabels(true);
     setLabelSizingType(LabelSizingType::Auto);
 
+    if (_exampleViewJSPlugin == nullptr)
+        return;
+
+
     _singleCellModeAction.initialize(_exampleViewJSPlugin);
 
     addAction(&_dimensionAction);
 
     _dimensionAction.setToolTip("Dimension");
-
     _floodFillAction.setToolTip("Flood Fill");
-
     _correlationModeAction.setToolTip("Correlation Mode");
     _positionAction.setToolTip("Position Dimension");
     _pointPlotAction.setToolTip("Point Plot");
     _clusteringAction.setToolTip("Cluster Settings");
 
-    if (_exampleViewJSPlugin == nullptr)
-        return;
 
+    const auto updateEnabled = [this]() {
+        bool hasDataset = _exampleViewJSPlugin->getPositionDataset().isValid();
+
+        _clusteringAction.setEnabled(hasDataset);
+        _positionAction.setEnabled(hasDataset);
+        _correlationModeAction.setEnabled(hasDataset);
+        _pointPlotAction.setEnabled(hasDataset);
+        _singleCellModeAction.setEnabled(hasDataset);
+    };
+
+    connect(&_exampleViewJSPlugin->getPositionDataset(), &Dataset<Points>::changed, this, updateEnabled);
+
+    updateEnabled();
+
+ 
     connect(&_floodFillAction, &VariantAction::variantChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateFloodFill);
     connect(&_sliceAction, &IntegralAction::valueChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateSlice);
 

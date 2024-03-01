@@ -2,6 +2,8 @@
 #include <actions/WidgetAction.h>
 #include <actions/TriggerAction.h>
 #include <actions/ToggleAction.h>
+#include <actions/DatasetPickerAction.h>
+
 using namespace mv::gui;
 
 class ExampleViewJSPlugin;
@@ -63,12 +65,16 @@ public: // Action getters
 
     TriggerAction& getLoadAvgExpressionAction() { return _loadAvgExpressionAction; }
 
+    DatasetPickerAction& getLabelDatasetPickerAction() { return _labelDatasetPickerAction; }
+
 private:
     ExampleViewJSPlugin*    _exampleViewJSPlugin;     /** Pointer to scatterplot plugin */
     ToggleAction            _singleCellOptionAction;          /** single cell option action */
 
     TriggerAction           _computeAvgExpressionAction;
     TriggerAction           _loadAvgExpressionAction;
+
+    DatasetPickerAction     _labelDatasetPickerAction;
 
     //friend class mv::AbstractActionsManager;
 };

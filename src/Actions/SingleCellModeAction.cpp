@@ -11,7 +11,8 @@ SingleCellModeAction::SingleCellModeAction(QObject* parent, const QString& title
 	_exampleViewJSPlugin(nullptr),
     _singleCellOptionAction(this, "Use scRNA-seq genes", false),
     _computeAvgExpressionAction(this, "Compute average expression"),
-    _loadAvgExpressionAction(this, "Load average expression")
+    _loadAvgExpressionAction(this, "Load average expression"),
+    _labelDatasetPickerAction(this, "Label for mapping")
 {
     setIcon(mv::Application::getIconFont("FontAwesome").getIcon("braille"));//"eye", "braille", "database", "chart-area"
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
@@ -19,11 +20,10 @@ SingleCellModeAction::SingleCellModeAction(QObject* parent, const QString& title
     _singleCellOptionAction.setToolTip("Single Cell Option");
     _computeAvgExpressionAction.setToolTip("Compute average expression");
     _loadAvgExpressionAction.setToolTip("Load average expression");
+    _labelDatasetPickerAction.setToolTip("Label Dataset used for mapping to ST");
 
-    if (_exampleViewJSPlugin == nullptr)
-    {
-        return;
-    }
+
+
 }
 
 void SingleCellModeAction::initialize(ExampleViewJSPlugin* exampleViewJSPlugin)
@@ -33,6 +33,16 @@ void SingleCellModeAction::initialize(ExampleViewJSPlugin* exampleViewJSPlugin)
     connect(&_computeAvgExpressionAction, &TriggerAction::triggered, exampleViewJSPlugin, &ExampleViewJSPlugin::computeAvgExpression);
 
     connect(&_loadAvgExpressionAction, &TriggerAction::triggered, exampleViewJSPlugin, &ExampleViewJSPlugin::loadAvgExpression);
+
+    connect(&_labelDatasetPickerAction, &DatasetPickerAction::datasetPicked, exampleViewJSPlugin, &ExampleViewJSPlugin::setLabelDataset);
+
+    // test
+    _singleCellOptionAction.setEnabled(false);
+    _computeAvgExpressionAction.setEnabled(false);
+
+   /* connect(exampleViewJSPlugin, &ExampleViewJSPlugin::avgExprDatasetExistsChanged, this, [this](bool enabled) {
+        _singleCellOptionAction.setEnabled(enabled);
+        });*/
 
 }
 
@@ -49,10 +59,12 @@ SingleCellModeAction::Widget::Widget(QWidget* parent, SingleCellModeAction* sing
     layout->addWidget(singleCellModeAction->getSingleCellOptionAction().createLabelWidget(this), 0, 0);
     layout->addWidget(singleCellModeAction->getSingleCellOptionAction().createWidget(this), 0, 1);
 
-    // hide for now - function not implemented
-    /*layout->addWidget(new QLabel("Average Expression:", parent), 1, 0);
-    layout->addWidget(singleCellModeAction->getComputeAvgExpressionAction().createWidget(this), 2, 0);
-    layout->addWidget(singleCellModeAction->getLoadAvgExpressionAction().createWidget(this), 2, 1);*/
+    layout->addWidget(singleCellModeAction->getLabelDatasetPickerAction().createLabelWidget(this), 1, 0);
+    layout->addWidget(singleCellModeAction->getLabelDatasetPickerAction().createWidget(this), 1, 1);
+
+    layout->addWidget(new QLabel("Average Expression:", parent), 2, 0);
+    layout->addWidget(singleCellModeAction->getComputeAvgExpressionAction().createWidget(this), 3, 0);
+    layout->addWidget(singleCellModeAction->getLoadAvgExpressionAction().createWidget(this), 3, 1);
 
     setLayout(layout);
 }

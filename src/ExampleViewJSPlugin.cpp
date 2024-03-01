@@ -95,8 +95,8 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _colorMapAction(this, "Color map", "RdYlBu")
 
 {
-    _primaryToolbarAction.addAction(&_settingsAction.getPositionAction(), 0, GroupAction::Horizontal);
-    _primaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), 0, GroupAction::Horizontal); 
+    _primaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 0, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getDimensionAction(), 0, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), 0, GroupAction::Horizontal);
@@ -263,9 +263,6 @@ void ExampleViewJSPlugin::init()
                     {
                         _sliceDataset = candidateDataset;
                         updateSlice();
-
-                        loadDataAvgExpression();// TO DO: only for ABC Atlas
-                        loadDataForLabels();
                     });
             }
             else {
@@ -525,16 +522,198 @@ void ExampleViewJSPlugin::updateShowDimension() {
 }
 
 void ExampleViewJSPlugin::computeAvgExpression() {
-    qDebug() << "computeAvgExpression() is triggered ";
+    qDebug() << "computeAvgExpression() started ";
 
-    qDebug() << "PLACEHOLDER: NOT IMPLEMENTED YET ";
+    // Attention: data used below should all from a singlecell dataset
+
+    Dataset<Clusters> scLabelDataset = _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentDataset<Clusters>();
+    QVector<Cluster> labelClusters = scLabelDataset->getClusters();
+  
+    if (!scLabelDataset->getParent().isValid())
+    {
+        qDebug() << "ERROR: No valid source data for the selected label dataset!";
+        return;
+    }
+
+    Dataset<Points> scSourceDataset = scLabelDataset->getParent()->getSourceDataset<Points>();
+    
+    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): scSourceDataset name: " << scSourceDataset->getGuiName();
+    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): scSourceDataset numPoints: " << scSourceDataset->getNumPoints();
+    
+    int numPoints = scSourceDataset->getNumPoints();
+    int numClusters = labelClusters.size();
+    int numGenes = scSourceDataset->getNumDimensions();
+    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): numPoints: " << numPoints << " numClusters: " << numClusters << " numGenes: " << numGenes;
+
+    Eigen::MatrixXf scSourceMatrix;
+    convertToEigenMatrixProjection(scSourceDataset, scSourceMatrix);
+    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): scSourceMatrix size: " << scSourceMatrix.rows() << " " << scSourceMatrix.cols();
+
+    std::vector<float> scCellLabels(numPoints, 0);
+
+    // Mapping from cluster name to list of cell indices
+    std::map<QString, std::vector<int>> clusterToIndicesMap;
+
+    for (int i = 0; i < numClusters; ++i) {
+        QString clusterName = labelClusters[i].getName(); 
+        const auto& ptIndices = labelClusters[i].getIndices();
+        for (int ptIndex : ptIndices) {
+            scCellLabels[ptIndex] = i; // Use cluster index instead of name for numerical computations
+            clusterToIndicesMap[clusterName].push_back(ptIndex);
+        }
+    }
+    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): clusterToIndicesMap size: " << clusterToIndicesMap.size();
+
+    _avgExpr.resize(numClusters, numGenes);
+
+    // Compute the average expression for each cluster
+
+    for (const auto& cluster : clusterToIndicesMap) {
+        const auto& indices = cluster.second;
+
+        Eigen::MatrixXf clusterExpr(indices.size(), scSourceMatrix.cols());
+        #pragma omp parallel for
+        for (int i = 0; i < indices.size(); ++i) {
+            clusterExpr.row(i) = scSourceMatrix.row(indices[i]);
+        }
+
+        Eigen::VectorXf clusterMean = clusterExpr.colwise().mean();
+        int clusterIndex = std::distance(clusterToIndicesMap.begin(), clusterToIndicesMap.find(cluster.first));
+        _avgExpr.row(clusterIndex) = clusterMean;
+    }
+
+    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();
+    
+    // Flatten the Eigen::MatrixXf data to a std::vector<float>
+    std::vector<float> allData(numClusters * numGenes);
+    for (int i = 0; i < numClusters; ++i) {
+        for (int j = 0; j < numGenes; ++j) {
+            allData[i * numGenes + j] = _avgExpr(i, j);
+        }
+    }
+
+    // get the gene names and cluster names
+    _geneNamesAvgExpr.clear();
+    _geneNamesAvgExpr = scSourceDataset->getDimensionNames();
+
+    _clusterNamesAvgExpr.clear();
+    for (const auto& cluster : clusterToIndicesMap) {
+        _clusterNamesAvgExpr.push_back(cluster.first);
+    }
+
+    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): _geneNamesAvgExpr size: " << _geneNamesAvgExpr.size();
+    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): _clusterNamesAvgExpr size: " << _clusterNamesAvgExpr.size();
+
+    _clusterAliasToRowMap.clear();// _clusterAliasToRowMap: first element is label name, second element is row index in _avgExpr
+    for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
+        _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
+    }
+
+
+    // Create and store the dataset
+    if (!_avgExprDataset.isValid()) {
+        _avgExprDataset = mv::data().createDataset<Points>("Points", "avgExprDataset");
+    }
+    else {
+        _avgExprDataset.reset();
+    }     
+    _avgExprDataset->setData(allData.data(), numClusters, numGenes); 
+    _avgExprDataset->setDimensionNames(_geneNamesAvgExpr);
+    events().notifyDatasetDataChanged(_avgExprDataset);
+
+    _avgExprDatasetExists = true;
+    _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().setEnabled(_avgExprDatasetExists);
+
+    loadLabelsFromSTDataset();
+
+    qDebug() << "computeAvgExpression() finished ";
 
 }
 
 void ExampleViewJSPlugin::loadAvgExpression() {
-    qDebug() << "loadAvgExpression() is triggered ";
+    qDebug() << "ONLY FOR ABCAtlas";
 
-    qDebug() << "PLACEHOLDER: NOT IMPLEMENTED YET ";
+    loadAvgExpressionABCAtlas();// TO DO: only for ABC Atlas
+    loadLabelsFromSTDatasetABCAtlas();
+
+    _avgExprDatasetExists = true;
+
+    // enable single cell toggle - TO DO: use signal or set directly
+    //emit avgExprDatasetExistsChanged(_avgExprDatasetExists);
+    _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().setEnabled(_avgExprDatasetExists);
+
+}
+
+void ExampleViewJSPlugin::loadLabelsFromSTDataset() {
+    // this is loading label from ST dataset!!!
+    // Different from loading from singlecell datset!!!
+
+    QString stParentName = _positionDataset->getParent()->getGuiName();
+    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): stParentName: " << stParentName;
+
+    QString selectedDataName = _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentText();
+    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): selectedDataName: " << selectedDataName;
+
+    Dataset<Clusters> labelDataset;
+    
+    for (const auto& data : mv::data().getAllDatasets())
+    {
+        //qDebug() << data->getGuiName();
+        if (data->getGuiName() == selectedDataName) {
+            qDebug() << "data->getParent()->getGuiName() " << data->getParent()->getGuiName();
+            if (data->getParent()->getGuiName() == stParentName) {
+                labelDataset = data;
+                qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): labelDataset name: " << labelDataset->getGuiName();
+                break;
+            }
+        }
+    }
+
+    QVector<Cluster> labelClusters = labelDataset->getClusters();
+
+    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): labelClusters size: " << labelClusters.size();
+
+    // precompute the cell-label array
+    _cellLabels.clear();
+    _cellLabels.resize(_numPoints);
+
+    for (int i = 0; i < labelClusters.size(); ++i) {
+        QString clusterName = labelClusters[i].getName();
+        const auto& ptIndices = labelClusters[i].getIndices();
+        for (int j = 0; j < ptIndices.size(); ++j) {
+            int ptIndex = ptIndices[j];
+            _cellLabels[ptIndex] = clusterName;
+        }
+    }
+
+    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): _cellLabels size: " << _cellLabels.size();
+}
+
+
+void ExampleViewJSPlugin::setLabelDataset() {
+    qDebug() << _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentText();
+
+    // check if there are two datasets with the same selected name
+    QString selectedDataName = _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentText();
+
+    int count = 0;
+    for (const auto& data : mv::data().getAllDatasets())
+    {
+        if (data->getGuiName() == selectedDataName) {
+            count++;
+        }
+    }
+
+    if (count == 2) {
+        qDebug() << "There are " << count << " datasets with the name '" << selectedDataName << "'.";
+    }
+    else {
+        qDebug() << "There are " << count << " datasets with the name '" << selectedDataName << "'.";
+        return;
+    }
+
+    _settingsAction.getSingleCellModeAction().getComputeAvgExpressionAction().setEnabled(true);
+
 }
 
 void ExampleViewJSPlugin::computeCorrSpatial() {
@@ -695,50 +874,101 @@ void ExampleViewJSPlugin::updateSelection()
             std::cout << "computeCorrWave() Elapsed time: " << elapsed3.count() << " ms\n";
         }
     } else {
-        // temporal code for corrWave - single cell option
-        // test temp code only for ABC Atlas
-        countLabelDistribution();
-        computeAvgExprSubset();
+        // single cell option
+        if (!_sliceDataset.isValid()) {
+            // single cell + 2D
+            // To DO: needs to be reorganised - avoid redundant code
+            countLabelDistribution();
+            computeAvgExprSubset();
 
-        _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
-        _subsetData3D = _subsetDataAvgOri; // row for clusters, col for genes
-        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
+            _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
+            _subsetData = _subsetDataAvgOri; // row for clusters, col for genes
+            qDebug() << "ExampleViewJSPlugin::updateSelection(): _subsetData size: " << _subsetData.rows() << " " << _subsetData.cols();
 
-        // compute corrWave here - test temp code
-        int numEnabledDims = _subsetData3D.cols(); // genes
-        Eigen::VectorXf eigenWaveNumbers(_waveAvg.size()); // to do: should check if _sortedWaveNumbers is empty
-        std::copy(_waveAvg.begin(), _waveAvg.end(), eigenWaveNumbers.data());
-        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): eigenWaveNumbers size: " << eigenWaveNumbers.size();
+            // compute corrWave here - test temp code
+            int numEnabledDims = _subsetData.cols(); // genes
+            Eigen::VectorXf eigenWaveNumbers(_waveAvg.size()); // to do: should check if _sortedWaveNumbers is empty
+            std::copy(_waveAvg.begin(), _waveAvg.end(), eigenWaveNumbers.data());
+            qDebug() << "ExampleViewJSPlugin::updateSelection(): eigenWaveNumbers size: " << eigenWaveNumbers.size();
 
-        Eigen::VectorXf centeredWaveNumbers = eigenWaveNumbers - Eigen::VectorXf::Constant(eigenWaveNumbers.size(), eigenWaveNumbers.mean());
-        float waveNumbersNorm = centeredWaveNumbers.squaredNorm();
-        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): waveNumbersNorm: " << waveNumbersNorm;
+            Eigen::VectorXf centeredWaveNumbers = eigenWaveNumbers - Eigen::VectorXf::Constant(eigenWaveNumbers.size(), eigenWaveNumbers.mean());
+            float waveNumbersNorm = centeredWaveNumbers.squaredNorm();
+            qDebug() << "ExampleViewJSPlugin::updateSelection(): waveNumbersNorm: " << waveNumbersNorm;
 
-        _corrGeneWave.clear();
-        _corrGeneWave.resize(numEnabledDims);
+            _corrGeneWave.clear();
+            _corrGeneWave.resize(numEnabledDims);
 #pragma omp parallel for
-        for (int col = 0; col < numEnabledDims; ++col) {
-            Eigen::VectorXf centered = _subsetData3D.col(col) - Eigen::VectorXf::Constant(_subsetData3D.col(col).size(), _subsetData3D.col(col).mean());
-            float correlation = centered.dot(centeredWaveNumbers) / std::sqrt(centered.squaredNorm() * waveNumbersNorm);
-            if (std::isnan(correlation)) { correlation = 0.0f; }
-            _corrGeneWave[col] = correlation;
-        }
-        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _corrGeneWave size: " << _corrGeneWave.size();
+            for (int col = 0; col < numEnabledDims; ++col) {
+                Eigen::VectorXf centered = _subsetData.col(col) - Eigen::VectorXf::Constant(_subsetData.col(col).size(), _subsetData.col(col).mean());
+                float correlation = centered.dot(centeredWaveNumbers) / std::sqrt(centered.squaredNorm() * waveNumbersNorm);
+                if (std::isnan(correlation)) { correlation = 0.0f; }
+                _corrGeneWave[col] = correlation;
+            }
+            qDebug() << "ExampleViewJSPlugin::updateSelection(): _corrGeneWave size: " << _corrGeneWave.size();
 
-        // output corrWave
-        /*for (float value : _corrGeneWave) {
-            std::cout << value << " ";
-        }
-        std::cout << std::endl;*/
+            // output corrWave
+            /*for (float value : _corrGeneWave) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;*/
 
-        // output mean and stdDev of corrWave
-        float mean = std::accumulate(_corrGeneWave.begin(), _corrGeneWave.end(), 0.0f) / _corrGeneWave.size();
-        float sumOfSquares = 0.0f;
-        for (float value : _corrGeneWave) {
-            sumOfSquares += (value - mean) * (value - mean);
+            // output mean and stdDev of corrWave
+            float mean = std::accumulate(_corrGeneWave.begin(), _corrGeneWave.end(), 0.0f) / _corrGeneWave.size();
+            float sumOfSquares = 0.0f;
+            for (float value : _corrGeneWave) {
+                sumOfSquares += (value - mean) * (value - mean);
+            }
+            float stdDev = std::sqrt(sumOfSquares / _corrGeneWave.size());
+            qDebug() << "ExampleViewJSPlugin::updateSelection(): corrWave mean: " << mean << " stdDev: " << stdDev;
+
         }
-        float stdDev = std::sqrt(sumOfSquares / _corrGeneWave.size());
-        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): corrWave mean: " << mean << " stdDev: " << stdDev;
+        else {
+            // single cell + 3D
+            // temporal code for corrWave - single cell option
+            // test temp code only for ABC Atlas
+            countLabelDistribution();
+            computeAvgExprSubset();
+
+            _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
+            _subsetData3D = _subsetDataAvgOri; // row for clusters, col for genes
+            qDebug() << "ExampleViewJSPlugin::updateSelection(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
+
+            // compute corrWave here - test temp code
+            int numEnabledDims = _subsetData3D.cols(); // genes
+            Eigen::VectorXf eigenWaveNumbers(_waveAvg.size()); // to do: should check if _sortedWaveNumbers is empty
+            std::copy(_waveAvg.begin(), _waveAvg.end(), eigenWaveNumbers.data());
+            qDebug() << "ExampleViewJSPlugin::updateSelection(): eigenWaveNumbers size: " << eigenWaveNumbers.size();
+
+            Eigen::VectorXf centeredWaveNumbers = eigenWaveNumbers - Eigen::VectorXf::Constant(eigenWaveNumbers.size(), eigenWaveNumbers.mean());
+            float waveNumbersNorm = centeredWaveNumbers.squaredNorm();
+            qDebug() << "ExampleViewJSPlugin::updateSelection(): waveNumbersNorm: " << waveNumbersNorm;
+
+            _corrGeneWave.clear();
+            _corrGeneWave.resize(numEnabledDims);
+#pragma omp parallel for
+            for (int col = 0; col < numEnabledDims; ++col) {
+                Eigen::VectorXf centered = _subsetData3D.col(col) - Eigen::VectorXf::Constant(_subsetData3D.col(col).size(), _subsetData3D.col(col).mean());
+                float correlation = centered.dot(centeredWaveNumbers) / std::sqrt(centered.squaredNorm() * waveNumbersNorm);
+                if (std::isnan(correlation)) { correlation = 0.0f; }
+                _corrGeneWave[col] = correlation;
+            }
+            qDebug() << "ExampleViewJSPlugin::updateSelection(): _corrGeneWave size: " << _corrGeneWave.size();
+
+            // output corrWave
+            /*for (float value : _corrGeneWave) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;*/
+
+            // output mean and stdDev of corrWave
+            float mean = std::accumulate(_corrGeneWave.begin(), _corrGeneWave.end(), 0.0f) / _corrGeneWave.size();
+            float sumOfSquares = 0.0f;
+            for (float value : _corrGeneWave) {
+                sumOfSquares += (value - mean) * (value - mean);
+            }
+            float stdDev = std::sqrt(sumOfSquares / _corrGeneWave.size());
+            qDebug() << "ExampleViewJSPlugin::updateSelection(): corrWave mean: " << mean << " stdDev: " << stdDev;
+        }
     }
 
     clusterGenes();
@@ -796,6 +1026,13 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
         _enabledDimNames = _geneNamesAvgExpr;
         qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _enabledDimNames size: " << _enabledDimNames.size();
 
+        // TO DO: temporary code to avoid too many genes for single cell option
+        if (_settingsAction.getClusteringAction().getCorrThresholdAction().getValue() < 0.6)
+        {
+            _settingsAction.getClusteringAction().getCorrThresholdAction().setValue(0.6);
+            qDebug() << "Warning: _corrThreshold is set to 0.6";
+        }
+        
         updateSelection();
 
     }
@@ -814,8 +1051,6 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
 
         updateSelection();
     }
-
-    qDebug() << "data assigned" << _subsetData3D.rows() << _subsetData3D.cols();
 }
 
 void ExampleViewJSPlugin::updateNumCluster()
@@ -1024,8 +1259,23 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
 
     if(!_sliceDataset.isValid()) {
         // 2D dataset
-        
-        _dimView->setScalars(dimV, 1);// TO DO: hard-coded the idx of point
+        if (_isSingleCell != true) {
+            // ST data
+            _dimView->setScalars(dimV, 1);// TO DO: hard-coded the idx of point
+        } 
+        else {
+            // singlecell data - assign _avgExpr values to ST points
+
+            std::vector<float> viewScalars(_numPoints);
+            for (size_t i = 0; i < _numPoints; ++i) {
+                QString label = _cellLabels[i]; // Get the cluster alias label name of the cell
+                viewScalars[i] = dimV[_clusterAliasToRowMap[label]];
+            }
+
+            _dimView->setScalars(viewScalars, 1);// TO DO: hard-coded the idx of point
+           
+        }
+       
         
      } else {
         // 3D dataset
@@ -1043,8 +1293,7 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
 
             for (size_t i = 0; i < _onSliceIndices.size(); ++i) {
                 int cellIndex = _onSliceIndices[i]; // Get the actual cell index
-                int label = _cellLabels[cellIndex]; // Get the cluster alias label name of the cell
-
+                QString label = _cellLabels[cellIndex]; // Get the cluster alias label name of the cell
                 viewScalars[i] = dimV[_clusterAliasToRowMap[label]];
             }
         }
@@ -1267,8 +1516,8 @@ void ExampleViewJSPlugin::updateFloodFill()
 
 }
 
-void ExampleViewJSPlugin::loadDataAvgExpression() {
-    qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression(): start... ";
+void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
+    qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): start... ";
 
     /*load file of avg expr - file from Michael */
     //std::ifstream file("precomputed_stats_ABC_revision_230821_alias_identifier.csv"); // in this file column:gene identifier, row:cluster alias
@@ -1276,7 +1525,7 @@ void ExampleViewJSPlugin::loadDataAvgExpression() {
     //std::ifstream file("avg_MERFISH_aliasgenesymbol_august.csv");// august data, self computed from MERFISH data
 
     if (!file.is_open()) {
-        qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression Error: Could not open the avg expr file.";
+        qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas Error: Could not open the avg expr file.";
         return;
     }
 
@@ -1306,8 +1555,7 @@ void ExampleViewJSPlugin::loadDataAvgExpression() {
         std::string clusterNameStr;
         if (std::getline(lineStream, clusterNameStr, ',')) {
             try {
-                int clusterName = std::stoi(clusterNameStr);
-                _clusterNamesAvgExpr.push_back(clusterName);
+                _clusterNamesAvgExpr.push_back(QString::fromStdString(clusterNameStr));
             }
             catch (const std::exception& e) {
                 std::cerr << "Error converting cluster name to int: " << e.what() << std::endl;
@@ -1331,22 +1579,23 @@ void ExampleViewJSPlugin::loadDataAvgExpression() {
     int numClusters = _clusterNamesAvgExpr.size();
     int numGenes = _geneNamesAvgExpr.size();
 
-    _avgExpr.resize(numClusters, numGenes);
-    for (int i = 0; i < numClusters; ++i) {
-        for (int j = 0; j < numGenes; ++j) {
-            _avgExpr(i, j) = matrixData[i][j];
-        }
-    }
+    // TO DO: not needed anymore
+    //_avgExpr.resize(numClusters, numGenes);
+    //for (int i = 0; i < numClusters; ++i) {
+    //    for (int j = 0; j < numGenes; ++j) {
+    //        _avgExpr(i, j) = matrixData[i][j];
+    //    }
+    //}
 
     file.close();
 
-    _clusterAliasToRowMap.clear();// _clusterAliasToRowMap: first element is cluster alias, second element is row index in _avgExpr
+    _clusterAliasToRowMap.clear();// _clusterAliasToRowMap: first element is label name, second element is row index in _avgExpr
     for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
         _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
     }
 
-    qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression()" << numGenes << " genes and " << numClusters << " clusters"; 
-    qDebug() << "ExampleViewJSPlugin::loadDataAvgExpression(): finished";
+    qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas()" << numGenes << " genes and " << numClusters << " clusters"; 
+    qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): finished";
 
     // identify duplicate gene symbols and append an index to them
     std::map<QString, int> geneSymbolCount;
@@ -1361,18 +1610,36 @@ void ExampleViewJSPlugin::loadDataAvgExpression() {
         }
     }
 
-    // temp: store avg expr dimension names as a Point dataset - TO DO: only one row is stored
-    _avgExprDataset = mv::data().createDataset<Points>("Points", "avgExprDataset");
-    std::vector<float> firstRow;
-    for (int j = 0; j < numGenes; ++j) {
-        firstRow.push_back(_avgExpr(0, j));
+    // store the evg expression matrix as a dataset
+    size_t totalElements = numClusters * numGenes; // total number of data points
+    std::vector<float> allData;
+    allData.reserve(totalElements);
+    for (const auto& row : matrixData) {
+        allData.insert(allData.end(), row.begin(), row.end());
     }
-    _avgExprDataset->setData(firstRow.data(), 1, firstRow.size());
+
+    if (!_avgExprDataset.isValid()) {
+        _avgExprDataset = mv::data().createDataset<Points>("Points", "avgExprDataset");
+    }
+    else {
+        _avgExprDataset.reset();
+    }
+    
+    _avgExprDataset->setData(allData.data(), numClusters, numGenes); // Assuming this function signature is (data, rows, columns)
     _avgExprDataset->setDimensionNames(_geneNamesAvgExpr);
+    events().notifyDatasetDataChanged(_avgExprDataset);
+    qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): _avgExprDataset dataset created";
+
+    // test convert to eigen
+    _avgExpr.resize(numClusters, numGenes);
+    convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);
 
 }
 
-void ExampleViewJSPlugin::loadDataForLabels() {
+void ExampleViewJSPlugin::loadLabelsFromSTDatasetABCAtlas() {
+    // this is loading label from ST dataset!!!
+    // Different from loading from singlecell datset!!!
+
     Dataset<Clusters> labelDataset;
     for (const auto& data : mv::data().getAllDatasets())
     {
@@ -1384,14 +1651,15 @@ void ExampleViewJSPlugin::loadDataForLabels() {
 
     QVector<Cluster> labelClusters = labelDataset->getClusters();
 
-    qDebug() << "ExampleViewJSPlugin::loadDataForLabels(): labelClusters size: " << labelClusters.size();
+    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDatasetABCAtlas(): labelClusters size: " << labelClusters.size();
 
     // precompute the cell-label array
     _cellLabels.clear();
     _cellLabels.resize(_numPoints);
 
+
     for (int i = 0; i < labelClusters.size(); ++i) {
-        int clusterName = labelClusters[i].getName().toInt(); // TO DO: cluster alias - check if it matches
+        QString clusterName = labelClusters[i].getName();
         const auto& ptIndices = labelClusters[i].getIndices();
         for (int j = 0; j < ptIndices.size(); ++j) {
             int ptIndex = ptIndices[j];
@@ -1399,19 +1667,21 @@ void ExampleViewJSPlugin::loadDataForLabels() {
         }
     }
 
-    qDebug() << "ExampleViewJSPlugin::loadDataForLabels(): _cellLabels size: " << _cellLabels.size();
+    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDatasetABCAtlas(): _cellLabels size: " << _cellLabels.size();
     qDebug() << "_cellLabels[0]" << _cellLabels[0];
 }
 
 void ExampleViewJSPlugin::countLabelDistribution() {
 
     // count the number of cells in each cluster using the precomputed array _cellLabels
-    std::map<int, int> clusterPointCounts;
-    std::map<int, int> clusterWaveNumberSums; // test corrWave - use cluster instead of cell points
-    std::map<int, std::map<int, int>> waveNumberDistribution; // New map for wave number distribution
+    std::map<QString, int> clusterPointCounts;
+    std::map<QString, int> clusterWaveNumberSums; // test corrWave - use cluster instead of cell points
+
+
+    std::map<QString, std::map<int, int>> waveNumberDistribution; // New map for wave number distribution
     for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
         int ptIndex = _sortedFloodIndices[index];
-        int label = _cellLabels[ptIndex];
+        QString label = _cellLabels[ptIndex];
         clusterPointCounts[label]++;
 
         clusterWaveNumberSums[label] += _sortedWaveNumbers[index]; // for computing the average wave number
@@ -1423,11 +1693,10 @@ void ExampleViewJSPlugin::countLabelDistribution() {
     _countsLabel.clear(); // TO DO: can direct assign to _countsLabel - avoid copy
     _countsLabel = clusterPointCounts;
 
-    // compute the average wave number for each cluster
-    std::map<int, float> clusterWaveAvg;
+    std::map<QString, float> clusterWaveAvg;
     int i = 0;
     for (const auto& pair : clusterPointCounts) {
-        int label = pair.first;
+        QString label = pair.first;
         int count = pair.second;
         float average = (count > 0) ? static_cast<float>(clusterWaveNumberSums[label]) / count : 0.0f;
         clusterWaveAvg[label] = average;
@@ -1462,6 +1731,7 @@ void ExampleViewJSPlugin::countLabelDistribution() {
 }
 
 void ExampleViewJSPlugin::computeAvgExprSubset() {
+
     // sum of counts for later normalization
     int sumOfCounts = 0;
     for (const auto& pair : _countsLabel) {
@@ -1470,23 +1740,25 @@ void ExampleViewJSPlugin::computeAvgExprSubset() {
     qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): sumOfCounts: " << sumOfCounts;
 
     // Create a map for counts
-    std::unordered_map<int, int> countsMap;
+    std::unordered_map<QString, int> countsMap;
     for (const auto& pair : _countsLabel) {
-        // int columnName = pair.first.toInt(); // for QString
-        int clusterName = pair.first; // for int
+        QString clusterName = pair.first;
         countsMap[clusterName] = pair.second;
     }
     qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): countsMap size: " << countsMap.size();
 
-
+    // TEST Feb29
     int numClusters = _avgExpr.rows();
     int numGenes = _avgExpr.cols();
+    int numClusters2 = _avgExprDataset->getNumPoints();
+    int numGenes2 = _avgExprDataset->getNumDimensions();
     qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): before matching numClusters: " << numClusters << " numGenes: " << numGenes;
+    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): before matching numClusters2: " << numClusters2 << " numGenes2: " << numGenes2;
 
 
-    std::vector<int> clustersToKeep; // it is cluster names 
+    std::vector<QString> clustersToKeep; // it is cluster names 1
     for (int i = 0; i < numClusters; ++i) {
-        int clusterName = _clusterNamesAvgExpr[i];
+        QString clusterName = _clusterNamesAvgExpr[i];
         if (countsMap.find(clusterName) != countsMap.end()) {
             clustersToKeep.push_back(clusterName);
         }
@@ -1498,9 +1770,9 @@ void ExampleViewJSPlugin::computeAvgExprSubset() {
         // output the cluster names that are not in
         QString output;
         for (const auto& pair : countsMap) {
-            int clusterName = pair.first;
+            QString clusterName = pair.first;
             if (std::find(_clusterNamesAvgExpr.begin(), _clusterNamesAvgExpr.end(), clusterName) == _clusterNamesAvgExpr.end()) {
-                output += QString::number(clusterName) + " ";
+                output += clusterName + " ";
             }
         }
         qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): not found cluster names: " << output;
@@ -1520,7 +1792,7 @@ void ExampleViewJSPlugin::computeAvgExprSubset() {
     qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): after matching numClusters: " << clustersToKeep.size();
 
     for (int i = 0; i < clustersToKeep.size(); ++i) {
-        int clusterName = clustersToKeep[i];
+        QString clusterName = clustersToKeep[i];
 
         auto it = std::find(_clusterNamesAvgExpr.begin(), _clusterNamesAvgExpr.end(), clusterName);
         if (it == _clusterNamesAvgExpr.end()) {
@@ -1545,9 +1817,9 @@ void ExampleViewJSPlugin::computeAvgExprSubset() {
     qDebug() << "subsetDataAvgExprWeighted num rows (clusters): " << _subsetDataAvgWeighted.rows() << ", num columns (genes): " << _subsetDataAvgWeighted.cols();
     qDebug() << "subsetDataAvgExprOri num rows (clusters): " << _subsetDataAvgOri.rows() << ", num columns (genes): " << _subsetDataAvgOri.cols();
 
-    // match _clusterWaveNumbers to clustersToKeep, i.e. match the column order of subset
+    // match _clusterWaveNumbers to clustersToKeep, i.e. match the column order of subset1
     _waveAvg.clear();
-    for (int clusterName : clustersToKeep) {
+    for (QString clusterName : clustersToKeep) {
         _waveAvg.push_back(_clusterWaveNumbers[clusterName]);
     }
     qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): _waveAvg size: " << _waveAvg.size();
@@ -1960,7 +2232,7 @@ void ExampleViewJSPlugin::computeFloodedClusterScalarsSingleCell(const std::vect
     _colorScalars.clear();
     _colorScalars.resize(_nclust, std::vector<float>(_numPoints, 0.0f));
 
-    std::unordered_map<int, int> clusterAliasToRowMapSubset;// ATTENTION here only cluster alias within the subset!!
+    std::unordered_map<QString, int> clusterAliasToRowMapSubset;// ATTENTION here only cluster alias within the subset!!
     for (int i = 0; i < _clustersToKeep.size(); ++i) {
         clusterAliasToRowMapSubset[_clustersToKeep[i]] = i;
     }
@@ -1987,7 +2259,7 @@ void ExampleViewJSPlugin::computeFloodedClusterScalarsSingleCell(const std::vect
     // Populate _colorScalars
     for (size_t i = 0; i < _sortedFloodIndices.size(); ++i) {
         int cellIndex = _sortedFloodIndices[i]; // Get the actual cell index
-        int label = _cellLabels[cellIndex]; // Get the cluster alias label name of the cell
+        QString label = _cellLabels[cellIndex]; // Get the cluster alias label name of the cell
         int columnIndex = clusterAliasToRowMapSubset[label]; // Get the column index of the cluster alias label name [in the subset]
 
         // Assuming label is within the column range of subsetMeans2
@@ -2213,9 +2485,6 @@ void ExampleViewJSPlugin::updateClick() {
         if (_selectedClusterIndex == 6) {// TO DO: hard coded for the current layout
             _dimView->selectView(true);
 
-            if (!_sliceDataset.isValid()) // only for 3D dataset + VolumeViewer
-                return;
-
             Eigen::VectorXf dimValue;
             std::vector<float> dimV;
             if (!_isSingleCell) {
@@ -2230,7 +2499,7 @@ void ExampleViewJSPlugin::updateClick() {
                 dimValue.resize(_numPoints);
 #pragma omp parallel for
                 for (int i = 0; i < _numPoints; ++i) {
-                    int label = _cellLabels[i]; // Get the cluster alias label name of the cell
+                    QString label = _cellLabels[i]; // Get the cluster alias label name of the cell
                     dimValue[i] = avgValue(_clusterAliasToRowMap[label]);
                 }
                 dimV.assign(dimValue.data(), dimValue.data() + dimValue.size());
