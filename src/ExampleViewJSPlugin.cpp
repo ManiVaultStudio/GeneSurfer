@@ -130,20 +130,8 @@ void ExampleViewJSPlugin::init()
 
     layout->setContentsMargins(0, 0, 0, 0);
 
-    //setting widget
-    /*auto settingsWidget = _settingsAction.createWidget(&getWidget());
-    settingsWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    layout->addWidget(settingsWidget);*/
-
     //test
     layout->addWidget(_primaryToolbarAction.createWidget(&getWidget()));
-
-    //test
-    /*auto settingsLayout = new QHBoxLayout();
-    settingsLayout->addWidget(settingsWidget);
-    auto correlationWidget = _settingsAction.getCorrelationModeAction().createCollapsedWidget(&getWidget());
-    settingsLayout->addWidget(correlationWidget);
-    layout->addLayout(settingsLayout);*/
 
     // Create barchart widget and set html contents of webpage 
     _chartWidget = new ChartWidget(this);
@@ -287,16 +275,6 @@ void ExampleViewJSPlugin::init()
     // Update point selection when the position dataset data changes
     //connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, &ExampleViewJSPlugin::updateSelection);// TO DO
 
-    // disable the clicked frame when selection changed
-    /*connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, [this]() {
-        if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
-            _scatterViews[_selectedClusterIndex]->selectView(false);
-        }
-        else if (_selectedClusterIndex == 6) {
-            _dimView->selectView(false);
-        }
-        });*/
-
     connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, &ExampleViewJSPlugin::updateFloodFill);
 
     _client = new EnrichmentAnalysis(this);
@@ -342,8 +320,6 @@ void ExampleViewJSPlugin::positionDatasetChanged()
     }
 
     qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): enabledDimensions size: " << _enabledDimNames.size();
-    qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): enabledDimensions[0]: " << _enabledDimNames[0];
-
 
     if (!_clusterScalars.isValid())
     {
@@ -996,11 +972,6 @@ void ExampleViewJSPlugin::updateSelection()
     updateScatterColors();
     updateScatterOpacity();
     updateScatterSelection();
- 
-    //if (_selectedClusterIndex != -1) {
-    //    // a view has been selected
-    //    updateClick();
-    //}
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
@@ -1374,22 +1345,6 @@ void ExampleViewJSPlugin::computeCorrWave()
     else {
         // 3D dataset
 
-        //only computing the correlation for the onSliceIndices in 2D
-        /*Eigen::VectorXf eigenWaveNumbers(_onSliceWaveNumbers.size());
-        std::copy(_onSliceWaveNumbers.begin(), _onSliceWaveNumbers.end(), eigenWaveNumbers.data());
-
-        _corrGeneWave.clear();
-        for (int col = 0; col < numEnabledDims; ++col) {
-            if (col < _subsetData.cols()) {
-                float correlation = computeCorrelation(_subsetData.col(col), eigenWaveNumbers);
-                _corrGeneWave.push_back(correlation);
-            }
-            else {
-                qDebug() << "Column index out of range in _subsetData for col=" << col;
-            }
-        }*/
-
-
        // compute the correlation for floodfill in 3D
         Eigen::VectorXf eigenWaveNumbers(_sortedWaveNumbers.size());
         std::copy(_sortedWaveNumbers.begin(), _sortedWaveNumbers.end(), eigenWaveNumbers.data());
@@ -1590,14 +1545,6 @@ void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
     int numClusters = _clusterNamesAvgExpr.size();
     int numGenes = _geneNamesAvgExpr.size();
 
-    // TO DO: not needed anymore
-    //_avgExpr.resize(numClusters, numGenes);
-    //for (int i = 0; i < numClusters; ++i) {
-    //    for (int j = 0; j < numGenes; ++j) {
-    //        _avgExpr(i, j) = matrixData[i][j];
-    //    }
-    //}
-
     file.close();
 
     _clusterAliasToRowMap.clear();// _clusterAliasToRowMap: first element is label name, second element is row index in _avgExpr
@@ -1642,6 +1589,7 @@ void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
     qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): _avgExprDataset dataset created";
 
     // test convert to eigen
+    // TO DO: maybe connect _avgExprDataset to _avgExpr directly??
     _avgExpr.resize(numClusters, numGenes);
     convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);
 
@@ -2578,11 +2526,8 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
     _primaryToolbarAction.fromParentVariantMap(variantMap);
     _settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
 
-
-    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _sliceDataset.isValid()" << _sliceDataset.isValid();
     qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _avgExpr.size() " << _avgExpr.size();
     qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _avgExprDataset.isValid() " << _avgExprDataset.isValid();
-    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _cellLabels.size() " << _cellLabels.size();
 
     QString clusterScalarsId = variantMap["ClusterScalars"].toString();
     _clusterScalars = mv::data().getDataset<Points>(clusterScalarsId);
@@ -2594,7 +2539,6 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
         updateSlice();
     }
 
-    qDebug() << "ExampleViewJSPlugin::fromVariantMap() 4 ";
     _loadingFromProject = false;
 
 }
@@ -2612,7 +2556,6 @@ QVariantMap ExampleViewJSPlugin::toVariantMap() const
     {
         variantMap.insert("CurrentSliceIdx", _currentSliceIndex);
     }
-
 
     return variantMap;
 }
