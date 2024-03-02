@@ -326,6 +326,7 @@ void ExampleViewJSPlugin::positionDatasetChanged()
         if (!_loadingFromProject)
         {
             _clusterScalars = mv::data().createDataset<Points>("Points", "Clusters");
+            events().notifyDatasetAdded(_clusterScalars);
             // initialize the clusterScalars dataset with 0s
             std::vector<float> tempInit(_numPoints, 0.0f);
             _clusterScalars->setData(tempInit.data(), tempInit.size(), 1);
@@ -599,11 +600,13 @@ void ExampleViewJSPlugin::computeAvgExpression() {
 
     // Create and store the dataset
     if (!_avgExprDataset.isValid()) {
+        qDebug() << "avgExprDataset not valid";
         _avgExprDataset = mv::data().createDataset<Points>("Points", "avgExprDataset");
+        events().notifyDatasetAdded(_avgExprDataset);
     }
-    else {
-        _avgExprDataset.reset();
-    }     
+    //else {
+    //    _avgExprDataset.reset();// TO DO: 
+    //}     
     _avgExprDataset->setData(allData.data(), numClusters, numGenes); 
     _avgExprDataset->setDimensionNames(_geneNamesAvgExpr);
     events().notifyDatasetDataChanged(_avgExprDataset);
@@ -621,13 +624,17 @@ void ExampleViewJSPlugin::loadAvgExpression() {
     qDebug() << "ONLY FOR ABCAtlas";
 
     loadAvgExpressionABCAtlas();// TO DO: only for ABC Atlas
+    qDebug() << "1";
     loadLabelsFromSTDatasetABCAtlas();
+    qDebug() << "2";
 
     _avgExprDatasetExists = true;
 
     // enable single cell toggle - TO DO: use signal or set directly
     //emit avgExprDatasetExistsChanged(_avgExprDatasetExists);
     _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().setEnabled(_avgExprDatasetExists);
+
+    qDebug() << "load AvgExpression finished ";
 
 }
 
@@ -998,9 +1005,35 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
 
         if (_avgExpr.size() == 0) {
             qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr is empty";
-            return;
+            qDebug() << "_loadingFromProject = " << _loadingFromProject;
+
+            if (_loadingFromProject) {
+                qDebug() << "Loading from project...";
+                switch (_avgExprStatus)
+                {
+                case AvgExpressionStatus::NONE:
+                    qDebug() << "Status: NONE";
+                    break;
+                case AvgExpressionStatus::COMPUTED:
+                    qDebug() << "Status: COMPUTED";
+                    computeAvgExpression();
+                    qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
+                    /*convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);
+                    loadLabelsFromSTDataset();*/
+                    break;
+                case AvgExpressionStatus::LOADED:
+                    qDebug() << "Status: LOADED";
+                    loadAvgExpression();
+                    break;
+                }
+            }
+            else {
+                return;
+            }
+            
         } 
 
+        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();
         _settingsAction.getDimensionAction().setPointsDataset(_avgExprDataset);
 
         // update _enabledDimNames
@@ -1576,12 +1609,16 @@ void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
         allData.insert(allData.end(), row.begin(), row.end());
     }
 
+    qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): allData size: " << allData.size();
+
     if (!_avgExprDataset.isValid()) {
+        qDebug() << "Create an avgExprDataset";
         _avgExprDataset = mv::data().createDataset<Points>("Points", "avgExprDataset");
+        events().notifyDatasetAdded(_avgExprDataset);
     }
-    else {
+    /*else {
         _avgExprDataset.reset();
-    }
+    }*/
     
     _avgExprDataset->setData(allData.data(), numClusters, numGenes); // Assuming this function signature is (data, rows, columns)
     _avgExprDataset->setDimensionNames(_geneNamesAvgExpr);
@@ -2521,20 +2558,20 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
 
     ViewPlugin::fromVariantMap(variantMap);
 
-    variantMapMustContain(variantMap, "SettingsAction");
+    _avgExprStatus = static_cast<AvgExpressionStatus>(variantMap["AvgExpressionStatus"].toInt());
+    qDebug() << "ExampleViewJSPlugin::fromVariantMap() 2 ";
 
-    _primaryToolbarAction.fromParentVariantMap(variantMap);
+    variantMapMustContain(variantMap, "SettingsAction");
     _settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
 
-    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _avgExpr.size() " << _avgExpr.size();
-    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _avgExprDataset.isValid() " << _avgExprDataset.isValid();
+    qDebug() << "ExampleViewJSPlugin::fromVariantMap() 3 ";
 
     QString clusterScalarsId = variantMap["ClusterScalars"].toString();
     _clusterScalars = mv::data().getDataset<Points>(clusterScalarsId);
 
     if (_sliceDataset.isValid())
     {
-        qDebug() << "ExampleViewJSPlugin::fromVariantMap() 3 ";
+        qDebug() << "ExampleViewJSPlugin::fromVariantMap() 4 ";
         _currentSliceIndex = variantMap["CurrentSliceIdx"].toInt();
         updateSlice();
     }
@@ -2549,6 +2586,8 @@ QVariantMap ExampleViewJSPlugin::toVariantMap() const
 
     _primaryToolbarAction.insertIntoVariantMap(variantMap);
     _settingsAction.insertIntoVariantMap(variantMap);
+
+    variantMap.insert("AvgExpressionStatus", static_cast<int>(_avgExprStatus));
 
     variantMap.insert("ClusterScalars", _clusterScalars.getDatasetId());
 

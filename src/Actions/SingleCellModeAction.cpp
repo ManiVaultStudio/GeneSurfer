@@ -28,19 +28,21 @@ void SingleCellModeAction::initialize(ExampleViewJSPlugin* exampleViewJSPlugin)
 {
     connect(&_singleCellOptionAction, &ToggleAction::toggled, exampleViewJSPlugin, &ExampleViewJSPlugin::updateSingleCellOption);
 
-    connect(&_computeAvgExpressionAction, &TriggerAction::triggered, exampleViewJSPlugin, &ExampleViewJSPlugin::computeAvgExpression);
-
-    connect(&_loadAvgExpressionAction, &TriggerAction::triggered, exampleViewJSPlugin, &ExampleViewJSPlugin::loadAvgExpression);
-
     connect(&_labelDatasetPickerAction, &DatasetPickerAction::datasetPicked, exampleViewJSPlugin, &ExampleViewJSPlugin::setLabelDataset);
 
-    // test
     _singleCellOptionAction.setEnabled(false);
     _computeAvgExpressionAction.setEnabled(false);
 
-   /* connect(exampleViewJSPlugin, &ExampleViewJSPlugin::avgExprDatasetExistsChanged, this, [this](bool enabled) {
-        _singleCellOptionAction.setEnabled(enabled);
-        });*/
+    connect(&_computeAvgExpressionAction, &TriggerAction::triggered, this, [exampleViewJSPlugin](bool enabled)
+        {
+            exampleViewJSPlugin->setAvgExpressionStatus(AvgExpressionStatus::COMPUTED);
+            exampleViewJSPlugin->computeAvgExpression();
+        });
+    connect(&_loadAvgExpressionAction, &TriggerAction::triggered, this, [exampleViewJSPlugin](bool enabled)
+        {
+            exampleViewJSPlugin->setAvgExpressionStatus(AvgExpressionStatus::LOADED);
+            exampleViewJSPlugin->loadAvgExpression();
+        });
 
 }
 
@@ -73,18 +75,18 @@ void SingleCellModeAction::fromVariantMap(const QVariantMap& variantMap)
     WidgetAction::fromVariantMap(variantMap);
 
     _labelDatasetPickerAction.fromParentVariantMap(variantMap);
-    //_loadAvgExpressionAction.fromParentVariantMap(variantMap);
-    //_computeAvgExpressionAction.fromParentVariantMap(variantMap);
-    //_singleCellOptionAction.fromParentVariantMap(variantMap);  
+    _computeAvgExpressionAction.fromParentVariantMap(variantMap);
+    _loadAvgExpressionAction.fromParentVariantMap(variantMap);
+    _singleCellOptionAction.fromParentVariantMap(variantMap);  
 }
 
 QVariantMap SingleCellModeAction::toVariantMap() const
 {
     auto variantMap = WidgetAction::toVariantMap();
 
-    //_singleCellOptionAction.insertIntoVariantMap(variantMap);
-    //_computeAvgExpressionAction.insertIntoVariantMap(variantMap);
-    //_loadAvgExpressionAction.insertIntoVariantMap(variantMap);
+    _singleCellOptionAction.insertIntoVariantMap(variantMap);
+    _computeAvgExpressionAction.insertIntoVariantMap(variantMap);
+    _loadAvgExpressionAction.insertIntoVariantMap(variantMap);
     _labelDatasetPickerAction.insertIntoVariantMap(variantMap);
 
     return variantMap;

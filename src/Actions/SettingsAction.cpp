@@ -100,10 +100,13 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
 
     _positionDatasetPickerAction.fromParentVariantMap(variantMap);
     _sliceDatasetPickerAction.fromParentVariantMap(variantMap);
+    _avgExprDatasetPickerAction.fromParentVariantMap(variantMap);
+
     // Load position dataset
     auto positionDataset = _positionDatasetPickerAction.getCurrentDataset();
     if (positionDataset.isValid())
     {
+        qDebug() << ">>>>> Found position dataset " << positionDataset->getGuiName();
         Dataset pickedDataset = mv::data().getDataset(positionDataset.getDatasetId());
         _exampleViewJSPlugin->getPositionDataset() = pickedDataset;
     }
@@ -118,13 +121,13 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     }
 
     // Load average expression dataset
-    /*auto avgExprDataset = _avgExprDatasetPickerAction.getCurrentDataset();
+    auto avgExprDataset = _avgExprDatasetPickerAction.getCurrentDataset();
     if (avgExprDataset.isValid())
     {
         qDebug() << ">>>>> Found Avg Expression dataset " << avgExprDataset->getGuiName();
         Dataset pickedDataset = mv::data().getDataset(avgExprDataset.getDatasetId());
         _exampleViewJSPlugin->getAvgExprDataset() = pickedDataset;
-    }*/
+    }
 
     _floodFillAction.fromParentVariantMap(variantMap);
     //_correlationModeAction.fromParentVariantMap(variantMap);
@@ -134,6 +137,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     _pointPlotAction.fromParentVariantMap(variantMap); 
     _sliceAction.fromParentVariantMap(variantMap);
     _dimensionAction.fromParentVariantMap(variantMap);
+    
 }
 
 QVariantMap SettingsAction::toVariantMap() const
@@ -143,7 +147,7 @@ QVariantMap SettingsAction::toVariantMap() const
     _positionDatasetPickerAction.insertIntoVariantMap(variantMap);
     _sliceDatasetPickerAction.insertIntoVariantMap(variantMap);
 
-    //_avgExprDatasetPickerAction.insertIntoVariantMap(variantMap);
+    _avgExprDatasetPickerAction.insertIntoVariantMap(variantMap);
 
     _positionAction.insertIntoVariantMap(variantMap);
     _dimensionAction.insertIntoVariantMap(variantMap);

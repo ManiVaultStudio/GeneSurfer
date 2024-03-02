@@ -38,6 +38,13 @@ using namespace mv::gui;
 /** Dataset reference used in this plugin is located in the mv util namespace */
 using namespace mv::util;
 
+enum class AvgExpressionStatus
+{
+    NONE,
+    COMPUTED,
+    LOADED
+};
+
 class ChartWidget;
 class ScatterView;
 
@@ -268,6 +275,8 @@ private:
 
     // serialization
     bool                    _loadingFromProject = false;
+    AvgExpressionStatus     _avgExprStatus = AvgExpressionStatus::NONE;
+
     
 
 public:
@@ -292,6 +301,9 @@ public:
     mv::Dataset<Clusters>& getSliceDataset() { return _sliceDataset; }
 
     //SettingsAction& getSettingsAction() { return _settingsAction; }
+
+public: 
+    void setAvgExpressionStatus(AvgExpressionStatus status) { _avgExprStatus = status; }
 
 public: 
     /** Get reference to the scatter plot widget */
