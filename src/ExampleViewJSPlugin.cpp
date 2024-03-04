@@ -1004,9 +1004,10 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
         if (_avgExpr.size() == 0) {
             qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr is empty";
             qDebug() << "_loadingFromProject = " << _loadingFromProject;
+            qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
 
-            if (_loadingFromProject) {
-                qDebug() << "Loading from project...";
+            if (_avgExprDataset.isValid()) {
+                qDebug() << "_avgExprDataset is valid...";
                 switch (_avgExprStatus)
                 {
                 case AvgExpressionStatus::NONE:
@@ -2636,6 +2637,12 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
     if (_selectedDimName != "NoneSelected")
         updateDimView(_selectedDimName);
     qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;
+
+    if (_avgExprStatus != AvgExpressionStatus::NONE)
+    {
+        // to set singlecell option enabled
+        _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().setEnabled(true);
+    }
 
     _loadingFromProject = false;
 
