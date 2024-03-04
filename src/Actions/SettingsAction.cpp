@@ -16,7 +16,8 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _avgExprDatasetPickerAction(this, "AvgExprDataset"),
 
     _positionAction(this, "Position"),
-    _dimensionAction(this, "Dim"),
+
+    _dimensionSelectionAction(this, "Dim"),
 
     _pointPlotAction(this, "Point Plot"),
 
@@ -37,18 +38,12 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     if (_exampleViewJSPlugin == nullptr)
         return;
 
-
     _singleCellModeAction.initialize(_exampleViewJSPlugin);
 
-    addAction(&_dimensionAction);
-
-    _dimensionAction.setToolTip("Dimension");
-    _floodFillAction.setToolTip("Flood Fill");
     _correlationModeAction.setToolTip("Correlation Mode");
     _positionAction.setToolTip("Position Dimension");
     _pointPlotAction.setToolTip("Point Plot");
     _clusteringAction.setToolTip("Cluster Settings");
-
 
     const auto updateEnabled = [this]() {
         bool hasDataset = _exampleViewJSPlugin->getPositionDataset().isValid();
@@ -58,6 +53,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         _correlationModeAction.setEnabled(hasDataset);
         _pointPlotAction.setEnabled(hasDataset);
         _singleCellModeAction.setEnabled(hasDataset);
+        _dimensionSelectionAction.setEnabled(hasDataset);
     };
 
     connect(&_exampleViewJSPlugin->getPositionDataset(), &Dataset<Points>::changed, this, updateEnabled);
@@ -80,17 +76,6 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
  
     connect(&_floodFillAction, &VariantAction::variantChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateFloodFill);
     connect(&_sliceAction, &IntegralAction::valueChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateSlice);
-
-    connect(&_dimensionAction, &DimensionPickerAction::currentDimensionIndexChanged, [this](const std::uint32_t& currentDimensionIndex) {
-        if (_exampleViewJSPlugin->isDataInitialized()) {
-            _exampleViewJSPlugin->updateShowDimension();
-        }
-        });
-
-    connect(&_exampleViewJSPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this]() {
-        _dimensionAction.setPointsDataset(_exampleViewJSPlugin->getPositionSourceDataset());
-        //_dimensionAction.setCurrentDimensionIndex(0);
-        });
 
 }
 
@@ -136,7 +121,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     _positionAction.fromParentVariantMap(variantMap);  
     _pointPlotAction.fromParentVariantMap(variantMap); 
     _sliceAction.fromParentVariantMap(variantMap);
-    _dimensionAction.fromParentVariantMap(variantMap);
+    _dimensionSelectionAction.fromParentVariantMap(variantMap);
     
 }
 
@@ -150,7 +135,7 @@ QVariantMap SettingsAction::toVariantMap() const
     _avgExprDatasetPickerAction.insertIntoVariantMap(variantMap);
 
     _positionAction.insertIntoVariantMap(variantMap);
-    _dimensionAction.insertIntoVariantMap(variantMap);
+    _dimensionSelectionAction.insertIntoVariantMap(variantMap);
     _pointPlotAction.insertIntoVariantMap(variantMap);
     _singleCellModeAction.insertIntoVariantMap(variantMap);
     _clusteringAction.insertIntoVariantMap(variantMap);

@@ -78,6 +78,8 @@ set(Actions
     src/Actions/SingleCellModeAction.h
 	src/Actions/ClusteringAction.cpp
     src/Actions/ClusteringAction.h
+	src/Actions/DimensionSelectionAction.cpp
+    src/Actions/DimensionSelectionAction.h
 )
 
 

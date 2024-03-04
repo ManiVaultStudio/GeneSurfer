@@ -1,7 +1,6 @@
 #pragma once
 
 #include <actions/GroupAction.h>
-#include <actions/WidgetAction.h>
 #include <actions/IntegralAction.h>
 #include <actions/VariantAction.h>
 #include <actions/DatasetPickerAction.h>
@@ -13,6 +12,7 @@
 #include "PointPlotAction.h"
 #include "SingleCellModeAction.h"
 #include "ClusteringAction.h"
+#include "DimensionSelectionAction.h"
 
 using namespace mv::gui;
 
@@ -57,7 +57,7 @@ public: // Action getters
 
     PositionAction& getPositionAction() { return _positionAction; }
 
-    DimensionPickerAction& getDimensionAction() { return _dimensionAction; }
+    DimensionSelectionAction& getDimensionSelectionAction() { return _dimensionSelectionAction; }
 
     PointPlotAction& getPointPlotAction() { return _pointPlotAction; }
 
@@ -80,7 +80,7 @@ private:
 
     PositionAction          _positionAction;            /** position action */
 
-    DimensionPickerAction   _dimensionAction;           /** dimension picker action */
+    DimensionSelectionAction _dimensionSelectionAction;
 
     PointPlotAction         _pointPlotAction;           /** point plot action */
 

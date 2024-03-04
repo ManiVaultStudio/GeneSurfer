@@ -97,10 +97,10 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
 {
     _primaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
-    _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 0, GroupAction::Horizontal);
-    _primaryToolbarAction.addAction(&_settingsAction.getDimensionAction(), 0, GroupAction::Horizontal);
-    _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), 0, GroupAction::Horizontal);
-    _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction(), 0, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), -1, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 1, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction());
 
     for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
     {
@@ -490,7 +490,7 @@ void ExampleViewJSPlugin::updateViewData(std::vector<Vector2f>& positions) {
 }
 
 void ExampleViewJSPlugin::updateShowDimension() {
-    int shownDimension = _settingsAction.getDimensionAction().getCurrentDimensionIndex();
+    int shownDimension = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionIndex();
     qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension: " << shownDimension;
 
     if (shownDimension < 0) {
@@ -1058,7 +1058,7 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
         } 
 
         qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();
-        _settingsAction.getDimensionAction().setPointsDataset(_avgExprDataset);
+        _settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_avgExprDataset);
 
         // update _enabledDimNames
         _enabledDimNames.clear();
@@ -1077,7 +1077,7 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
     }
     else {
         qDebug() << "Using Spatial";
-        _settingsAction.getDimensionAction().setPointsDataset(_positionSourceDataset);
+        _settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_positionSourceDataset);
 
         const auto& dimNames = _positionSourceDataset->getDimensionNames();
         auto enabledDimensions = _positionSourceDataset->getDimensionsPickerAction().getEnabledDimensions();
