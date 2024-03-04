@@ -1016,14 +1016,38 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
                     break;
                 case AvgExpressionStatus::COMPUTED:
                     qDebug() << "Status: COMPUTED";
-                    computeAvgExpression();
+                    //computeAvgExpression();
+
+                    // in oder to avoid computing again - TO DO: seperate this part in the function
                     qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
-                    /*convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);
-                    loadLabelsFromSTDataset();*/
+                    convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);
+                    _geneNamesAvgExpr.clear();
+                    _geneNamesAvgExpr = _avgExprDataset->getDimensionNames();
+
+                    _clusterAliasToRowMap.clear();
+                    for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
+                        _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
+                    }
+                    qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+                    loadLabelsFromSTDataset();
                     break;
                 case AvgExpressionStatus::LOADED:
                     qDebug() << "Status: LOADED";
-                    loadAvgExpression();
+                    //loadAvgExpression();
+
+                    // in oder to avoid computing again - TO DO: seperate this part in the function
+                    qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
+                    convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);
+                    _geneNamesAvgExpr.clear();
+                    _geneNamesAvgExpr = _avgExprDataset->getDimensionNames();
+
+                    _clusterAliasToRowMap.clear();
+                    for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
+                        _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
+                    }
+                    qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+                    loadLabelsFromSTDatasetABCAtlas();
+
                     break;
                 }
             }
@@ -2561,6 +2585,21 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
     _avgExprStatus = static_cast<AvgExpressionStatus>(variantMap["AvgExpressionStatus"].toInt());
     qDebug() << "ExampleViewJSPlugin::fromVariantMap() 2 ";
 
+    if (_avgExprStatus != AvgExpressionStatus::NONE)
+    {
+        const auto clusterNamesAvgExprVariant = variantMap["clusterNamesAvgExpr"].toMap();
+        _clusterNamesAvgExpr.clear();
+        _clusterNamesAvgExpr.resize(clusterNamesAvgExprVariant.size());
+        for (const QString& key : clusterNamesAvgExprVariant.keys()) {
+            int index = key.toInt();
+            if (index >= 0 && index < clusterNamesAvgExprVariant.size()) {
+                _clusterNamesAvgExpr[index] = clusterNamesAvgExprVariant[key].toString();
+            }
+        }
+        qDebug() << ">>>>>ExampleViewJSPlugin::fromVariantMap(): clusterNamesAvgExpr.size();" << _clusterNamesAvgExpr.size();
+        qDebug() << ">>>>>ExampleViewJSPlugin::fromVariantMap(): clusterNamesAvgExpr[0];" << _clusterNamesAvgExpr[0];
+    }
+
     variantMapMustContain(variantMap, "SettingsAction");
     _settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
 
@@ -2594,6 +2633,16 @@ QVariantMap ExampleViewJSPlugin::toVariantMap() const
     if (_sliceDataset.isValid())
     {
         variantMap.insert("CurrentSliceIdx", _currentSliceIndex);
+    }
+
+    if (_avgExprStatus != AvgExpressionStatus::NONE)
+    {
+        // TO DO: can use populateVariantMapFromDataBuffer()
+        QVariantMap clusterNamesAvgExprVariant;
+        for (size_t i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
+            clusterNamesAvgExprVariant[QString::number(i)] = _clusterNamesAvgExpr[i];
+        }
+        variantMap.insert("clusterNamesAvgExpr", clusterNamesAvgExprVariant);
     }
 
     return variantMap;
