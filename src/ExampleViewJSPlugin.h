@@ -276,6 +276,7 @@ private:
     // serialization
     bool                    _loadingFromProject = false;
     AvgExpressionStatus     _avgExprStatus = AvgExpressionStatus::NONE;
+    QString                 _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
 
     
 

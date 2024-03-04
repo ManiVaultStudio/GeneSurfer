@@ -121,7 +121,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     _positionAction.fromParentVariantMap(variantMap);  
     _pointPlotAction.fromParentVariantMap(variantMap); 
     _sliceAction.fromParentVariantMap(variantMap);
-    _dimensionSelectionAction.fromParentVariantMap(variantMap);
+    //_dimensionSelectionAction.fromParentVariantMap(variantMap);
     
 }
 
@@ -135,13 +135,13 @@ QVariantMap SettingsAction::toVariantMap() const
     _avgExprDatasetPickerAction.insertIntoVariantMap(variantMap);
 
     _positionAction.insertIntoVariantMap(variantMap);
-    _dimensionSelectionAction.insertIntoVariantMap(variantMap);
     _pointPlotAction.insertIntoVariantMap(variantMap);
     _singleCellModeAction.insertIntoVariantMap(variantMap);
     _clusteringAction.insertIntoVariantMap(variantMap);
     _floodFillAction.insertIntoVariantMap(variantMap);
     _sliceAction.insertIntoVariantMap(variantMap);
     //_correlationModeAction.insertIntoVariantMap(variantMap);
+    //_dimensionSelectionAction.insertIntoVariantMap(variantMap); // TO DO: not needed, done in plugin.cpp
 
     return variantMap;
 }

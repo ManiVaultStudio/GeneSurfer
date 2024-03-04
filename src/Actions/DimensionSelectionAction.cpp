@@ -20,14 +20,14 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
         return;
 
     connect(&_dimensionAction, &DimensionPickerAction::currentDimensionIndexChanged, [this, exampleViewJSPlugin](const std::uint32_t& currentDimensionIndex) {
-        if (exampleViewJSPlugin->isDataInitialized()) {
+        if (exampleViewJSPlugin->isDataInitialized() && _dimensionAction.getCurrentDimensionIndex() != -1) {
             exampleViewJSPlugin->updateShowDimension();
         }
         });
 
     connect(&exampleViewJSPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this, exampleViewJSPlugin]() {
-        _dimensionAction.setPointsDataset(exampleViewJSPlugin->getPositionSourceDataset());
-        //_dimensionAction.setCurrentDimensionIndex(0);
+        _dimensionAction.setPointsDataset(exampleViewJSPlugin->getPositionSourceDataset());       
+        _dimensionAction.setCurrentDimensionIndex(-1);
         });
 
 }

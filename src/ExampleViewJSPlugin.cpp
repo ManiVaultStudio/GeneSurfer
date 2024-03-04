@@ -90,7 +90,7 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _settingsAction(this, "Settings Action"),
     _primaryToolbarAction(this, "PrimaryToolbar"),
     _currentDataSet(nullptr), // TO DO: Not used anymore
-    _selectedDimIndex(0),
+    _selectedDimIndex(-1), // test -1
     _selectedClusterIndex(0),
     _colorMapAction(this, "Color map", "RdYlBu")
 
@@ -417,7 +417,8 @@ void ExampleViewJSPlugin::convertDataAndUpdateChart()
 
 void ExampleViewJSPlugin::publishSelection(const QString& selection)
 {
-    updateDimView(selection);
+    _selectedDimName = selection;
+    updateDimView(_selectedDimName);
 
     qDebug() << "ExampleViewJSPlugin::publishSelection: selection: " << selection;
 }
@@ -491,22 +492,19 @@ void ExampleViewJSPlugin::updateViewData(std::vector<Vector2f>& positions) {
 
 void ExampleViewJSPlugin::updateShowDimension() {
     int shownDimension = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionIndex();
-    qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension: " << shownDimension;
 
     if (shownDimension < 0) {
+        qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension < 0: " << shownDimension;
         return;
     }
-
-    qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension >= 0: " << shownDimension;
-
-    //QString dimName = _enabledDimNames[shownDimension]; // align with _enabledDimNames
 
     const std::vector<QString> dimNamesSource = _isSingleCell ? _geneNamesAvgExpr : _positionSourceDataset->getDimensionNames();// align with positionSourceDataset, NOT _enabledDimNames
 
     QString dimName = dimNamesSource[shownDimension];
     qDebug() << "ExampleViewJSPlugin::updateShowDimension(): dimName: " << dimName;
 
-    updateDimView(dimName);
+    _selectedDimName = dimName;
+    updateDimView(_selectedDimName);
 }
 
 void ExampleViewJSPlugin::computeAvgExpression() {
@@ -1057,8 +1055,10 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
             
         } 
 
-        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();
+        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();    
         _settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_avgExprDataset);
+        _settingsAction.getDimensionSelectionAction().getDimensionAction().setCurrentDimensionIndex(-1);
+        
 
         // update _enabledDimNames
         _enabledDimNames.clear();
@@ -1078,7 +1078,8 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
     else {
         qDebug() << "Using Spatial";
         _settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_positionSourceDataset);
-
+        _settingsAction.getDimensionSelectionAction().getDimensionAction().setCurrentDimensionIndex(-1);
+        
         const auto& dimNames = _positionSourceDataset->getDimensionNames();
         auto enabledDimensions = _positionSourceDataset->getDimensionsPickerAction().getEnabledDimensions();
         _enabledDimNames.clear();
@@ -1277,7 +1278,14 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
         }
 
         qDebug() << "Access _positionSourceData";
-        //dimValues = _dataStore.getBaseData().col(_selectedDimIndex);// align with _enabledDimNames
+
+        // TO DO: remove debugging info
+        if (_selectedDimIndex == -1)
+        {
+            qDebug() << "ERROR!!!updateDimView(): _selectedDimIndex is -1";
+            return;
+        }
+            
         _positionSourceDataset->extractDataForDimension(dimV, _selectedDimIndex);// align with _positionSourceDataset
     }
     else {
@@ -1289,6 +1297,14 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
         }
 
         qDebug() << "Access _avgExpr";
+
+        // TO DO: remove debugging info
+        if (_selectedDimIndex == -1)
+        {
+            qDebug() << "ERROR!!!updateDimView(): _selectedDimIndex is -1";
+            return;
+        }
+
         dimValues = _avgExpr(Eigen::all, _selectedDimIndex);
         dimV.assign(dimValues.data(), dimValues.data() + dimValues.size());
     }
@@ -2615,6 +2631,12 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
         updateSlice();
     }
 
+    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;
+    _selectedDimName = variantMap["SelectedDimName"].toString();
+    if (_selectedDimName != "NoneSelected")
+        updateDimView(_selectedDimName);
+    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;
+
     _loadingFromProject = false;
 
 }
@@ -2629,6 +2651,8 @@ QVariantMap ExampleViewJSPlugin::toVariantMap() const
     variantMap.insert("AvgExpressionStatus", static_cast<int>(_avgExprStatus));
 
     variantMap.insert("ClusterScalars", _clusterScalars.getDatasetId());
+
+    variantMap.insert("SelectedDimName", _selectedDimName);
 
     if (_sliceDataset.isValid())
     {
