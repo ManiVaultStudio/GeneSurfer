@@ -90,14 +90,14 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _settingsAction(this, "Settings Action"),
     _primaryToolbarAction(this, "PrimaryToolbar"),
     _currentDataSet(nullptr), // TO DO: Not used anymore
-    _selectedDimIndex(-1), // test -1
+    _selectedDimIndex(-1),
     _selectedClusterIndex(0),
     _colorMapAction(this, "Color map", "RdYlBu")
 
 {
     _primaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
-    _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), -1, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction());
@@ -325,7 +325,7 @@ void ExampleViewJSPlugin::positionDatasetChanged()
     {
         if (!_loadingFromProject)
         {
-            _clusterScalars = mv::data().createDataset<Points>("Points", "Clusters");
+            _clusterScalars = mv::data().createDataset<Points>("Points", "Scalars");
             events().notifyDatasetAdded(_clusterScalars);
             // initialize the clusterScalars dataset with 0s
             std::vector<float> tempInit(_numPoints, 0.0f);
