@@ -98,7 +98,7 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _primaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);
-    _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 1, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 2, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction());
 
