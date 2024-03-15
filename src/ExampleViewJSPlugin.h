@@ -257,7 +257,7 @@ private:
     // for avg expression of single cell data
     std::vector<QString>            _geneNamesAvgExpr; // from avg expr single cell data
     Eigen::MatrixXf                 _avgExpr; // average expression of each cluster
-    Eigen::MatrixXf                 _subsetDataAvgWeighted; // subset of average expression of each cluster - weighted
+    Eigen::MatrixXf                 _subsetDataAvgWeighted; // subset of average expression of each cluster - weighted -TO DO: not needed
     Eigen::MatrixXf                 _subsetDataAvgOri; // subset of average expression of each cluster - NOT weighted - TO DO
 
     bool                            _avgExprDatasetExists = false; // whether the avg expression dataset exists
