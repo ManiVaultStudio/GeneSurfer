@@ -492,18 +492,16 @@ void ExampleViewJSPlugin::updateViewData(std::vector<Vector2f>& positions) {
 
 void ExampleViewJSPlugin::updateShowDimension() {
     int shownDimension = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionIndex();
+    QString shownDimensionName = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionName();
+    qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension: " << shownDimension;
+    qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimensionName: " << shownDimensionName;
 
     if (shownDimension < 0) {
         qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension < 0: " << shownDimension;
         return;
     }
 
-    const std::vector<QString> dimNamesSource = _isSingleCell ? _geneNamesAvgExpr : _positionSourceDataset->getDimensionNames();// align with positionSourceDataset, NOT _enabledDimNames
-
-    QString dimName = dimNamesSource[shownDimension];
-    qDebug() << "ExampleViewJSPlugin::updateShowDimension(): dimName: " << dimName;
-
-    _selectedDimName = dimName;
+    _selectedDimName = shownDimensionName;
     updateDimView(_selectedDimName);
 }
 
