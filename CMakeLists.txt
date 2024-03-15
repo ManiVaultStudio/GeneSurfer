@@ -80,6 +80,8 @@ set(Actions
     src/Actions/ClusteringAction.h
 	src/Actions/DimensionSelectionAction.cpp
     src/Actions/DimensionSelectionAction.h
+	src/Actions/GenePickerAction.cpp
+	src/Actions/GenePickerAction.h
 )
 
 

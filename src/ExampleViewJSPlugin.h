@@ -103,7 +103,8 @@ public:
     /** Update the color of _dimView */
     void updateShowDimension();
 
-
+    /** Work-around for dimensionPicker*/
+    void setDimensionNamesForDimensionPicker();
     
 public slots:
     /** Converts ManiVault's point data to a json-like data structure that Qt can pass to the JS code */

@@ -1123,8 +1123,9 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
         } 
 
         qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();    
-        _settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_avgExprDataset);
-        _settingsAction.getDimensionSelectionAction().getDimensionAction().setCurrentDimensionIndex(-1);
+        /*_settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_avgExprDataset);
+        _settingsAction.getDimensionSelectionAction().getDimensionAction().setCurrentDimensionIndex(-1);*/
+        setDimensionNamesForDimensionPicker();
         
 
         // update _enabledDimNames
@@ -1144,8 +1145,9 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
     }
     else {
         qDebug() << "Using Spatial";
-        _settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_positionSourceDataset);
-        _settingsAction.getDimensionSelectionAction().getDimensionAction().setCurrentDimensionIndex(-1);
+        /*_settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_positionSourceDataset);
+        _settingsAction.getDimensionSelectionAction().getDimensionAction().setCurrentDimensionIndex(-1);*/
+        setDimensionNamesForDimensionPicker();
         
         const auto& dimNames = _positionSourceDataset->getDimensionNames();
         auto enabledDimensions = _positionSourceDataset->getDimensionsPickerAction().getEnabledDimensions();
@@ -1158,6 +1160,46 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
 
         updateSelection();
     }
+}
+
+void ExampleViewJSPlugin::setDimensionNamesForDimensionPicker() {
+    // Work around for dimensionPickerAction
+    // sort the strings to avoid the issue of the original dimensionPickerAction: 
+    // e.g.select "Hoxb5" but "Hoxb5os" was selected because "Hoxb5os" was the first matched one in the list
+
+    std::vector<QString> sortedGeneNames;
+
+    if (_isSingleCell) {
+        sortedGeneNames = _geneNamesAvgExpr;
+    }
+    else {
+        sortedGeneNames = _positionSourceDataset->getDimensionNames();
+    }
+    qDebug() << "ExampleViewJSPlugin::setDimensionNamesForDimensionPicker(): sortedGeneNames size: " << sortedGeneNames.size();
+
+    // sort the gene names, to make the shortest in the front if one is a prefix of the other
+    std::sort(sortedGeneNames.begin(), sortedGeneNames.end(), [](const QString& a, const QString& b) {
+        // Compare alphabetically first
+        int minLength = std::min(a.length(), b.length());
+        for (int i = 0; i < minLength; i++) {
+            if (a[i] != b[i]) {
+                return a[i] < b[i];
+            }
+        }
+        // If one is a prefix of the other, or they are identical up to the minLength, sort by length
+        return a.length() < b.length();
+     });
+    qDebug() << "ExampleViewJSPlugin::setDimensionNamesForDimensionPicker(): sortedGeneNames sorted";
+
+    QStringList sortedGeneNamesList;
+    for (const auto& str : sortedGeneNames) {
+        sortedGeneNamesList.append(str);
+    }
+    qDebug() << "ExampleViewJSPlugin::setDimensionNamesForDimensionPicker(): sortedGeneNamesList size: " << sortedGeneNamesList.size();
+
+    _settingsAction.getDimensionSelectionAction().getDimensionAction().setDimensionNames(sortedGeneNamesList);
+    _settingsAction.getDimensionSelectionAction().getDimensionAction().setCurrentDimensionIndex(-1);
+
 }
 
 void ExampleViewJSPlugin::updateNumCluster()

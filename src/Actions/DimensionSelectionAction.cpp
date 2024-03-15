@@ -19,51 +19,37 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
     if (exampleViewJSPlugin == nullptr)
         return;
 
-    connect(&_dimensionAction, &DimensionPickerAction::currentDimensionIndexChanged, [this, exampleViewJSPlugin](const std::uint32_t& currentDimensionIndex) {
+    connect(&_dimensionAction, &GenePickerAction::currentDimensionIndexChanged, [this, exampleViewJSPlugin](const std::uint32_t& currentDimensionIndex) {
         if (exampleViewJSPlugin->isDataInitialized() && _dimensionAction.getCurrentDimensionIndex() != -1) {
             exampleViewJSPlugin->updateShowDimension();
         }
         });
 
     connect(&exampleViewJSPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this, exampleViewJSPlugin]() {
-        _dimensionAction.setPointsDataset(exampleViewJSPlugin->getPositionSourceDataset());       
+        auto sortedGeneNames = exampleViewJSPlugin->getPositionSourceDataset()->getDimensionNames();
+
+        std::sort(sortedGeneNames.begin(), sortedGeneNames.end(), [](const QString& a, const QString& b) {
+            // Compare alphabetically first
+            int minLength = std::min(a.length(), b.length());
+            for (int i = 0; i < minLength; i++) {
+                if (a[i] != b[i]) {
+                    return a[i] < b[i];
+                }
+            }
+            // If one is a prefix of the other, or they are identical up to the minLength, sort by length
+            return a.length() < b.length();
+         });
+
+        QStringList sortedGeneNamesList;
+        for (const auto& str : sortedGeneNames) {
+            sortedGeneNamesList.append(str);
+        }
+
+        _dimensionAction.setDimensionNames(sortedGeneNamesList);
         _dimensionAction.setCurrentDimensionIndex(-1);
         });
 
 }
-
-
-// void CorrelationModeAction::connectToPublicAction(WidgetAction* publicAction, bool recursive)
-// {
-    // auto publicCorrelationModeAction = dynamic_cast<CorrelationModeAction*>(publicAction);
-
-    // Q_ASSERT(publicCorrelationModeAction != nullptr);
-
-    // if (publicCorrelationModeAction == nullptr)
-        // return;
-
-    // if (recursive) {
-        // actions().connectPrivateActionToPublicAction(&_scatterPlotAction, &publicCorrelationModeAction->getScatterPlotAction(), recursive);
-        // actions().connectPrivateActionToPublicAction(&_densityPlotAction, &publicCorrelationModeAction->getDensityPlotAction(), recursive);
-        // actions().connectPrivateActionToPublicAction(&_contourPlotAction, &publicCorrelationModeAction->getContourPlotAction(), recursive);
-    // }
-
-    // OptionAction::connectToPublicAction(publicAction, recursive);
-// }
-
-// void CorrelationModeAction::disconnectFromPublicAction(bool recursive)
-// {
-    // if (!isConnected())
-        // return;
-
-    // if (recursive) {
-        // actions().disconnectPrivateActionFromPublicAction(&_scatterPlotAction, recursive);
-        // actions().disconnectPrivateActionFromPublicAction(&_densityPlotAction, recursive);
-        // actions().disconnectPrivateActionFromPublicAction(&_contourPlotAction, recursive);
-    // }
-
-    // OptionAction::disconnectFromPublicAction(recursive);
-// }
 
 void DimensionSelectionAction::fromVariantMap(const QVariantMap& variantMap)
 {

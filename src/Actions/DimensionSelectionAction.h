@@ -1,6 +1,6 @@
 #pragma once
 #include <actions/GroupAction.h>
-#include <PointData/DimensionPickerAction.h>
+#include "GenePickerAction.h"
 
 using namespace mv::gui;
 
@@ -43,12 +43,11 @@ public: // Serialization
 
 public: // Action getters
 
-    DimensionPickerAction& getDimensionAction() { return _dimensionAction; }
+    GenePickerAction& getDimensionAction() { return _dimensionAction; }
 
 private:
-    DimensionPickerAction   _dimensionAction;           /** dimension picker action */
+    GenePickerAction   _dimensionAction;           /** modified ver. dimension picker action */
 
-    //friend class mv::AbstractActionsManager;
 };
 
 Q_DECLARE_METATYPE(DimensionSelectionAction)
