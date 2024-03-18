@@ -45,13 +45,13 @@ public: // Serialization
 public: // Action getters
 
    IntegralAction& getNumClusterAction() { return _numClusterAction; }
-   DecimalAction& getCorrThresholdAction() { return _corrThresholdAction; }
+   //DecimalAction& getCorrThresholdAction() { return _corrThresholdAction; }
+   IntegralAction& getNumGenesThresholdAction() { return _numGenesThresholdAction; }
 
 private:
     IntegralAction          _numClusterAction;        /** number of cluster action */
-    DecimalAction           _corrThresholdAction;        /** correlation threshold action */
-
-    //friend class mv::AbstractActionsManager;
+    //DecimalAction           _corrThresholdAction;        /** correlation threshold action */
+    IntegralAction          _numGenesThresholdAction;        /** number of gene threshold action */
 };
 
 Q_DECLARE_METATYPE(ClusteringAction)

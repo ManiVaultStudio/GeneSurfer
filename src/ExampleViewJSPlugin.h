@@ -222,8 +222,9 @@ private:
     std::vector<float>      _corrGeneWave;
     std::vector<float>      _corrGeneSpatial;
     
-
-    float                   _corrThreshold;
+    // threshold for filtering genes based on correlation
+    //float                   _corrThreshold;
+    int                     _numGenesThreshold = 50;
 
     int                     _nclust;// number of clusters
     std::unordered_map<QString, int>  _dimNameToClusterLabel; // map dimension name to cluster label

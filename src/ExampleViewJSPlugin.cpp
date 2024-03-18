@@ -80,7 +80,7 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _numPoints(0),
     _subsetData(),
     _corrGeneWave(),
-    _corrThreshold(0.15f),
+    //_corrThreshold(0.15f),
     _dimNameToClusterLabel(),
     _colorScalars(_nclust, std::vector<float>(_numPoints, 0.0f)),
     _chartWidget(nullptr),
@@ -1133,13 +1133,17 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
         _enabledDimNames = _geneNamesAvgExpr;
         qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _enabledDimNames size: " << _enabledDimNames.size();
 
-        // TO DO: temporary code to avoid too many genes for single cell option
-        if (_settingsAction.getClusteringAction().getCorrThresholdAction().getValue() < 0.6)
+        // TO DO: temporary code to avoid too many genes for single cell option - NOT needed if use _numGenesThreshold
+        /*if (_settingsAction.getClusteringAction().getCorrThresholdAction().getValue() < 0.6)
         {
             _settingsAction.getClusteringAction().getCorrThresholdAction().setValue(0.6);
             qDebug() << "Warning: _corrThreshold is set to 0.6";
-        }
-        
+        }*/
+
+        // update max number of genes in _numGenesThresholdAction
+        _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(_enabledDimNames.size());
+
+ 
         updateSelection();
 
     }
@@ -1157,6 +1161,9 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
             if (enabledDimensions[i])
                 _enabledDimNames.push_back(dimNames[i]);
         }
+
+        // update max number of genes in _numGenesThresholdAction
+        _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(_enabledDimNames.size());
 
         updateSelection();
     }
@@ -1226,7 +1233,9 @@ void ExampleViewJSPlugin::updateNumCluster()
 }
 
 void ExampleViewJSPlugin::updateCorrThreshold() {
-    _corrThreshold = _settingsAction.getClusteringAction().getCorrThresholdAction().getValue();
+    //_corrThreshold = _settingsAction.getClusteringAction().getCorrThresholdAction().getValue();
+
+    _numGenesThreshold = _settingsAction.getClusteringAction().getNumGenesThresholdAction().getValue();
 
     // cannot be changed before plotting
     if (_isFloodIndex.empty()) {
@@ -2019,22 +2028,38 @@ void ExampleViewJSPlugin::clusterGenes()
         corr = _corrGeneWave;
     }
 
-    auto start1 = std::chrono::high_resolution_clock::now();
-    // filter genes based on corrWave  
-    std::vector<QString> filteredDimNames;
+    // option 1 - filter genes based on corr value 
+    /*std::vector<QString> filteredDimNames;
     std::vector<int> filteredDimIndices;
-
     for (int i = 0; i < _enabledDimNames.size(); ++i) {
-
         if (std::abs(corr[i]) >= _corrThreshold) {
             filteredDimNames.push_back(_enabledDimNames[i]);
             filteredDimIndices.push_back(i);
         }
-    }
-    auto end1 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
-    std::cout << "clusterGenes() filtering Elapsed time: " << elapsed1.count() << " ms\n";
+    }*/
 
+    // option 2 - filter genes based on the defined number of genes
+    if (_numGenesThreshold > _enabledDimNames.size()) {
+        qDebug() << "ERROR! clusterGenes(): _numGenesThreshold is larger than the number of genes";
+        return;
+    }
+
+    // create a vector of pairs (absolute correlation value, index)
+    std::vector<std::pair<float, int>> pairs(corr.size());
+    for (size_t i = 0; i < corr.size(); ++i) {
+        pairs[i] = std::make_pair(std::abs(corr[i]), i);
+    }
+
+    // partially sort to find the top _numGenesThreshold elements
+    std::nth_element(pairs.begin(), pairs.begin() + _numGenesThreshold, pairs.end(), std::greater<>());
+
+    std::vector<QString> filteredDimNames;
+    std::vector<int> filteredDimIndices;
+    for (int i = 0; i < _numGenesThreshold; ++i) {
+        filteredDimNames.push_back(_enabledDimNames[pairs[i].second]);
+        filteredDimIndices.push_back(pairs[i].second);
+    }
+     
     qDebug() << "ExampleViewJSPlugin::clusterGenes(): filteredDimNames size: " << filteredDimNames.size();
 
     if (filteredDimNames.size() < _nclust) {
