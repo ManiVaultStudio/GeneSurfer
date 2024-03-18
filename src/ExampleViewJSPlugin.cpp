@@ -2720,6 +2720,8 @@ void ExampleViewJSPlugin::updateSlice() {
     updateScatterOpacity();
     updateScatterColors();
 
+    if (_selectedDimName != "NoneSelected")
+        updateDimView(_selectedDimName);
 }
 
 // serialization

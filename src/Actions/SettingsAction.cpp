@@ -113,11 +113,14 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
         Dataset pickedDataset = mv::data().getDataset(avgExprDataset.getDatasetId());
         _exampleViewJSPlugin->getAvgExprDataset() = pickedDataset;
     }
-
+    qDebug() << ">>>>> SettingsAction::fromVariantMap 1";
     _floodFillAction.fromParentVariantMap(variantMap);
+    qDebug() << ">>>>> SettingsAction::fromVariantMap 2";
     //_correlationModeAction.fromParentVariantMap(variantMap);
     _singleCellModeAction.fromParentVariantMap(variantMap);
+    qDebug() << ">>>>> SettingsAction::fromVariantMap 3";
     _clusteringAction.fromParentVariantMap(variantMap);
+    qDebug() << ">>>>> SettingsAction::fromVariantMap 4";
     _positionAction.fromParentVariantMap(variantMap);  
     _pointPlotAction.fromParentVariantMap(variantMap); 
     _sliceAction.fromParentVariantMap(variantMap);
