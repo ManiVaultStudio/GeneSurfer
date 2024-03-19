@@ -6,6 +6,7 @@
 #include "compute/DataMatrix.h"
 #include "Compute/EnrichmentAnalysis.h"
 #include "Compute/fastcluster.h"
+#include "Compute/CorrFilter.h"
 
 #include "Actions/SettingsAction.h"
 
@@ -142,19 +143,10 @@ private:
     /** Update the _dimView */
     void updateDimView(const QString& selectedDim);
 
-    /** Compute correlations of gene and floodfill wave */
-    void computeCorrWave();
-
-    /** Compute correlations of gene and spatial coordinates - partial x y z */
-    void computeCorrSpatial();
-
     void computeSubsetData(const DataMatrix& dataMatrix, const std::vector<int>& sortedIndices, DataMatrix& subsetDataMatrix);
 
     /** order the 1D vector according to the spatial coordinates */
     void orderSpatially(const std::vector<int>& unsortedIndices, const std::vector<int>& unsortedWave, std::vector<mv::Vector2f>& sortedCoordinates, std::vector<int>& sortedIndices, std::vector<int>& sortedWave);
-
-    /** Compute the correlation between two vectors using Eigen */
-    float computeCorrelation(const Eigen::VectorXf& a, const Eigen::VectorXf& b);
 
     /** Cluster genes based on their pairwise correlations */
     void clusterGenes();
@@ -219,12 +211,13 @@ private:
     Eigen::MatrixXf         _subsetData; // subset of flooded data, sorted spatially
 
     std::vector<mv::Vector2f>     _positions;                 /** Point positions */ 
+
+    // Filtering genes based on correlation
     std::vector<float>      _corrGeneWave;
     std::vector<float>      _corrGeneSpatial;
-    
-    // threshold for filtering genes based on correlation
     //float                   _corrThreshold;
     int                     _numGenesThreshold = 50;
+    corrFilter::CorrFilter  _corrFilter;
 
     int                     _nclust;// number of clusters
     std::unordered_map<QString, int>  _dimNameToClusterLabel; // map dimension name to cluster label

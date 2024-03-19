@@ -63,6 +63,8 @@ set(Compute
     src/Compute/DataTransformations.h
     src/Compute/EnrichmentAnalysis.cpp
     src/Compute/EnrichmentAnalysis.h
+	src/Compute/CorrFilter.cpp
+    src/Compute/CorrFilter.h
 )
 
 set(Actions

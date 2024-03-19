@@ -706,157 +706,6 @@ void ExampleViewJSPlugin::setLabelDataset() {
 
 }
 
-void ExampleViewJSPlugin::computeCorrSpatial() {
-    if (_isFloodIndex.empty()) {
-        qDebug() << "ExampleViewJSPlugin::computeCorrWave(): _isFloodIndex is empty";
-        return;
-    }
-
-    // temporal fix: populate the data in subset for singlecell option
-    DataMatrix tempSubsetData;
-    // 2D
-    if (_isSingleCell) {
-        qDebug() << "ExampleViewJSPlugin::computeCorrSpatial(): _isSingleCell = " << _isSingleCell;
-        if (_avgExprDataset.isValid()) {
-            qDebug() << "ExampleViewJSPlugin::computeCorrSpatial(): _avgExprDataset is valid";
-            DataMatrix populatedSubsetAvg(_sortedFloodIndices.size(), _geneNamesAvgExpr.size());
-            
-#pragma omp parallel for
-            for (int i = 0; i < _geneNamesAvgExpr.size(); ++i) {
-                const Eigen::VectorXf avgValue = _avgExpr(Eigen::all, i);
-                std::vector<float> colSubset(_sortedFloodIndices.size());
-                for (size_t j = 0; j < _sortedFloodIndices.size(); ++j) {
-                    int index = _sortedFloodIndices[j];
-                    QString label = _cellLabels[index]; // Get the cluster alias label name of the cell
-                    colSubset[j] = avgValue[_clusterAliasToRowMap[label]];
-                }
-                populatedSubsetAvg.col(i) = Eigen::Map<Eigen::VectorXf>(colSubset.data(), colSubset.size());
-            }
-            qDebug() << "ExampleViewJSPlugin::computeCorrSpatial(): populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
-            tempSubsetData = populatedSubsetAvg;
-        }
-        else {
-            qDebug() << "ExampleViewJSPlugin::computeCorrSpatial(): _avgExprDataset is not valid";
-            return;
-        }      
-    }
-    else
-    {
-        if (!_sliceDataset.isValid()) { 
-            qDebug() << "ExampleViewJSPlugin::computeCorrSpatial(): 2D + NOT Singlecell";
-            tempSubsetData = _subsetData; 
-        }
-        else {
-            qDebug() << "ExampleViewJSPlugin::computeCorrSpatial(): 3D + NOT Singlecell";
-            tempSubsetData = _subsetData3D; 
-        }
-    }
-
-    if (!_sliceDataset.isValid()) {
-        // 2D dataset 
-        std::vector<float> xCoords, yCoords;
-        for (int index : _sortedFloodIndices) {
-            xCoords.push_back(_positions[index].x);
-            yCoords.push_back(_positions[index].y);
-        }
-
-        Eigen::VectorXf xVector = Eigen::Map<Eigen::VectorXf>(xCoords.data(), xCoords.size());
-        Eigen::VectorXf yVector = Eigen::Map<Eigen::VectorXf>(yCoords.data(), yCoords.size());
-
-        // Precompute means and norms for xVector, yVector
-        float meanX = xVector.mean(), meanY = yVector.mean();
-        Eigen::VectorXf centeredX = xVector - Eigen::VectorXf::Constant(xVector.size(), meanX);
-        Eigen::VectorXf centeredY = yVector - Eigen::VectorXf::Constant(yVector.size(), meanY);
-        float normX = centeredX.squaredNorm(), normY = centeredY.squaredNorm();
-
-        /*std::vector<float> correlationsX(_subsetData.cols());
-        std::vector<float> correlationsY(_subsetData.cols());*/
-        std::vector<float> correlationsX(tempSubsetData.cols());
-        std::vector<float> correlationsY(tempSubsetData.cols());
-        _corrGeneSpatial.clear();
-        //_corrGeneSpatial.resize(_subsetData.cols());
-        _corrGeneSpatial.resize(tempSubsetData.cols());
-
-#pragma omp parallel for
-        //for (int i = 0; i < _subsetData.cols(); ++i) {
-        for (int i = 0; i < tempSubsetData.cols(); ++i) {
-            //Eigen::VectorXf column = _subsetData.col(i);
-            Eigen::VectorXf column = tempSubsetData.col(i);
-            float meanColumn = column.mean();
-            Eigen::VectorXf centeredColumn = column - Eigen::VectorXf::Constant(column.size(), meanColumn);
-            float normColumn = centeredColumn.squaredNorm();
-
-            float correlationX = centeredColumn.dot(centeredX) / std::sqrt(normColumn * normX);
-            float correlationY = centeredColumn.dot(centeredY) / std::sqrt(normColumn * normY);
-
-            if (std::isnan(correlationX)) { correlationX = 0.0f; }
-            if (std::isnan(correlationY)) { correlationY = 0.0f; }
-            correlationsX[i] = correlationX;
-            correlationsY[i] = correlationY;
-            //_corrGeneSpatial[i] = std::abs(correlationX) + std::abs(correlationY);
-            _corrGeneSpatial[i] = (std::abs(correlationX) + std::abs(correlationY))/2;// To do: Test??
-        }
-    }
-    else {
-        // 3D dataset
-        std::vector<float> zPositions;
-        _positionDataset->extractDataForDimension(zPositions, 2);
-
-        std::vector<float> xCoords, yCoords, zCoords;
-        for (int index : _sortedFloodIndices) {
-            xCoords.push_back(_positions[index].x);
-            yCoords.push_back(_positions[index].y);
-            zCoords.push_back(zPositions[index]);
-        }
-
-        Eigen::VectorXf xVector = Eigen::Map<Eigen::VectorXf>(xCoords.data(), xCoords.size());
-        Eigen::VectorXf yVector = Eigen::Map<Eigen::VectorXf>(yCoords.data(), yCoords.size());
-        Eigen::VectorXf zVector = Eigen::Map<Eigen::VectorXf>(zCoords.data(), zCoords.size());
-
-        // Precompute means and norms for xVector, yVector, zVector
-        float meanX = xVector.mean(), meanY = yVector.mean(), meanZ = zVector.mean();
-        Eigen::VectorXf centeredX = xVector - Eigen::VectorXf::Constant(xVector.size(), meanX);
-        Eigen::VectorXf centeredY = yVector - Eigen::VectorXf::Constant(yVector.size(), meanY);
-        Eigen::VectorXf centeredZ = zVector - Eigen::VectorXf::Constant(zVector.size(), meanZ);
-        float normX = centeredX.squaredNorm(), normY = centeredY.squaredNorm(), normZ = centeredZ.squaredNorm();
-
-        /*std::vector<float> correlationsX(_subsetData3D.cols());
-        std::vector<float> correlationsY(_subsetData3D.cols());
-        std::vector<float> correlationsZ(_subsetData3D.cols());*/
-        std::vector<float> correlationsX(tempSubsetData.cols());
-        std::vector<float> correlationsY(tempSubsetData.cols());
-        std::vector<float> correlationsZ(tempSubsetData.cols());
-
-        _corrGeneSpatial.clear();
-        //_corrGeneSpatial.resize(_subsetData3D.cols());
-        _corrGeneSpatial.resize(tempSubsetData.cols());
-
-#pragma omp parallel for
-        //for (int i = 0; i < _subsetData3D.cols(); ++i) {
-        for (int i = 0; i < tempSubsetData.cols(); ++i) {
-            //Eigen::VectorXf column = _subsetData3D.col(i);
-            Eigen::VectorXf column = tempSubsetData.col(i);
-            
-            float meanColumn = column.mean();
-            Eigen::VectorXf centeredColumn = column - Eigen::VectorXf::Constant(column.size(), meanColumn);
-            float normColumn = centeredColumn.squaredNorm();
-
-            float correlationX = centeredColumn.dot(centeredX) / std::sqrt(normColumn * normX);
-            float correlationY = centeredColumn.dot(centeredY) / std::sqrt(normColumn * normY);
-            float correlationZ = centeredColumn.dot(centeredZ) / std::sqrt(normColumn * normZ);
-
-            if (std::isnan(correlationX)) { correlationX = 0.0f; }
-            if (std::isnan(correlationY)) { correlationY = 0.0f; }
-            if (std::isnan(correlationZ)) { correlationZ = 0.0f; }
-            correlationsX[i] = correlationX;
-            correlationsY[i] = correlationY;
-            correlationsZ[i] = correlationZ;
-            _corrGeneSpatial[i] = std::abs(correlationX) + std::abs(correlationY) + std::abs(correlationZ);
-            //_corrGeneSpatial[i] = (std::abs(correlationX) + std::abs(correlationY) + std::abs(correlationZ))/3;// To Do: Test?? normalization?
-        }
-    }
-}
-
 void ExampleViewJSPlugin::updateSelection()
 {
     //TO DO: seperate plotting part and computation part, only update plotting part when plotting settings are changed
@@ -881,7 +730,7 @@ void ExampleViewJSPlugin::updateSelection()
 
     // compute subset and correlation
     if (_isSingleCell != true) {
-        
+
         if (!_sliceDataset.isValid()) {
             computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData); // TO DO: getBaseData() or getBaseNormalizedData()      
         }
@@ -902,59 +751,87 @@ void ExampleViewJSPlugin::updateSelection()
             std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
             std::cout << "computeSubsetData() 3D Elapsed time: " << elapsed2.count() << " ms\n";
         }
+    
 
         if (_isCorrSpatial) {
             auto start3 = std::chrono::high_resolution_clock::now();
-            computeCorrSpatial();
+
+            if (!_sliceDataset.isValid()) {
+                qDebug() << "Spatial corr + ST + 2D";
+                _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneSpatial);
+            }
+            else {
+                qDebug() << "Spatial corr + ST + 3D";
+                std::vector<float> zPositions;
+                _positionDataset->extractDataForDimension(zPositions, 2);
+                _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, _corrGeneSpatial);
+            }
+            
             auto end3 = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
-            std::cout << "computeCorrSpatial() Elapsed time: " << elapsed3.count() << " ms\n";
+            std::cout << "computeCorrelationVector() Elapsed time: " << elapsed3.count() << " ms\n";
         }
         else {
+            // corrWave + ST 
             auto start3 = std::chrono::high_resolution_clock::now();
-            computeCorrWave();
+
+            if (!_sliceDataset.isValid()) {
+                // corrWave + ST +2D
+                qDebug() << "mode: HD corr + ST +2D";
+                _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData, _corrGeneWave);
+            }
+            else {
+                // corrWave + ST +3D
+                qDebug() << "mode: HD corr + ST +3D";
+                _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData3D, _corrGeneWave);
+            }          
+
             auto end3 = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
-            std::cout << "computeCorrWave() Elapsed time: " << elapsed3.count() << " ms\n";
+            std::cout << "computeCorrelationVector() Elapsed time: " << elapsed3.count() << " ms\n";
         }
     } else {
         // single cell option
         if (!_sliceDataset.isValid()) {
             // single cell + 2D
-            // To DO: needs to be reorganised - avoid redundant code
             countLabelDistribution();
             computeAvgExprSubset();
 
+            
             _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
             _subsetData = _subsetDataAvgOri; // row for clusters, col for genes
             qDebug() << "ExampleViewJSPlugin::updateSelection(): _subsetData size: " << _subsetData.rows() << " " << _subsetData.cols();
 
             if (_isCorrSpatial) {
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): mode: singlecell + spatial corr + 2D";
-                computeCorrSpatial();
+                qDebug() << "mode: singlecell + spatial corr + 2D";
+                
+                // first populate the data in subset for singlecell option - TO DO: seperate this part in a function
+                DataMatrix populatedSubsetAvg(_sortedFloodIndices.size(), _geneNamesAvgExpr.size());
+
+                #pragma omp parallel for
+                for (int i = 0; i < _geneNamesAvgExpr.size(); ++i) 
+                {
+                    const Eigen::VectorXf avgValue = _avgExpr(Eigen::all, i);
+                    std::vector<float> colSubset(_sortedFloodIndices.size());
+                    for (size_t j = 0; j < _sortedFloodIndices.size(); ++j) 
+                    {
+                        int index = _sortedFloodIndices[j];
+                        QString label = _cellLabels[index]; // Get the cluster alias label name of the cell
+                        colSubset[j] = avgValue[_clusterAliasToRowMap[label]];
+                    }
+                    populatedSubsetAvg.col(i) = Eigen::Map<Eigen::VectorXf>(colSubset.data(), colSubset.size());
+                }
+                qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
+
+                _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneSpatial);
+                qDebug() << "computeCorrelationVector(): _corrGeneSpatial size: " << _corrGeneSpatial.size();
+
             }
             else {
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): mode: singlecell + HD corr + 2D";
-                // compute corrWave here - test temp code
-                int numEnabledDims = _subsetData.cols(); // genes
-                Eigen::VectorXf eigenWaveNumbers(_waveAvg.size()); // to do: should check if _sortedWaveNumbers is empty
-                std::copy(_waveAvg.begin(), _waveAvg.end(), eigenWaveNumbers.data());
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): eigenWaveNumbers size: " << eigenWaveNumbers.size();
+                qDebug() << "mode: singlecell + HD corr + 2D";
+                _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneWave);
 
-                Eigen::VectorXf centeredWaveNumbers = eigenWaveNumbers - Eigen::VectorXf::Constant(eigenWaveNumbers.size(), eigenWaveNumbers.mean());
-                float waveNumbersNorm = centeredWaveNumbers.squaredNorm();
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): waveNumbersNorm: " << waveNumbersNorm;
-
-                _corrGeneWave.clear();
-                _corrGeneWave.resize(numEnabledDims);
-#pragma omp parallel for
-                for (int col = 0; col < numEnabledDims; ++col) {
-                    Eigen::VectorXf centered = _subsetData.col(col) - Eigen::VectorXf::Constant(_subsetData.col(col).size(), _subsetData.col(col).mean());
-                    float correlation = centered.dot(centeredWaveNumbers) / std::sqrt(centered.squaredNorm() * waveNumbersNorm);
-                    if (std::isnan(correlation)) { correlation = 0.0f; }
-                    _corrGeneWave[col] = correlation;
-                }
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): _corrGeneWave size: " << _corrGeneWave.size();
+                qDebug() << "computeCorrelationVector(): _corrGeneWave size: " << _corrGeneWave.size();
 
                 // output corrWave
                 /*for (float value : _corrGeneWave) {
@@ -969,7 +846,7 @@ void ExampleViewJSPlugin::updateSelection()
                     sumOfSquares += (value - mean) * (value - mean);
                 }
                 float stdDev = std::sqrt(sumOfSquares / _corrGeneWave.size());
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): corrWave mean: " << mean << " stdDev: " << stdDev;
+                qDebug() << "computeCorrelationVector(): corrWave mean: " << mean << " stdDev: " << stdDev;
             }
         }
         else {
@@ -984,32 +861,36 @@ void ExampleViewJSPlugin::updateSelection()
             qDebug() << "ExampleViewJSPlugin::updateSelection(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
 
             if (_isCorrSpatial) {
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): mode: singlecell + spatial corr + 3D";
-                computeCorrSpatial();
-            }
-            else {
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): mode: singlecell + HD corr + 3D";
+                qDebug() << "mode: singlecell + spatial corr + 3D";
 
-                // compute corrWave here - test temp code
-                int numEnabledDims = _subsetData3D.cols(); // genes
-                Eigen::VectorXf eigenWaveNumbers(_waveAvg.size()); // to do: should check if _sortedWaveNumbers is empty
-                std::copy(_waveAvg.begin(), _waveAvg.end(), eigenWaveNumbers.data());
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): eigenWaveNumbers size: " << eigenWaveNumbers.size();
+                 // first populate the data in subset for singlecell option - TO DO: seperate this part in a function
+                DataMatrix populatedSubsetAvg(_sortedFloodIndices.size(), _geneNamesAvgExpr.size());
 
-                Eigen::VectorXf centeredWaveNumbers = eigenWaveNumbers - Eigen::VectorXf::Constant(eigenWaveNumbers.size(), eigenWaveNumbers.mean());
-                float waveNumbersNorm = centeredWaveNumbers.squaredNorm();
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): waveNumbersNorm: " << waveNumbersNorm;
-
-                _corrGeneWave.clear();
-                _corrGeneWave.resize(numEnabledDims);
-#pragma omp parallel for
-                for (int col = 0; col < numEnabledDims; ++col) {
-                    Eigen::VectorXf centered = _subsetData3D.col(col) - Eigen::VectorXf::Constant(_subsetData3D.col(col).size(), _subsetData3D.col(col).mean());
-                    float correlation = centered.dot(centeredWaveNumbers) / std::sqrt(centered.squaredNorm() * waveNumbersNorm);
-                    if (std::isnan(correlation)) { correlation = 0.0f; }
-                    _corrGeneWave[col] = correlation;
+                #pragma omp parallel for
+                for (int i = 0; i < _geneNamesAvgExpr.size(); ++i) 
+                {
+                    const Eigen::VectorXf avgValue = _avgExpr(Eigen::all, i);
+                    std::vector<float> colSubset(_sortedFloodIndices.size());
+                    for (size_t j = 0; j < _sortedFloodIndices.size(); ++j) 
+                    {
+                        int index = _sortedFloodIndices[j];
+                        QString label = _cellLabels[index]; // Get the cluster alias label name of the cell
+                        colSubset[j] = avgValue[_clusterAliasToRowMap[label]];
+                    }
+                    populatedSubsetAvg.col(i) = Eigen::Map<Eigen::VectorXf>(colSubset.data(), colSubset.size());
                 }
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): _corrGeneWave size: " << _corrGeneWave.size();
+                qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
+
+                std::vector<float> zPositions;
+                _positionDataset->extractDataForDimension(zPositions, 2);
+                _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, zPositions, _corrGeneSpatial);
+            }
+            else 
+            {
+                qDebug() << "mode: singlecell + HD corr + 3D";
+
+                _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneWave);
+                qDebug() << "computeCorrelationVector(): _corrGeneWave size: " << _corrGeneWave.size();
 
                 // output corrWave
                 /*for (float value : _corrGeneWave) {
@@ -1024,7 +905,8 @@ void ExampleViewJSPlugin::updateSelection()
                     sumOfSquares += (value - mean) * (value - mean);
                 }
                 float stdDev = std::sqrt(sumOfSquares / _corrGeneWave.size());
-                qDebug() << "ExampleViewJSPlugin::updateSelection(): corrWave mean: " << mean << " stdDev: " << stdDev;
+
+                qDebug() << "computeCorrelationVector(): corrWave mean: " << mean << " stdDev: " << stdDev;
             }
         }
     }
@@ -1476,17 +1358,6 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
 
 }
 
-
-float ExampleViewJSPlugin::computeCorrelation(const Eigen::VectorXf& a, const Eigen::VectorXf& b) {
-    // TO DO: might not needed? or only for 2D dataset
-    Eigen::VectorXf a_centered = a - Eigen::VectorXf::Constant(a.size(), a.mean());
-    Eigen::VectorXf b_centered = b - Eigen::VectorXf::Constant(b.size(), b.mean());
-    float correlation = a_centered.dot(b_centered) /
-        std::sqrt(a_centered.squaredNorm() * b_centered.squaredNorm());
-    if (std::isnan(correlation)) { return 0.0f; } // TO DO: check if this is a good way to handle nan in corr computation
-    return correlation;
-}
-
 void ExampleViewJSPlugin::computeSubsetData(const DataMatrix& dataMatrix, const std::vector<int>& sortedIndices, DataMatrix& subsetDataMatrix)
 {
     if (_isFloodIndex.empty()) {
@@ -1510,52 +1381,6 @@ void ExampleViewJSPlugin::computeSubsetData(const DataMatrix& dataMatrix, const 
 
 }
 
-void ExampleViewJSPlugin::computeCorrWave()
-{
-    if (_isFloodIndex.empty()) {
-        qDebug() << "ExampleViewJSPlugin::computeCorrWave(): _isFloodIndex is empty";
-        return;
-    }
-
-    int numEnabledDims = _enabledDimNames.size();
-
-    // compute correlation between local gene expressions and waveNumbers (sorted)
-    // convert sortedWaveNumbers to an Eigen vector
-
-    if (!_sliceDataset.isValid()) {
-        // 2D dataset
-        Eigen::VectorXf eigenWaveNumbers(_sortedWaveNumbers.size());
-        std::copy(_sortedWaveNumbers.begin(), _sortedWaveNumbers.end(), eigenWaveNumbers.data());
-
-        _corrGeneWave.clear();
-        for (int col = 0; col < numEnabledDims; ++col) {
-            float correlation = computeCorrelation(_subsetData.col(col), eigenWaveNumbers);
-            _corrGeneWave.push_back(correlation);
-        }
-    }
-    else {
-        // 3D dataset
-
-       // compute the correlation for floodfill in 3D
-        Eigen::VectorXf eigenWaveNumbers(_sortedWaveNumbers.size());
-        std::copy(_sortedWaveNumbers.begin(), _sortedWaveNumbers.end(), eigenWaveNumbers.data());
-
-        Eigen::VectorXf centeredWaveNumbers = eigenWaveNumbers - Eigen::VectorXf::Constant(eigenWaveNumbers.size(), eigenWaveNumbers.mean());
-        float waveNumbersNorm = centeredWaveNumbers.squaredNorm();
-
-        _corrGeneWave.clear();
-        _corrGeneWave.resize(numEnabledDims); 
-#pragma omp parallel for
-        for (int col = 0; col < numEnabledDims; ++col) {
-            Eigen::VectorXf centered = _subsetData3D.col(col) - Eigen::VectorXf::Constant(_subsetData3D.col(col).size(), _subsetData3D.col(col).mean());
-            float correlation = centered.dot(centeredWaveNumbers) / std::sqrt(centered.squaredNorm() * waveNumbersNorm);
-            if (std::isnan(correlation)) { correlation = 0.0f; }
-            _corrGeneWave[col] = correlation;
-        }
-    }
-
-    qDebug() << "ExampleViewJSPlugin::computeCorrWave():corrGeneWave is computed";
-}
 
 void ExampleViewJSPlugin::updateFloodFill()
 {
@@ -2022,9 +1847,11 @@ void ExampleViewJSPlugin::clusterGenes()
 
     std::vector<float> corr;
     if (_isCorrSpatial) {
+        qDebug() << "ExampleViewJSPlugin::clusterGenes(): SpatialCorr";
         corr = _corrGeneSpatial;
     }
     else {
+        qDebug() << "ExampleViewJSPlugin::clusterGenes(): HDCorr";
         corr = _corrGeneWave;
     }
 
@@ -2078,7 +1905,7 @@ void ExampleViewJSPlugin::clusterGenes()
     }
 
     // compute the correlation between each pair of the filtered genes
-    // TO DO: can call computeCorrWave() here to avoid repeated code
+    // TO DO: refactoring this part to CorrFilter class
     auto start2 = std::chrono::high_resolution_clock::now();
     Eigen::MatrixXf corrFilteredGene(filteredDimNames.size(), filteredDimNames.size());
 
@@ -2088,41 +1915,12 @@ void ExampleViewJSPlugin::clusterGenes()
     }
 
     if (!_sliceDataset.isValid()) {
-        // 2D 
-        for (int col1 = 0; col1 < filteredDimNames.size(); ++col1) {
-            for (int col2 = col1; col2 < filteredDimNames.size(); ++col2) {
-                int index1 = dimNameToIndex[filteredDimNames[col1]];
-                int index2 = dimNameToIndex[filteredDimNames[col2]];
-
-                float correlation = computeCorrelation(_subsetData.col(index1), _subsetData.col(index2));
-                corrFilteredGene(col1, col2) = correlation;
-                corrFilteredGene(col2, col1) = correlation;
-            }
-        }
+        qDebug() << "computePairwiseCorrelationVector: 2D dataset";
+        _corrFilter.computePairwiseCorrelationVector(filteredDimNames, dimNameToIndex, _subsetData, corrFilteredGene);
     } 
     else {
-        // 3D dataset - compute correlation for all floodfill indices
-
-        std::vector<Eigen::VectorXf> centeredVectors(filteredDimNames.size());// precompute mean 
-        std::vector<float> norms(filteredDimNames.size());
-
-        for (int i = 0; i < filteredDimNames.size(); ++i) {
-            int index = dimNameToIndex[filteredDimNames[i]];
-            Eigen::VectorXf centered = _subsetData3D.col(index) - Eigen::VectorXf::Constant(_subsetData3D.col(index).size(), _subsetData3D.col(index).mean());
-            centeredVectors[i] = centered;
-            norms[i] = centered.squaredNorm();
-        }
-
-#pragma omp parallel for
-        for (int col1 = 0; col1 < filteredDimNames.size(); ++col1) {
-            for (int col2 = col1; col2 < filteredDimNames.size(); ++col2) {
-                float correlation = centeredVectors[col1].dot(centeredVectors[col2]) / std::sqrt(norms[col1] * norms[col2]);
-                if (std::isnan(correlation)) { correlation = 0.0f; } // TO DO: check if this is a good way to handle nan in corr computation
-
-                corrFilteredGene(col1, col2) = correlation;
-                corrFilteredGene(col2, col1) = correlation;
-            }
-        }
+        qDebug() << "computePairwiseCorrelationVector: 3D dataset";
+        _corrFilter.computePairwiseCorrelationVector(filteredDimNames, dimNameToIndex, _subsetData3D, corrFilteredGene);
     }
 
     auto end2 = std::chrono::high_resolution_clock::now();
