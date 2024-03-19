@@ -186,6 +186,9 @@ private:
     /** get a subset of average expression of each cluster */
     void computeAvgExprSubset();
 
+    /** populate the avg expr values to spatil domain */
+    DataMatrix populateAvgExprToSpatial();
+
 private:
     DataStorage             _dataStore;
 

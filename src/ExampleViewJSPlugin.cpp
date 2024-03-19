@@ -806,25 +806,19 @@ void ExampleViewJSPlugin::updateSelection()
                 qDebug() << "mode: singlecell + spatial corr + 2D";
                 
                 // first populate the data in subset for singlecell option - TO DO: seperate this part in a function
-                DataMatrix populatedSubsetAvg(_sortedFloodIndices.size(), _geneNamesAvgExpr.size());
-
-                #pragma omp parallel for
-                for (int i = 0; i < _geneNamesAvgExpr.size(); ++i) 
-                {
-                    const Eigen::VectorXf avgValue = _avgExpr(Eigen::all, i);
-                    std::vector<float> colSubset(_sortedFloodIndices.size());
-                    for (size_t j = 0; j < _sortedFloodIndices.size(); ++j) 
-                    {
-                        int index = _sortedFloodIndices[j];
-                        QString label = _cellLabels[index]; // Get the cluster alias label name of the cell
-                        colSubset[j] = avgValue[_clusterAliasToRowMap[label]];
-                    }
-                    populatedSubsetAvg.col(i) = Eigen::Map<Eigen::VectorXf>(colSubset.data(), colSubset.size());
-                }
-                qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
+                DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
 
                 _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneSpatial);
                 qDebug() << "computeCorrelationVector(): _corrGeneSpatial size: " << _corrGeneSpatial.size();
+
+                // output mean and stdDev of corrGeneSpatial
+                float mean = std::accumulate(_corrGeneSpatial.begin(), _corrGeneSpatial.end(), 0.0f) / _corrGeneSpatial.size();
+                float sumOfSquares = 0.0f;
+                for (float value : _corrGeneSpatial) {
+                    sumOfSquares += (value - mean) * (value - mean);
+                }
+                float stdDev = std::sqrt(sumOfSquares / _corrGeneSpatial.size());
+                qDebug() << "computeCorrelationVector(): _corrGeneSpatial mean: " << mean << " stdDev: " << stdDev;
 
             }
             else {
@@ -847,6 +841,13 @@ void ExampleViewJSPlugin::updateSelection()
                 }
                 float stdDev = std::sqrt(sumOfSquares / _corrGeneWave.size());
                 qDebug() << "computeCorrelationVector(): corrWave mean: " << mean << " stdDev: " << stdDev;
+
+                auto maxIt = std::max_element(_corrGeneWave.begin(), _corrGeneWave.end());
+                auto minIt = std::min_element(_corrGeneWave.begin(), _corrGeneWave.end());
+                float maxVal = (maxIt != _corrGeneWave.end()) ? *maxIt : std::numeric_limits<float>::lowest();
+                float minVal = (minIt != _corrGeneWave.end()) ? *minIt : std::numeric_limits<float>::max();
+
+                qDebug() << "computeCorrelationVector(): corrWave mean: " << mean << ", stdDev: " << stdDev << ", max: " << maxVal << ", min: " << minVal;
             }
         }
         else {
@@ -863,23 +864,8 @@ void ExampleViewJSPlugin::updateSelection()
             if (_isCorrSpatial) {
                 qDebug() << "mode: singlecell + spatial corr + 3D";
 
-                 // first populate the data in subset for singlecell option - TO DO: seperate this part in a function
-                DataMatrix populatedSubsetAvg(_sortedFloodIndices.size(), _geneNamesAvgExpr.size());
-
-                #pragma omp parallel for
-                for (int i = 0; i < _geneNamesAvgExpr.size(); ++i) 
-                {
-                    const Eigen::VectorXf avgValue = _avgExpr(Eigen::all, i);
-                    std::vector<float> colSubset(_sortedFloodIndices.size());
-                    for (size_t j = 0; j < _sortedFloodIndices.size(); ++j) 
-                    {
-                        int index = _sortedFloodIndices[j];
-                        QString label = _cellLabels[index]; // Get the cluster alias label name of the cell
-                        colSubset[j] = avgValue[_clusterAliasToRowMap[label]];
-                    }
-                    populatedSubsetAvg.col(i) = Eigen::Map<Eigen::VectorXf>(colSubset.data(), colSubset.size());
-                }
-                qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
+                // first populate the data in subset for singlecell option - TO DO: seperate this part in a function
+                DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
 
                 std::vector<float> zPositions;
                 _positionDataset->extractDataForDimension(zPositions, 2);
@@ -931,6 +917,28 @@ void ExampleViewJSPlugin::updateSelection()
     std::cout << "updateSelection() Elapsed time: " << elapsed.count() << " ms\n";
     qDebug() << "ExampleViewJSPlugin::updateSelection(): end... ";
 
+}
+
+DataMatrix ExampleViewJSPlugin::populateAvgExprToSpatial() {
+    // populate the data in subset for singlecell option
+    DataMatrix populatedSubsetAvg(_sortedFloodIndices.size(), _geneNamesAvgExpr.size());
+
+#pragma omp parallel for
+    for (int i = 0; i < _geneNamesAvgExpr.size(); ++i)
+    {
+        const Eigen::VectorXf avgValue = _avgExpr(Eigen::all, i);
+        std::vector<float> colSubset(_sortedFloodIndices.size());
+        for (size_t j = 0; j < _sortedFloodIndices.size(); ++j)
+        {
+            int index = _sortedFloodIndices[j];
+            QString label = _cellLabels[index]; // Get the cluster alias label name of the cell
+            colSubset[j] = avgValue[_clusterAliasToRowMap[label]];
+        }
+        populatedSubsetAvg.col(i) = Eigen::Map<Eigen::VectorXf>(colSubset.data(), colSubset.size());
+    }
+    qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
+
+    return populatedSubsetAvg;
 }
 
 void ExampleViewJSPlugin::setCorrelationMode(bool mode) {
