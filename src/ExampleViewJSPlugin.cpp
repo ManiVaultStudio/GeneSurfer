@@ -275,7 +275,13 @@ void ExampleViewJSPlugin::init()
     // Update point selection when the position dataset data changes
     //connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, &ExampleViewJSPlugin::updateSelection);// TO DO
 
-    connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, &ExampleViewJSPlugin::updateFloodFill);
+    //connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, &ExampleViewJSPlugin::updateFloodFill);// Test March20
+
+    // Test March20
+    connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, [this]() {
+        _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
+        updateSelection();
+        });
 
     _client = new EnrichmentAnalysis(this);
     connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &ExampleViewJSPlugin::updateEnrichmentTable);
@@ -453,7 +459,9 @@ void ExampleViewJSPlugin::updateFloodFillDataset()
     qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets name: " << _floodFillDataset->text();
     qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets size: " << _floodFillDataset->getNumPoints();
      
-    updateFloodFill();
+    _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
+
+    updateSelection();
 }
 
 void ExampleViewJSPlugin::updateSelectedDim() {
@@ -847,7 +855,7 @@ void ExampleViewJSPlugin::updateSelection()
                 float maxVal = (maxIt != _corrGeneWave.end()) ? *maxIt : std::numeric_limits<float>::lowest();
                 float minVal = (minIt != _corrGeneWave.end()) ? *minIt : std::numeric_limits<float>::max();
 
-                qDebug() << "computeCorrelationVector(): corrWave mean: " << mean << ", stdDev: " << stdDev << ", max: " << maxVal << ", min: " << minVal;
+                qDebug() << "computeCorrelationVector(): max: " << maxVal << ", min: " << minVal;
             }
         }
         else {

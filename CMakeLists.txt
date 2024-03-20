@@ -65,6 +65,8 @@ set(Compute
     src/Compute/EnrichmentAnalysis.h
 	src/Compute/CorrFilter.cpp
     src/Compute/CorrFilter.h
+	src/Compute/FloodSubset.cpp
+    src/Compute/FloodSubset.h
 )
 
 set(Actions

@@ -7,6 +7,7 @@
 #include "Compute/EnrichmentAnalysis.h"
 #include "Compute/fastcluster.h"
 #include "Compute/CorrFilter.h"
+#include "Compute/FloodSubset.h"
 
 #include "Actions/SettingsAction.h"
 
@@ -197,24 +198,26 @@ private:
     QTableWidget*           _tableWidget; // table widget for enrichment analysis
 
     DropWidget*             _dropWidget;        // Widget for drag and drop behavior
+
+    // Dataset
     mv::Dataset<Points>   _currentDataSet;    // Reference to currently shown data set
     mv::Dataset<Points>   _positionDataset;   /** Smart pointer to points dataset for point position */
     mv::Dataset<Points>   _positionSourceDataset;     /** Smart pointer to source of the points dataset for point position (if any) */
+    std::vector<mv::Vector2f>     _positions;                 /** Point positions */
     int32_t                 _numPoints;                 /** Number of point positions */
     std::vector<QString>    _enabledDimNames;
-
     bool                    _dataInitialized = false;
-    std::vector<bool>       _isFloodIndex; //direct mapping for flood indices
-    mv::Dataset<Points>   _floodFillDataset; // dataset for flood fill
-
     //int32_t                 _cursorPoint = 0; // index of the point under the cursor
 
+    // FloodFill subset computing
+    std::vector<bool>       _isFloodIndex; //direct mapping for flood indices
+    mv::Dataset<Points>   _floodFillDataset; // dataset for flood fill
     std::vector<int>        _sortedFloodIndices;// spatially sorted indices of flood fill at the current cursor position
     std::vector<int>        _sortedWaveNumbers;// spatially sorted wave numbers of flood fill at the current cursor position
     Eigen::MatrixXf         _subsetData; // subset of flooded data, sorted spatially
+    FloodSubset             _floodSubset; // flood subset computing
 
-    std::vector<mv::Vector2f>     _positions;                 /** Point positions */ 
-
+    
     // Filtering genes based on correlation
     std::vector<float>      _corrGeneWave;
     std::vector<float>      _corrGeneSpatial;
