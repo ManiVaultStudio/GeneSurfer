@@ -741,189 +741,91 @@ void ExampleViewJSPlugin::updateSelection()
         _scatterViews[i]->setProjectionName("Gene cluster: " + clusterIdx); // TO DO: remove redundant code
     }
 
-    // compute subset and correlation
-    if (_isSingleCell != true) {
-
-        if (!_sliceDataset.isValid()) {
-            _floodSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData);
-        }
-        else {
-            // 3D dataset
-
-            //subset data only contains the onSliceFloodIndice
-            auto start1 = std::chrono::high_resolution_clock::now();
-
-            _floodSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData);
-
-            auto end1 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
-            std::cout << "computeSubsetData() on slice Elapsed time: " << elapsed1.count() << " ms\n";
-
-            //subset data contains all floodfill indices
-            auto start2 = std::chrono::high_resolution_clock::now();
-
-            _floodSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
-
-            auto end2 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
-            std::cout << "computeSubsetData 3D Elapsed time: " << elapsed2.count() << " ms\n";
-        }
-    
-
-        if (_isCorrSpatial) {
-            auto start3 = std::chrono::high_resolution_clock::now();
-
-            if (!_sliceDataset.isValid()) {
-                qDebug() << "Spatial corr + ST + 2D";
-                _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneSpatial);
-            }
-            else {
-                qDebug() << "Spatial corr + ST + 3D";
-                std::vector<float> zPositions;
-                _positionDataset->extractDataForDimension(zPositions, 2);
-                _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, _corrGeneSpatial);
-            }
-            
-            auto end3 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
-            std::cout << "computeCorrelationVector() Elapsed time: " << elapsed3.count() << " ms\n";
-        }
-        else {
-            // corrWave + ST 
-            auto start3 = std::chrono::high_resolution_clock::now();
-
-            if (!_sliceDataset.isValid()) {
-                // corrWave + ST +2D
-                qDebug() << "mode: HD corr + ST +2D";
-                _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData, _corrGeneWave);
-            }
-            else {
-                // corrWave + ST +3D
-                qDebug() << "mode: HD corr + ST +3D";
-                _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData3D, _corrGeneWave);
-            }          
-
-            auto end3 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
-            std::cout << "computeCorrelationVector() Elapsed time: " << elapsed3.count() << " ms\n";
-        }
-    } else {
-        // single cell option
-        if (!_sliceDataset.isValid()) {
-            // single cell + 2D
-            countLabelDistribution();
-            _floodSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
-                         
-            _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
-            _subsetData = _subsetDataAvgOri; // row for clusters, col for genes
-            qDebug() << "ExampleViewJSPlugin::updateSelection(): _subsetData size: " << _subsetData.rows() << " " << _subsetData.cols();
-
-            if (_isCorrSpatial) {
-                qDebug() << "mode: singlecell + spatial corr + 2D";
-                
-                // first populate the data in subset for singlecell option - TO DO: seperate this part in a function
-                DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
-
-                _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneSpatial);
-                qDebug() << "computeCorrelationVector(): _corrGeneSpatial size: " << _corrGeneSpatial.size();
-
-                // output mean and stdDev of corrGeneSpatial
-                float mean = std::accumulate(_corrGeneSpatial.begin(), _corrGeneSpatial.end(), 0.0f) / _corrGeneSpatial.size();
-                float sumOfSquares = 0.0f;
-                for (float value : _corrGeneSpatial) {
-                    sumOfSquares += (value - mean) * (value - mean);
-                }
-                float stdDev = std::sqrt(sumOfSquares / _corrGeneSpatial.size());
-                qDebug() << "computeCorrelationVector(): _corrGeneSpatial mean: " << mean << " stdDev: " << stdDev;
-
-            }
-            else {
-                qDebug() << "mode: singlecell + HD corr + 2D";
-                _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneWave);
-
-                qDebug() << "computeCorrelationVector(): _corrGeneWave size: " << _corrGeneWave.size();
-
-                // output corrWave
-                /*for (float value : _corrGeneWave) {
-                    std::cout << value << " ";
-                }
-                std::cout << std::endl;*/
-
-                // output mean and stdDev of corrWave
-                float mean = std::accumulate(_corrGeneWave.begin(), _corrGeneWave.end(), 0.0f) / _corrGeneWave.size();
-                float sumOfSquares = 0.0f;
-                for (float value : _corrGeneWave) {
-                    sumOfSquares += (value - mean) * (value - mean);
-                }
-                float stdDev = std::sqrt(sumOfSquares / _corrGeneWave.size());
-                qDebug() << "computeCorrelationVector(): corrWave mean: " << mean << " stdDev: " << stdDev;
-
-                auto maxIt = std::max_element(_corrGeneWave.begin(), _corrGeneWave.end());
-                auto minIt = std::min_element(_corrGeneWave.begin(), _corrGeneWave.end());
-                float maxVal = (maxIt != _corrGeneWave.end()) ? *maxIt : std::numeric_limits<float>::lowest();
-                float minVal = (minIt != _corrGeneWave.end()) ? *minIt : std::numeric_limits<float>::max();
-
-                qDebug() << "computeCorrelationVector(): max: " << maxVal << ", min: " << minVal;
-            }
-        }
-        else {
-            // single cell + 3D
-            // temporal code for corrWave - single cell option
-            // test temp code only for ABC Atlas
-            countLabelDistribution();
-            _floodSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
-
-            _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
-            _subsetData3D = _subsetDataAvgOri; // row for clusters, col for genes
-            qDebug() << "ExampleViewJSPlugin::updateSelection(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
-
-            if (_isCorrSpatial) {
-                qDebug() << "mode: singlecell + spatial corr + 3D";
-
-                // first populate the data in subset for singlecell option - TO DO: seperate this part in a function
-                DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
-
-                std::vector<float> zPositions;
-                _positionDataset->extractDataForDimension(zPositions, 2);
-                _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, zPositions, _corrGeneSpatial);
-            }
-            else 
-            {
-                qDebug() << "mode: singlecell + HD corr + 3D";
-
-                _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneWave);
-                qDebug() << "computeCorrelationVector(): _corrGeneWave size: " << _corrGeneWave.size();
-
-                // output corrWave
-                /*for (float value : _corrGeneWave) {
-                    std::cout << value << " ";
-                }
-                std::cout << std::endl;*/
-
-                // output mean and stdDev of corrWave
-                float mean = std::accumulate(_corrGeneWave.begin(), _corrGeneWave.end(), 0.0f) / _corrGeneWave.size();
-                float sumOfSquares = 0.0f;
-                for (float value : _corrGeneWave) {
-                    sumOfSquares += (value - mean) * (value - mean);
-                }
-                float stdDev = std::sqrt(sumOfSquares / _corrGeneWave.size());
-
-                qDebug() << "computeCorrelationVector(): corrWave mean: " << mean << " stdDev: " << stdDev;
-            }
-        }
+    ////////////////////
+    // Compute subset //
+    ////////////////////
+    if (!_isSingleCell && !_sliceDataset.isValid()) {
+        qDebug() << ">>>>>Compute subset: 2D + ST";
+        _floodSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData);
+    }
+    if (!_isSingleCell && _sliceDataset.isValid()) {
+        qDebug() << ">>>>>Compute subset: 3D + ST";
+        //subset data only contains the onSliceFloodIndice
+        _floodSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData);
+        //subset data contains all floodfill indices     
+        _floodSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
+    }
+    if (_isSingleCell && !_sliceDataset.isValid()) {
+        qDebug() << ">>>>>Compute subset: 2D + SingleCell";
+        countLabelDistribution();
+        _floodSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
+        _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
+        _subsetData = _subsetDataAvgOri;
+    }
+    if (_isSingleCell && _sliceDataset.isValid()) {
+        qDebug() << ">>>>>Compute subset: 3D + SingleCell";
+        countLabelDistribution();
+        _floodSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
+        _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
+        _subsetData3D = _subsetDataAvgOri;
     }
 
-    clusterGenes();
+    //////////////////////////////////////////////
+    // Compute correlation for filtering genes //
+    /////////////////////////////////////////////
+    
+    // -------------- Spatial Correlation --------------
+    if (!_isSingleCell && !_sliceDataset.isValid() && _isCorrSpatial) {
+        qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorr";
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneSpatial);
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _isCorrSpatial) {
+        qDebug() << ">>>>>Compute subset: 3D + ST + SpatialCorr";
+        std::vector<float> zPositions;
+        _positionDataset->extractDataForDimension(zPositions, 2);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, _corrGeneSpatial);
+    }
+    if (_isSingleCell && !_sliceDataset.isValid() && _isCorrSpatial) {
+        qDebug() << ">>>>>Compute subset: 2D + SingleCell + SpatialCorr";
+        DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneSpatial);
 
+    }
+    if (_isSingleCell && _sliceDataset.isValid() && _isCorrSpatial) {
+        qDebug() << ">>>>>Compute subset: 3D + SingleCell + SpatialCorr";
+        DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
+        std::vector<float> zPositions;
+        _positionDataset->extractDataForDimension(zPositions, 2);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, zPositions, _corrGeneSpatial);
+    }
+    // -------------- HD Correlation --------------
+    if (!_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
+        qDebug() << ">>>>>Compute corr: 2D + ST + HDCorr";
+        _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData, _corrGeneWave);
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && !_isCorrSpatial) {
+        qDebug() << ">>>>>Compute subset: 3D + ST + HDCorr";
+        _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData3D, _corrGeneWave);
+    }
+    if (_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
+        qDebug() << ">>>>>Compute subset: 2D + SingleCell + HDCorr";
+        _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneWave);
+    }
+    if (_isSingleCell && _sliceDataset.isValid() && !_isCorrSpatial) {
+        qDebug() << ">>>>>Compute subset: 3D + SingleCell + HDCorr";
+        _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneWave);
+    }
+
+    ////////////////////
+    // Clustering //
+    ////////////////////
+    clusterGenes();
     qDebug() << "updateSelection(): data clustered";
 
-    auto start4 = std::chrono::high_resolution_clock::now();
+    ////////////////////
+    // Update Plots //
+    ////////////////////
     convertDataAndUpdateChart();
-    auto end4 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed4 = end4 - start4;
-    std::cout << "convertDataAndUpdateChart() Elapsed time: " << elapsed4.count() << " ms\n";
-
-
     updateScatterColors();
     updateScatterOpacity();
     updateScatterSelection();
@@ -932,7 +834,6 @@ void ExampleViewJSPlugin::updateSelection()
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "updateSelection() Elapsed time: " << elapsed.count() << " ms\n";
     qDebug() << "ExampleViewJSPlugin::updateSelection(): end... ";
-
 }
 
 DataMatrix ExampleViewJSPlugin::populateAvgExprToSpatial() {
