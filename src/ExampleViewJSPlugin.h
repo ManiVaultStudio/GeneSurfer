@@ -230,9 +230,9 @@ private:
     //HsneHierarchy           _hierarchy; // TO DO remove HSNE dependency
 
     std::vector<std::vector<float>> _colorScalars; // scalars for the color of each scatter view
-
     Dataset<Points>                 _clusterScalars; // scalars for plotting in volume viewer
 
+    // slice-related for 3D data
     int                             _currentSliceIndex = 0; // current slice index for 3D slice dataset
     Dataset<Clusters>               _sliceDataset; // dataset for 3D slices
     std::vector<int>                _onSliceIndices; // pt indices on the slice
@@ -241,9 +241,11 @@ private:
     std::vector<bool>               _isFloodOnSlice; // direct mapping for flood indices on the slice
     Eigen::MatrixXf                 _subsetData3D;// subset of flooded data 3D
 
+    // Enrichment Analysis
     EnrichmentAnalysis*             _client;// enrichment analysis client 
     QVariantList                    _enrichmentResult; // cached enrichment analysis result, in case the user clicks on one cell
 
+    // Flags
     bool                            _isCorrSpatial = false; // whether to use spatial coordinates for correlation
     bool                            _isSingleCell = false; // whether to use avg expression from single cell data
     bool                            _toClearBarchart = false; //whether to clear the bar chart
@@ -254,7 +256,6 @@ private:
     // for avg expression of single cell data
     std::vector<QString>            _geneNamesAvgExpr; // from avg expr single cell data
     Eigen::MatrixXf                 _avgExpr; // average expression of each cluster
-    Eigen::MatrixXf                 _subsetDataAvgWeighted; // subset of average expression of each cluster - weighted -TO DO: not needed
     Eigen::MatrixXf                 _subsetDataAvgOri; // subset of average expression of each cluster - NOT weighted - TO DO
 
     bool                            _avgExprDatasetExists = false; // whether the avg expression dataset exists

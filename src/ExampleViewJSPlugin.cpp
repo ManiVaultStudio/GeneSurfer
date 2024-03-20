@@ -1646,7 +1646,6 @@ void ExampleViewJSPlugin::computeAvgExprSubset() {
         return;
     }
 
-    _subsetDataAvgWeighted.resize(clustersToKeep.size(), numGenes); // here, numCluster might reduce
     _subsetDataAvgOri.resize(clustersToKeep.size(), numGenes);
     qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): after matching numClusters: " << clustersToKeep.size();
 
@@ -1665,14 +1664,9 @@ void ExampleViewJSPlugin::computeAvgExprSubset() {
             continue;
         }
 
-        for (int j = 0; j < numGenes; ++j) {
-            float weightedValue = (_avgExpr(clusterIndex, j) * countsMap[clusterName]) / static_cast<float>(sumOfCounts);
-            _subsetDataAvgWeighted(i, j) = weightedValue;// TO DO: if needed?
-        }
         _subsetDataAvgOri.row(i) = _avgExpr.row(clusterIndex);
     }
 
-    qDebug() << "subsetDataAvgExprWeighted num rows (clusters): " << _subsetDataAvgWeighted.rows() << ", num columns (genes): " << _subsetDataAvgWeighted.cols();
     qDebug() << "subsetDataAvgExprOri num rows (clusters): " << _subsetDataAvgOri.rows() << ", num columns (genes): " << _subsetDataAvgOri.cols();
 
     // match _clusterWaveNumbers to clustersToKeep, i.e. match the column order of subset1
