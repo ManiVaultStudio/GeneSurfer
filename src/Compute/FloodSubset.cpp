@@ -103,3 +103,23 @@ void FloodSubset::updateFloodFillOnSlice(const std::vector<bool>& isFloodIndex, 
 
     qDebug() << "FloodSubset::updateIsFloodOnSlice(): _onSliceFloodIndices size" << onSliceFloodIndices.size();
 }
+
+void FloodSubset::computeSubsetData(const DataMatrix& dataMatrix, const std::vector<int>& indices, DataMatrix& subsetDataMatrix)
+{
+    if (indices.empty()) {
+        qDebug() << "WARNING: FloodSubset::computeSubsetData(): empty indices";
+        return;
+    }
+
+    int rows = indices.size();
+    int cols = dataMatrix.cols();
+
+    subsetDataMatrix.resize(rows, cols);
+
+#pragma omp parallel for
+    for (int i = 0; i < rows; ++i)
+    {
+        int index = indices[i];
+        subsetDataMatrix.row(i) = dataMatrix.row(index);
+    }
+}

@@ -1,7 +1,9 @@
 #pragma once
 
-#include <vector>
 #include "PointData/PointData.h"
+#include "DataMatrix.h"
+
+#include <vector>
 #include <QDebug>
 
 class FloodSubset
@@ -11,6 +13,8 @@ public:
     void updateFloodFill(mv::Dataset<Points> floodFillDataset, const int numPoints, std::vector<int>& floodIndices, std::vector<int>& waveNumbers, std::vector<bool>& isFloodIndex);
     // overloaded for 3D data
     void updateFloodFill(mv::Dataset<Points> floodFillDataset, const int numPoints, const std::vector<int>& onSliceIndices, std::vector<int>& floodIndices, std::vector<int>& waveNumbers, std::vector<bool>& isFloodIndex, std::vector<bool>& isFloodOnSlice, std::vector<int>& onSliceFloodIndices);
+
+    void computeSubsetData(const DataMatrix& dataMatrix, const std::vector<int>& indices, DataMatrix& subsetDataMatrix);
 
 private:
 

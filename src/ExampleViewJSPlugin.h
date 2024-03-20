@@ -142,8 +142,6 @@ private:
     /** Update the _dimView */
     void updateDimView(const QString& selectedDim);
 
-    void computeSubsetData(const DataMatrix& dataMatrix, const std::vector<int>& sortedIndices, DataMatrix& subsetDataMatrix);
-
     /** order the 1D vector according to the spatial coordinates */
     void orderSpatially(const std::vector<int>& unsortedIndices, const std::vector<int>& unsortedWave, std::vector<mv::Vector2f>& sortedCoordinates, std::vector<int>& sortedIndices, std::vector<int>& sortedWave);
 

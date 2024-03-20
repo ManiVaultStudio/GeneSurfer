@@ -745,24 +745,28 @@ void ExampleViewJSPlugin::updateSelection()
     if (_isSingleCell != true) {
 
         if (!_sliceDataset.isValid()) {
-            computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData); // TO DO: getBaseData() or getBaseNormalizedData()      
+            _floodSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData);
         }
         else {
             // 3D dataset
 
             //subset data only contains the onSliceFloodIndice
             auto start1 = std::chrono::high_resolution_clock::now();
-            computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData);// TO DO: getBaseData() or getBaseNormalizedData()
+
+            _floodSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData);
+
             auto end1 = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
             std::cout << "computeSubsetData() on slice Elapsed time: " << elapsed1.count() << " ms\n";
 
             //subset data contains all floodfill indices
             auto start2 = std::chrono::high_resolution_clock::now();
-            computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
+
+            _floodSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
+
             auto end2 = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
-            std::cout << "computeSubsetData() 3D Elapsed time: " << elapsed2.count() << " ms\n";
+            std::cout << "computeSubsetData 3D Elapsed time: " << elapsed2.count() << " ms\n";
         }
     
 
@@ -1379,29 +1383,6 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
 
 }
 
-void ExampleViewJSPlugin::computeSubsetData(const DataMatrix& dataMatrix, const std::vector<int>& sortedIndices, DataMatrix& subsetDataMatrix)
-{
-    if (_isFloodIndex.empty()) {
-        qDebug() << "ExampleViewJSPlugin::computeSubsetData: _isFloodIndex is empty";
-        return;
-    } 
-
-    int rows = sortedIndices.size();
-    int cols = dataMatrix.cols();
-
-    subsetDataMatrix.resize(rows, cols);
-
-#pragma omp parallel for
-    for (int i = 0; i < rows; ++i)
-    {
-        int index = sortedIndices[i];
-        subsetDataMatrix.row(i) = dataMatrix.row(index);
-    }
-
-    qDebug() << "ExampleViewJSPlugin::computeSubsetData: finished";
-
-}
-
 void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
     qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): start... ";
 
@@ -1632,10 +1613,7 @@ void ExampleViewJSPlugin::computeAvgExprSubset() {
 
     int numClusters = _avgExpr.rows();
     int numGenes = _avgExpr.cols();
-    //int numClusters = _avgExprDataset->getNumPoints();
-    //int numGenes = _avgExprDataset->getNumDimensions();
     qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): before matching numClusters: " << numClusters << " numGenes: " << numGenes;
-
 
     std::vector<QString> clustersToKeep; // it is cluster names 1
     for (int i = 0; i < numClusters; ++i) {
@@ -1689,11 +1667,10 @@ void ExampleViewJSPlugin::computeAvgExprSubset() {
 
         for (int j = 0; j < numGenes; ++j) {
             float weightedValue = (_avgExpr(clusterIndex, j) * countsMap[clusterName]) / static_cast<float>(sumOfCounts);
-            _subsetDataAvgWeighted(i, j) = weightedValue;
+            _subsetDataAvgWeighted(i, j) = weightedValue;// TO DO: if needed?
         }
         _subsetDataAvgOri.row(i) = _avgExpr.row(clusterIndex);
     }
-
 
     qDebug() << "subsetDataAvgExprWeighted num rows (clusters): " << _subsetDataAvgWeighted.rows() << ", num columns (genes): " << _subsetDataAvgWeighted.cols();
     qDebug() << "subsetDataAvgExprOri num rows (clusters): " << _subsetDataAvgOri.rows() << ", num columns (genes): " << _subsetDataAvgOri.cols();
@@ -2054,7 +2031,6 @@ void ExampleViewJSPlugin::computeFloodedClusterScalars(const std::vector<int> fi
     }
     else {
         // 3D dataset
-        //computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, subsetData);
         subsetData = _subsetData3D;
     }
 
