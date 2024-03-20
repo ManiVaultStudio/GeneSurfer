@@ -47,10 +47,6 @@ set(PLUGIN
 )
 
 set(Compute
-    #src/Compute/HsneHierarchy.cpp
-    #src/Compute/HsneHierarchy.h
-    #src/Compute/HsneParameters.cpp
-    #src/Compute/HsneParameters.h
     src/Compute/fastcluster.cpp
     src/Compute/fastcluster.h
     src/Compute/fastcluster_dm.h

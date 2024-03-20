@@ -22,10 +22,6 @@
 #include <Eigen/Dense>
 
 #include <QWidget>
-
-//#include "Compute/HsneHierarchy.h"
-//#include "Compute/HsneParameters.h"// TO DO remove HSNE dependency
-
 #include <QNetworkReply>
 #include <QTableWidget>
 #include <QTableWidgetItem>
@@ -264,8 +260,6 @@ private:
 public:
     bool isDataInitialized() { return _dataInitialized; }
     bool isUsingSingleCell() { return _isSingleCell; }
-    //HsneHierarchy& getHierarchy() { return _hierarchy; }
-
 
 public: // Data loading
     /** Invoked when the position points dataset changes */
