@@ -77,7 +77,6 @@ public:
     /** update the selected dim in the scatter plot */
     void updateSelectedDim();
 
-
     /** Update the point size of _scatterViews and _dimView */
     void updateScatterPointSize();
 
@@ -119,7 +118,6 @@ public slots:
 private slots:
     /** Invoked when the selection of the cell in the table changes */
     void onTableClicked(int row, int column);
-
 
 private:
     /** Published selections received from the JS side to ManiVault's core */
@@ -186,95 +184,82 @@ private:
     DataMatrix populateAvgExprToSpatial();
 
 private:
-    DataStorage             _dataStore;
 
-    ChartWidget*            _chartWidget;       // WebWidget that sets up the HTML page - bar chart
+    DataStorage                        _dataStore;
 
-    QTableWidget*           _tableWidget; // table widget for enrichment analysis
+    ChartWidget*                       _chartWidget;             // WebWidget that sets up the HTML page - bar chart
+    QTableWidget*                      _tableWidget;             // Table widget for enrichment analysis
+    DropWidget*                        _dropWidget;              // Widget for drag and drop behavior
 
-    DropWidget*             _dropWidget;        // Widget for drag and drop behavior
-
-    // Dataset
-    mv::Dataset<Points>   _currentDataSet;    // Reference to currently shown data set
-    mv::Dataset<Points>   _positionDataset;   /** Smart pointer to points dataset for point position */
-    mv::Dataset<Points>   _positionSourceDataset;     /** Smart pointer to source of the points dataset for point position (if any) */
-    std::vector<mv::Vector2f>     _positions;                 /** Point positions */
-    int32_t                 _numPoints;                 /** Number of point positions */
-    std::vector<QString>    _enabledDimNames;
-    bool                    _dataInitialized = false;
-    //int32_t                 _cursorPoint = 0; // index of the point under the cursor
+    // Data
+    mv::Dataset<Points>                _positionDataset;         // Smart pointer to points dataset for point position
+    mv::Dataset<Points>                _positionSourceDataset;   // Smart pointer to source of the points dataset for point position (if any)
+    std::vector<mv::Vector2f>          _positions;               // Point positions
+    int32_t                            _numPoints;               // Number of point positions
+    std::vector<QString>               _enabledDimNames;
+    bool                               _dataInitialized = false;
 
     // FloodFill subset computing
-    std::vector<bool>       _isFloodIndex; //direct mapping for flood indices
-    mv::Dataset<Points>   _floodFillDataset; // dataset for flood fill
-    std::vector<int>        _sortedFloodIndices;// spatially sorted indices of flood fill at the current cursor position
-    std::vector<int>        _sortedWaveNumbers;// spatially sorted wave numbers of flood fill at the current cursor position
-    Eigen::MatrixXf         _subsetData; // subset of flooded data, sorted spatially
-    FloodSubset             _floodSubset; // flood subset computing
+    std::vector<bool>                  _isFloodIndex;            // Direct mapping for flood indices
+    mv::Dataset<Points>                _floodFillDataset;        // Dataset for flood fill
+    std::vector<int>                   _sortedFloodIndices;      // Spatially sorted indices of flood fill at the current cursor position
+    std::vector<int>                   _sortedWaveNumbers;       // Spatially sorted wave numbers of flood fill at the current cursor position
+    Eigen::MatrixXf                    _subsetData;              // Subset of flooded data, sorted spatially
+    FloodSubset                        _floodSubset;             // Flood subset computing
 
-    
     // Filtering genes based on correlation
-    std::vector<float>      _corrGeneVector; // vector of correlation values for filtering genes
-    //float                   _corrThreshold;
-    int                     _numGenesThreshold = 50;
-    corrFilter::CorrFilter  _corrFilter;
+    std::vector<float>                 _corrGeneVector;          // Vector of correlation values for filtering genes
+    int                                _numGenesThreshold = 50;
+    corrFilter::CorrFilter             _corrFilter;
 
-    int                     _nclust;// number of clusters
-    std::unordered_map<QString, int>  _dimNameToClusterLabel; // map dimension name to cluster label
+    // Clustering
+    int                                _nclust;                  // Number of clusters
+    std::unordered_map<QString, int>   _dimNameToClusterLabel;   // Map dimension name to cluster label
 
-    int                     _selectedClusterIndex;
-    int                     _selectedDimIndex; // current selected dimension index for _dimView
+    // Interaction
+    int                                _selectedClusterIndex;
+    int                                _selectedDimIndex;        // Current selected dimension index for _dimView
 
-    //HsneHierarchy           _hierarchy; // TO DO remove HSNE dependency
+    std::vector<std::vector<float>>    _colorScalars;            // Scalars for the color of each scatter view
+    Dataset<Points>                    _clusterScalars;          // Scalars for plotting in volume viewer
 
-    std::vector<std::vector<float>> _colorScalars; // scalars for the color of each scatter view
-    Dataset<Points>                 _clusterScalars; // scalars for plotting in volume viewer
-
-    // slice-related for 3D data
-    int                             _currentSliceIndex = 0; // current slice index for 3D slice dataset
-    Dataset<Clusters>               _sliceDataset; // dataset for 3D slices
-    std::vector<int>                _onSliceIndices; // pt indices on the slice
-    std::vector<int>                _onSliceFloodIndices; // flood indices on the slice
-    std::vector<int>                _onSliceWaveNumbers; // wave numbers on the slice
-    std::vector<bool>               _isFloodOnSlice; // direct mapping for flood indices on the slice
-    Eigen::MatrixXf                 _subsetData3D;// subset of flooded data 3D
+    // 3D data
+    int                                _currentSliceIndex = 0;   // Current slice index for 3D slice dataset
+    Dataset<Clusters>                  _sliceDataset;            // Dataset for 3D slices
+    std::vector<int>                   _onSliceIndices;          // Pt indices on the slice
+    std::vector<int>                   _onSliceFloodIndices;     // Flood indices on the slice
+    std::vector<int>                   _onSliceWaveNumbers;      // Wave numbers on the slice
+    std::vector<bool>                  _isFloodOnSlice;          // Direct mapping for flood indices on the slice
+    Eigen::MatrixXf                    _subsetData3D;            // Subset of flooded data 3D
 
     // Enrichment Analysis
-    EnrichmentAnalysis*             _client;// enrichment analysis client 
-    QVariantList                    _enrichmentResult; // cached enrichment analysis result, in case the user clicks on one cell
+    EnrichmentAnalysis*                _client;                  // Enrichment analysis client 
+    QVariantList                       _enrichmentResult;        // Cached enrichment analysis result, in case the user clicks on one cell
+
+    // Single cell data
+    mv::Dataset<Points>                _avgExprDataset;          // Point dataset for average expression of each cluster
+    Eigen::MatrixXf                    _avgExpr;                 // Average expression of each cluster
+    Eigen::MatrixXf                    _subsetDataAvgOri;        // Subset of average expression of each cluster - NOT weighted 
+    std::vector<QString>               _geneNamesAvgExpr;        // From avg expr single cell data    
+    std::vector<float>                 _waveAvg;                 // Avg of wave numbers for each cluster - same order as subset columns
+    bool                               _avgExprDatasetExists = false; // Whether the avg expression dataset exists   
+
+    QMap<QString, QStringList>         _simplifiedToIndexGeneMapping; // Map for simplified gene names to extra indexed gene names - for duplicate gene symbols 
+    std::vector<QString>               _clusterNamesAvgExpr;     // From avg expr single cell data
+    std::unordered_map<QString, int>   _clusterAliasToRowMap;    // Map label (QString) to row index in _avgExpr
+    std::vector<QString>               _cellLabels;              // Labels for each point
+    std::unordered_map<QString, int>   _countsMap;               // Count distribution of labels WITHIN floodfill
+    std::unordered_map<QString, float> _clusterWaveNumbers;      // Avg of wave numbers for each cluster, first element is the label
+    std::vector<QString>               _clustersToKeep;          // clusters to keep for avg expression - same order as subset row - cluster alias name 
 
     // Flags
-    bool                            _isCorrSpatial = false; // whether to use spatial coordinates for correlation
-    bool                            _isSingleCell = false; // whether to use avg expression from single cell data
-    bool                            _toClearBarchart = false; //whether to clear the bar chart
-
-
-    std::vector<float>          _waveAvg; // avg of wave numbers for each cluster - same order as subset columns
-
-    // for avg expression of single cell data
-    std::vector<QString>            _geneNamesAvgExpr; // from avg expr single cell data
-    Eigen::MatrixXf                 _avgExpr; // average expression of each cluster
-    Eigen::MatrixXf                 _subsetDataAvgOri; // subset of average expression of each cluster - NOT weighted - TO DO
-
-    bool                            _avgExprDatasetExists = false; // whether the avg expression dataset exists
-    mv::Dataset<Points>             _avgExprDataset; // Point dataset for average expression of each cluster - test
-    std::unordered_map<QString, QString> _identifierToSymbolMap; // map from gene identifier to gene symbol // To DO: remove this map
-    QMap<QString, QStringList>      _simplifiedToIndexGeneMapping; // map for simplified gene names to extra indexed gene names - for duplicate gene symbols 
-
-    // TEST: generalize singlecell option 
-    std::vector<QString>                _clusterNamesAvgExpr;// from avg expr single cell data
-    std::unordered_map<QString, int>    _clusterAliasToRowMap; // first element is label as a QString, second element is row index in _avgExpr // TO DO: change alias to name
-    std::vector<QString>            _cellLabels;// labels for each point
-    std::unordered_map<QString, int> _countsMap; //count distribution of labels WITHIN floodfill, first element is the label
-    std::unordered_map<QString, float>        _clusterWaveNumbers; // avg of wave numbers for each cluster, first element is the label
-    std::vector<QString>                _clustersToKeep;// clusters to keep for avg expression - same order as subset row - cluster alias name 
-
-    // serialization
-    bool                    _loadingFromProject = false;
-    AvgExpressionStatus     _avgExprStatus = AvgExpressionStatus::NONE;
-    QString                 _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
-
-    
+    bool                               _isCorrSpatial = false;   // whether to use spatial coordinates for correlation
+    bool                               _isSingleCell = false;    // whether to use avg expression from single cell data
+    bool                               _toClearBarchart = false; //whether to clear the bar chart
+    bool                               _loadingFromProject = false;
+    AvgExpressionStatus                _avgExprStatus = AvgExpressionStatus::NONE;
+    QString                            _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
+  
 
 public:
     bool isDataInitialized() { return _dataInitialized; }
@@ -296,8 +281,6 @@ public:
     mv::Dataset<Points>& getAvgExprDataset() { return _avgExprDataset; }
 
     mv::Dataset<Clusters>& getSliceDataset() { return _sliceDataset; }
-
-    //SettingsAction& getSettingsAction() { return _settingsAction; }
 
 public: 
     void setAvgExpressionStatus(AvgExpressionStatus status) { _avgExprStatus = status; }

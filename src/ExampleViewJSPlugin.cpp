@@ -78,9 +78,7 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _positions(),
     _positionSourceDataset(),
     _numPoints(0),
-    _subsetData(),
     //_corrThreshold(0.15f),
-    _dimNameToClusterLabel(),
     _colorScalars(_nclust, std::vector<float>(_numPoints, 0.0f)),
     _chartWidget(nullptr),
     _tableWidget(nullptr),
@@ -88,7 +86,6 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _dropWidget(nullptr),
     _settingsAction(this, "Settings Action"),
     _primaryToolbarAction(this, "PrimaryToolbar"),
-    _currentDataSet(nullptr), // TO DO: Not used anymore
     _selectedDimIndex(-1),
     _selectedClusterIndex(0),
     _colorMapAction(this, "Color map", "RdYlBu")
@@ -422,8 +419,8 @@ void ExampleViewJSPlugin::publishSelection(const QString& selection)
 
 QString ExampleViewJSPlugin::getCurrentDataSetID() const
 {
-    if (_currentDataSet.isValid())
-        return _currentDataSet->getId();
+    if (_positionDataset.isValid())
+        return _positionDataset->getId();
     else
         return QString{};
 }
