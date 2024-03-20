@@ -123,3 +123,23 @@ void FloodSubset::computeSubsetData(const DataMatrix& dataMatrix, const std::vec
         subsetDataMatrix.row(i) = dataMatrix.row(index);
     }
 }
+
+void FloodSubset::computeSubsetDataAvgExpr(const DataMatrix& dataMatrix, const std::vector<QString>& clusterNames, const std::unordered_map<QString, int>& clusterToRowMap, DataMatrix& subsetDataMatrix)
+{
+    subsetDataMatrix.resize(clusterNames.size(), dataMatrix.cols());
+
+    for (int i = 0; i < clusterNames.size(); ++i) {
+        QString clusterName = clusterNames[i];
+
+        auto it = clusterToRowMap.find(clusterName);
+        if (it == clusterToRowMap.end()) {
+            qDebug() << "Error: clusterName " << clusterName << " not found in _clusterAliasToRowMap";
+            continue;
+        }
+        int clusterIndex = it->second;
+
+        subsetDataMatrix.row(i) = dataMatrix.row(clusterIndex);
+    }
+
+    qDebug() << "FloodSubset::computeSubsetDataAvgExpr(): subset num rows (clusters): " << subsetDataMatrix.rows() << ", num columns (genes): " << subsetDataMatrix.cols();
+}

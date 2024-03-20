@@ -171,6 +171,8 @@ private:
     /** count distribution of labels within floodfill */
     void countLabelDistribution();
 
+    void matchLabelInSubset();
+
     /** load data for labels from ST dataset*/
     void loadLabelsFromSTDataset();
 
@@ -179,9 +181,6 @@ private:
 
     /** load data for average expression of each cluster - ONLY FOR ABCAtlas*/
     void loadAvgExpressionABCAtlas();
-
-    /** get a subset of average expression of each cluster */
-    void computeAvgExprSubset();
 
     /** populate the avg expr values to spatil domain */
     DataMatrix populateAvgExprToSpatial();
@@ -267,8 +266,8 @@ private:
     std::vector<QString>                _clusterNamesAvgExpr;// from avg expr single cell data
     std::unordered_map<QString, int>    _clusterAliasToRowMap; // first element is label as a QString, second element is row index in _avgExpr // TO DO: change alias to name
     std::vector<QString>            _cellLabels;// labels for each point
-    std::map<QString, int>          _countsLabel; // count distribution of labels within floodfill, first element is the label 
-    std::map<QString, float>        _clusterWaveNumbers; // avg of wave numbers for each cluster, first element is the label
+    std::unordered_map<QString, int> _countsMap; //count distribution of labels WITHIN floodfill, first element is the label
+    std::unordered_map<QString, float>        _clusterWaveNumbers; // avg of wave numbers for each cluster, first element is the label
     std::vector<QString>                _clustersToKeep;// clusters to keep for avg expression - same order as subset row - cluster alias name 
 
     // serialization

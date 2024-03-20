@@ -812,9 +812,8 @@ void ExampleViewJSPlugin::updateSelection()
         if (!_sliceDataset.isValid()) {
             // single cell + 2D
             countLabelDistribution();
-            computeAvgExprSubset();
-
-            
+            _floodSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
+                         
             _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
             _subsetData = _subsetDataAvgOri; // row for clusters, col for genes
             qDebug() << "ExampleViewJSPlugin::updateSelection(): _subsetData size: " << _subsetData.rows() << " " << _subsetData.cols();
@@ -872,7 +871,7 @@ void ExampleViewJSPlugin::updateSelection()
             // temporal code for corrWave - single cell option
             // test temp code only for ABC Atlas
             countLabelDistribution();
-            computeAvgExprSubset();
+            _floodSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
 
             _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
             _subsetData3D = _subsetDataAvgOri; // row for clusters, col for genes
@@ -1537,12 +1536,10 @@ void ExampleViewJSPlugin::loadLabelsFromSTDatasetABCAtlas() {
 
 void ExampleViewJSPlugin::countLabelDistribution() {
 
-    // count the number of cells in each cluster using the precomputed array _cellLabels
-    std::map<QString, int> clusterPointCounts;
-    std::map<QString, int> clusterWaveNumberSums; // test corrWave - use cluster instead of cell points
+    std::unordered_map<QString, int> clusterPointCounts;
+    std::unordered_map<QString, int> clusterWaveNumberSums; // test corrWave - use cluster instead of cell points
+    std::unordered_map<QString, std::map<int, int>> waveNumberDistribution; // New map for wave number distribution
 
-
-    std::map<QString, std::map<int, int>> waveNumberDistribution; // New map for wave number distribution
     for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
         int ptIndex = _sortedFloodIndices[index];
         QString label = _cellLabels[ptIndex];
@@ -1554,10 +1551,7 @@ void ExampleViewJSPlugin::countLabelDistribution() {
         waveNumberDistribution[label][waveNumber]++;
     }
 
-    _countsLabel.clear(); // TO DO: can direct assign to _countsLabel - avoid copy
-    _countsLabel = clusterPointCounts;
-
-    std::map<QString, float> clusterWaveAvg;
+    std::unordered_map<QString, float> clusterWaveAvg;
     int i = 0;
     for (const auto& pair : clusterPointCounts) {
         QString label = pair.first;
@@ -1566,110 +1560,62 @@ void ExampleViewJSPlugin::countLabelDistribution() {
         clusterWaveAvg[label] = average;
         i++;
     }
-    _clusterWaveNumbers.clear(); // TO DO: can direct assign to _clusterWaveNumbers - avoid copy
+
+    _countsMap.clear();
+    _countsMap = clusterPointCounts;
+    _clusterWaveNumbers.clear();
     _clusterWaveNumbers = clusterWaveAvg;
 
-    // output the distribution of wave numbers within each cluster
-    /*for (const auto& cluster : waveNumberDistribution) {
-        int label = cluster.first;
-        const auto& distribution = cluster.second;
-        std::cout << "Cluster " << label << " Avg Wave: " << clusterWaveAvg[label] << " Distri: ";
-        for (const auto& waveNumberCount : distribution) {
-            std::cout << "Wave " << waveNumberCount.first << ": " << waveNumberCount.second << ", ";
-        }
-        std::cout << std::endl;
-    }*/
-
-   // sort the counts
-   /* std::vector<std::pair<QString, int>> sortedCounts;
-    for (const auto& pair : clusterPointCounts) {
-        sortedCounts.push_back(pair);
-    }
-    std::sort(sortedCounts.begin(), sortedCounts.end(),
-        [](const std::pair<QString, int>& a, const std::pair<QString, int>& b) {
-            return a.second > b.second;
-        });
-    for (const auto& pair : sortedCounts) {
-        qDebug() << pair.first << ": " << pair.second;
-    }*/
+    matchLabelInSubset();
 }
 
-void ExampleViewJSPlugin::computeAvgExprSubset() {
-    // Create a map for counts
-    std::unordered_map<QString, int> countsMap;
-    for (const auto& pair : _countsLabel) {
-        QString clusterName = pair.first;
-        countsMap[clusterName] = pair.second;
-    }
-    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): countsMap size: " << countsMap.size();
-
+void ExampleViewJSPlugin::matchLabelInSubset()
+{
     int numClusters = _avgExpr.rows();
     int numGenes = _avgExpr.cols();
-    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): before matching numClusters: " << numClusters << " numGenes: " << numGenes;
+    qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): before matching numClusters: " << numClusters << " numGenes: " << numGenes;
 
     std::vector<QString> clustersToKeep; // it is cluster names 1
     for (int i = 0; i < numClusters; ++i) {
-        QString clusterName = _clusterNamesAvgExpr[i];
-        if (countsMap.find(clusterName) != countsMap.end()) {
+        QString clusterName = _clusterNamesAvgExpr[i]; // here cannot use _clusterAliasToRowMap, because need to keep the order in clustersToKeep?
+        if (_countsMap.find(clusterName) != _countsMap.end()) {
             clustersToKeep.push_back(clusterName);
         }
     }
 
     // to check if any columns are not in _columnNamesAvgExpr
-    if (clustersToKeep.size() != countsMap.size()) {
-        qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): " << countsMap.size() - clustersToKeep.size() << "clusters not found in avgExpr";
+    if (clustersToKeep.size() != _countsMap.size()) {
+        qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): " << _countsMap.size() - clustersToKeep.size() << "clusters not found in avgExpr";
         // output the cluster names that are not in
         QString output;
-        for (const auto& pair : countsMap) {
+        for (const auto& pair : _countsMap) {
             QString clusterName = pair.first;
             if (std::find(_clusterNamesAvgExpr.begin(), _clusterNamesAvgExpr.end(), clusterName) == _clusterNamesAvgExpr.end()) {
                 output += clusterName + " ";
             }
         }
-        qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): not found cluster names: " << output;
+        qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): not found cluster names: " << output;
     }
     else {
-        qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): all clusters found in avgExpr";
+        qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): all clusters found in avgExpr";
     }
 
     // Handle case where no columns are to be kept // TO DO: check if needed
     if (clustersToKeep.empty()) {
-        qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): No cluster to keep";
+        qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): No cluster to keep";
         return;
     }
 
-    _subsetDataAvgOri.resize(clustersToKeep.size(), numGenes);
-    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): after matching numClusters: " << clustersToKeep.size();
-
-    for (int i = 0; i < clustersToKeep.size(); ++i) {
-        QString clusterName = clustersToKeep[i];
-
-        auto it = std::find(_clusterNamesAvgExpr.begin(), _clusterNamesAvgExpr.end(), clusterName);
-        if (it == _clusterNamesAvgExpr.end()) {
-            qDebug() << "Error: clusterName " << clusterName << " not found in _clusterNamesAvgExpr";
-            continue;
-        }
-        int clusterIndex = std::distance(_clusterNamesAvgExpr.begin(), it);
-
-        if (countsMap.find(clusterName) == countsMap.end()) {
-            qDebug() << "Error: clusterName " << clusterName << " not found in countsMap";
-            continue;
-        }
-
-        _subsetDataAvgOri.row(i) = _avgExpr.row(clusterIndex);
-    }
-
-    qDebug() << "subsetDataAvgExprOri num rows (clusters): " << _subsetDataAvgOri.rows() << ", num columns (genes): " << _subsetDataAvgOri.cols();
-
-    // match _clusterWaveNumbers to clustersToKeep, i.e. match the column order of subset1
+    // match _clusterWaveNumbers to clustersToKeep, i.e. match the column order of subset
     _waveAvg.clear();
     for (QString clusterName : clustersToKeep) {
         _waveAvg.push_back(_clusterWaveNumbers[clusterName]);
     }
-    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): _waveAvg size: " << _waveAvg.size();
+    qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): _waveAvg size: " << _waveAvg.size();
 
     _clustersToKeep.clear();
     _clustersToKeep = clustersToKeep; // TO DO: dirty copy
+    qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): after matching numClusters: " << _clustersToKeep.size();
 
 }
 
@@ -1772,7 +1718,6 @@ void ExampleViewJSPlugin::clusterGenes()
     }
 
     // compute the correlation between each pair of the filtered genes
-    // TO DO: refactoring this part to CorrFilter class
     auto start2 = std::chrono::high_resolution_clock::now();
     Eigen::MatrixXf corrFilteredGene(filteredDimNames.size(), filteredDimNames.size());
 

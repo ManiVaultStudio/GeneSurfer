@@ -16,6 +16,8 @@ public:
 
     void computeSubsetData(const DataMatrix& dataMatrix, const std::vector<int>& indices, DataMatrix& subsetDataMatrix);
 
+    void computeSubsetDataAvgExpr(const DataMatrix& dataMatrix, const std::vector<QString>& clusterNames, const std::unordered_map<QString, int>& clusterToRowMap, DataMatrix& subsetDataMatrix);
+
 private:
 
     void processFloodFillDataset(mv::Dataset<Points> floodFillDataset, std::vector<int>& floodIndices, std::vector<int>& waveNumbers);
