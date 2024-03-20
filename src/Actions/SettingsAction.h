@@ -67,8 +67,6 @@ public: // Action getters
 
     CorrelationModeAction& getCorrelationModeAction() { return _correlationModeAction; }
 
-    //VariantAction& getFloodFillAction() { return _floodFillAction; }
-
     IntegralAction& getSliceAction() { return _sliceAction; }   
 
 private:
@@ -90,8 +88,6 @@ private:
     SingleCellModeAction    _singleCellModeAction;      /** single cell mode action */
     
     ClusteringAction        _clusteringAction;          /** clustering action */
-
-    //VariantAction           _floodFillAction;           /** flood fill action */
 
     IntegralAction          _sliceAction;           /** slice action */
 };

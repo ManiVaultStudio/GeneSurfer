@@ -25,8 +25,8 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
 
     _clusteringAction(this, "Cluster Settings"),
 
-    //_floodFillAction(this, "Flood Fill"),
     _sliceAction(this, "Slice"),
+
     _correlationModeAction(this, "Correlation Mode")
 {
     setText("Settings");
@@ -73,9 +73,6 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         _avgExprDatasetPickerAction.setCurrentDataset(dataset);
         });
 
- 
-    //connect(&_floodFillAction, &VariantAction::variantChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateFloodFill);// Test March20
-
     connect(&_sliceAction, &IntegralAction::valueChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateSlice);
 
 }
@@ -115,7 +112,6 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
         _exampleViewJSPlugin->getAvgExprDataset() = pickedDataset;
     }
     qDebug() << ">>>>> SettingsAction::fromVariantMap 1";
-    //_floodFillAction.fromParentVariantMap(variantMap);
     qDebug() << ">>>>> SettingsAction::fromVariantMap 2";
     //_correlationModeAction.fromParentVariantMap(variantMap);
     _singleCellModeAction.fromParentVariantMap(variantMap);
@@ -142,7 +138,6 @@ QVariantMap SettingsAction::toVariantMap() const
     _pointPlotAction.insertIntoVariantMap(variantMap);
     _singleCellModeAction.insertIntoVariantMap(variantMap);
     _clusteringAction.insertIntoVariantMap(variantMap);
-    //_floodFillAction.insertIntoVariantMap(variantMap);
     _sliceAction.insertIntoVariantMap(variantMap);
     //_correlationModeAction.insertIntoVariantMap(variantMap);
     //_dimensionSelectionAction.insertIntoVariantMap(variantMap); // TO DO: not needed, done in plugin.cpp
