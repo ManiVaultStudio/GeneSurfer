@@ -260,12 +260,12 @@ private:
 
     bool                            _avgExprDatasetExists = false; // whether the avg expression dataset exists
     mv::Dataset<Points>             _avgExprDataset; // Point dataset for average expression of each cluster - test
-    std::unordered_map<QString, QString> _identifierToSymbolMap; // map from gene identifier to gene symbol
+    std::unordered_map<QString, QString> _identifierToSymbolMap; // map from gene identifier to gene symbol // To DO: remove this map
     QMap<QString, QStringList>      _simplifiedToIndexGeneMapping; // map for simplified gene names to extra indexed gene names - for duplicate gene symbols 
 
     // TEST: generalize singlecell option 
     std::vector<QString>                _clusterNamesAvgExpr;// from avg expr single cell data
-    std::unordered_map<QString, int>    _clusterAliasToRowMap; // first element is label as a QString, second element is row index in _avgExpr
+    std::unordered_map<QString, int>    _clusterAliasToRowMap; // first element is label as a QString, second element is row index in _avgExpr // TO DO: change alias to name
     std::vector<QString>            _cellLabels;// labels for each point
     std::map<QString, int>          _countsLabel; // count distribution of labels within floodfill, first element is the label 
     std::map<QString, float>        _clusterWaveNumbers; // avg of wave numbers for each cluster, first element is the label

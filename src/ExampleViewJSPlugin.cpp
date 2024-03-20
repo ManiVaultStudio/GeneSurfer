@@ -1595,14 +1595,6 @@ void ExampleViewJSPlugin::countLabelDistribution() {
 }
 
 void ExampleViewJSPlugin::computeAvgExprSubset() {
-
-    // sum of counts for later normalization
-    int sumOfCounts = 0;
-    for (const auto& pair : _countsLabel) {
-        sumOfCounts += pair.second;
-    }
-    qDebug() << "ExampleViewJSPlugin::computeAvgExprSubset(): sumOfCounts: " << sumOfCounts;
-
     // Create a map for counts
     std::unordered_map<QString, int> countsMap;
     for (const auto& pair : _countsLabel) {
