@@ -338,13 +338,6 @@ void ExampleViewJSPlugin::positionDatasetChanged()
         }
     }
 
-    //if (_avgExprDataset.isValid())
-    //{
-    //    if (_loadingFromProject)
-    //        convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);
-    //}
-   
-
     qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): start converting dataset ... ";
     convertToEigenMatrix(_positionDataset, _positionSourceDataset, _dataStore.getBaseData());
     convertToEigenMatrixProjection(_positionDataset, _dataStore.getBaseFullProjection());
@@ -453,8 +446,6 @@ void ExampleViewJSPlugin::updateFloodFillDataset()
         qDebug() << "Warning: No floodFillDataset named allFloodNodesIndices found!";
         return;
     }
-
-    qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets name: " << _floodFillDataset->text();
     qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets size: " << _floodFillDataset->getNumPoints();
      
     if (!_sliceDataset.isValid()) {
@@ -610,10 +601,7 @@ void ExampleViewJSPlugin::computeAvgExpression() {
         qDebug() << "avgExprDataset not valid";
         _avgExprDataset = mv::data().createDataset<Points>("Points", "avgExprDataset");
         events().notifyDatasetAdded(_avgExprDataset);
-    }
-    //else {
-    //    _avgExprDataset.reset();// TO DO: 
-    //}     
+    }   
     _avgExprDataset->setData(allData.data(), numClusters, numGenes); 
     _avgExprDataset->setDimensionNames(_geneNamesAvgExpr);
     events().notifyDatasetDataChanged(_avgExprDataset);
@@ -690,7 +678,6 @@ void ExampleViewJSPlugin::loadLabelsFromSTDataset() {
     qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): _cellLabels size: " << _cellLabels.size();
 }
 
-
 void ExampleViewJSPlugin::setLabelDataset() {
     qDebug() << _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentText();
 
@@ -719,9 +706,8 @@ void ExampleViewJSPlugin::setLabelDataset() {
 
 void ExampleViewJSPlugin::updateSelection()
 {
-    //TO DO: seperate plotting part and computation part, only update plotting part when plotting settings are changed
-
-    _tableWidget->clearContents(); // clear table content
+    // clear table content
+    _tableWidget->clearContents(); 
 
     if (!_positionDataset.isValid())
         return;
@@ -1644,7 +1630,6 @@ void ExampleViewJSPlugin::clusterGenes()
         }
     }
 
-
     // Apply clustering
     int* merge = new int[2 * (n - 1)];// dendrogram in the encoding of the R function hclust
     double* height = new double[n - 1];// cluster distance for each step
@@ -2186,23 +2171,19 @@ void ExampleViewJSPlugin::updateSlice() {
         return;
     }
 
-    //QVector<Cluster>& clusters = _sliceDataset->getClusters();
     QString clusterName = _sliceDataset->getClusters()[_currentSliceIndex].getName();
 
     std::vector<uint32_t>& uindices = _sliceDataset->getClusters()[_currentSliceIndex].getIndices();
     std::vector<int> indices;
     indices.assign(uindices.begin(), uindices.end());
-    //qDebug() << "ExampleViewJSPlugin::updateSlice(): clusterName: " << clusterName << " uindices size: " << uindices.size();
 
     _onSliceIndices.clear();
     _onSliceIndices = indices;
-    //qDebug() << "ExampleViewJSPlugin::updateSlice(): _onSliceIndices size: " << _onSliceIndices.size(); 
     
     _dataStore.createDataView(indices);
     updateSelectedDim();
 
     // update floodfill mask on 2D
-
     if (_isFloodIndex.empty()) {
         qDebug() << "ExampleViewJSPlugin::updateSlice(): _isFloodIndex is empty";
     }
@@ -2222,7 +2203,9 @@ void ExampleViewJSPlugin::updateSlice() {
         updateDimView(_selectedDimName);
 }
 
-// serialization
+////////////////////
+// Serialization ///
+////////////////////
 void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
 {
     qDebug() << "ExampleViewJSPlugin::fromVariantMap() 1 ";
