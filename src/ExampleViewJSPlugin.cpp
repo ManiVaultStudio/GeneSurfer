@@ -79,7 +79,6 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _positionSourceDataset(),
     _numPoints(0),
     _subsetData(),
-    _corrGeneWave(),
     //_corrThreshold(0.15f),
     _dimNameToClusterLabel(),
     _colorScalars(_nclust, std::vector<float>(_numPoints, 0.0f)),
@@ -390,10 +389,9 @@ void ExampleViewJSPlugin::convertDataAndUpdateChart()
     // only process genes present in _dimNameToClusterLabel
     std::vector<std::pair<QString, float>> filteredAndSortedGenes;
 
-    const auto& corrVector = _isCorrSpatial ? _corrGeneSpatial : _corrGeneWave;
     for (size_t i = 0; i < _enabledDimNames.size(); ++i) {
         if (_dimNameToClusterLabel.find(_enabledDimNames[i]) != _dimNameToClusterLabel.end()) {
-            filteredAndSortedGenes.emplace_back(_enabledDimNames[i], corrVector[i]);
+            filteredAndSortedGenes.emplace_back(_enabledDimNames[i], _corrGeneVector[i]);
         }
     }
 
@@ -777,18 +775,18 @@ void ExampleViewJSPlugin::updateSelection()
     // -------------- Spatial Correlation --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _isCorrSpatial) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorr";
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneSpatial);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _isCorrSpatial) {
         qDebug() << ">>>>>Compute subset: 3D + ST + SpatialCorr";
         std::vector<float> zPositions;
         _positionDataset->extractDataForDimension(zPositions, 2);
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, _corrGeneSpatial);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, _corrGeneVector);
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _isCorrSpatial) {
         qDebug() << ">>>>>Compute subset: 2D + SingleCell + SpatialCorr";
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneSpatial);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
 
     }
     if (_isSingleCell && _sliceDataset.isValid() && _isCorrSpatial) {
@@ -796,24 +794,24 @@ void ExampleViewJSPlugin::updateSelection()
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
         std::vector<float> zPositions;
         _positionDataset->extractDataForDimension(zPositions, 2);
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, zPositions, _corrGeneSpatial);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, zPositions, _corrGeneVector);
     }
     // -------------- HD Correlation --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
         qDebug() << ">>>>>Compute corr: 2D + ST + HDCorr";
-        _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData, _corrGeneWave);
+        _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData, _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && !_isCorrSpatial) {
         qDebug() << ">>>>>Compute subset: 3D + ST + HDCorr";
-        _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData3D, _corrGeneWave);
+        _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData3D, _corrGeneVector);
     }
     if (_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
         qDebug() << ">>>>>Compute subset: 2D + SingleCell + HDCorr";
-        _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneWave);
+        _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneVector);
     }
     if (_isSingleCell && _sliceDataset.isValid() && !_isCorrSpatial) {
         qDebug() << ">>>>>Compute subset: 3D + SingleCell + HDCorr";
-        _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneWave);
+        _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneVector);
     }
 
     ////////////////////
@@ -1559,21 +1557,11 @@ void ExampleViewJSPlugin::clusterGenes()
 {
     qDebug() << "clusterGenes start...";
 
-    std::vector<float> corr;
-    if (_isCorrSpatial) {
-        qDebug() << "ExampleViewJSPlugin::clusterGenes(): SpatialCorr";
-        corr = _corrGeneSpatial;
-    }
-    else {
-        qDebug() << "ExampleViewJSPlugin::clusterGenes(): HDCorr";
-        corr = _corrGeneWave;
-    }
-
     // option 1 - filter genes based on corr value 
     /*std::vector<QString> filteredDimNames;
     std::vector<int> filteredDimIndices;
     for (int i = 0; i < _enabledDimNames.size(); ++i) {
-        if (std::abs(corr[i]) >= _corrThreshold) {
+        if (std::abs(_corrGeneVector[i]) >= _corrThreshold) {
             filteredDimNames.push_back(_enabledDimNames[i]);
             filteredDimIndices.push_back(i);
         }
@@ -1586,9 +1574,9 @@ void ExampleViewJSPlugin::clusterGenes()
     }
 
     // create a vector of pairs (absolute correlation value, index)
-    std::vector<std::pair<float, int>> pairs(corr.size());
-    for (size_t i = 0; i < corr.size(); ++i) {
-        pairs[i] = std::make_pair(std::abs(corr[i]), i);
+    std::vector<std::pair<float, int>> pairs(_corrGeneVector.size());
+    for (size_t i = 0; i < _corrGeneVector.size(); ++i) {
+        pairs[i] = std::make_pair(std::abs(_corrGeneVector[i]), i);
     }
 
     // partially sort to find the top _numGenesThreshold elements

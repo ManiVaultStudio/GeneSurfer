@@ -214,8 +214,7 @@ private:
 
     
     // Filtering genes based on correlation
-    std::vector<float>      _corrGeneWave;
-    std::vector<float>      _corrGeneSpatial;
+    std::vector<float>      _corrGeneVector; // vector of correlation values for filtering genes
     //float                   _corrThreshold;
     int                     _numGenesThreshold = 50;
     corrFilter::CorrFilter  _corrFilter;
