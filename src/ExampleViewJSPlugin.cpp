@@ -279,7 +279,12 @@ void ExampleViewJSPlugin::init()
 
     // Test March20
     connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, [this]() {
-        _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
+        if (!_sliceDataset.isValid()) {
+            _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
+        }
+        else {
+            _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices);
+        }      
         updateSelection();
         });
 
@@ -459,7 +464,12 @@ void ExampleViewJSPlugin::updateFloodFillDataset()
     qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets name: " << _floodFillDataset->text();
     qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets size: " << _floodFillDataset->getNumPoints();
      
-    _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
+    if (!_sliceDataset.isValid()) {
+        _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
+    }
+    else {
+        _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices);
+    }
 
     updateSelection();
 }
@@ -1398,121 +1408,121 @@ void ExampleViewJSPlugin::computeSubsetData(const DataMatrix& dataMatrix, const 
 }
 
 
-void ExampleViewJSPlugin::updateFloodFill()
-{
-    qDebug() << "ExampleViewJSPlugin::updateFloodfill: start... ";
-    auto start = std::chrono::high_resolution_clock::now();
-
-    if (!_floodFillDataset.isValid())
-    {
-        qDebug() << "ExampleViewJSPlugin::updateFloodfill: _floodFillDataset is not valid";
-        return;
-    }
-    
-    // get flood fill nodes from the core
-    auto start1 = std::chrono::high_resolution_clock::now();
-    std::vector<float> floodNodesWave(_floodFillDataset->getNumPoints());
-    _floodFillDataset->populateDataForDimensions < std::vector<float>, std::vector<float>>(floodNodesWave, { 0 });
-    auto end1 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
-    std::cout << "populateDataForDimensions Elapsed time: " << elapsed1.count() << " ms\n";
-
-    qDebug() << "ExampleViewJSPlugin::updateFloodfill: floodNodesWave size: " << floodNodesWave.size();
-
-    // process the selected flood-fill 
-    auto start2 = std::chrono::high_resolution_clock::now();
-    std::vector<int> floodIndices;
-    std::vector<int> waveNumbers;
-    int tempWave = 0;
-
-    for (int i = 0; i < floodNodesWave.size(); ++i) {
-        float node = floodNodesWave[i];
-        if (node == -1.0f) {
-            tempWave += 1;
-        }
-        else {
-            floodIndices.push_back(static_cast<int>(node));
-            waveNumbers.push_back(tempWave);
-        }
-    }
-
-    int maxWaveNumber = std::max_element(waveNumbers.begin(), waveNumbers.end())[0];
-
-    for (int i = 0; i < waveNumbers.size(); ++i) {
-        waveNumbers[i] = maxWaveNumber + 1 - waveNumbers[i];
-    }
-
-    
-    std::vector<Vector2f> sortedFloodedCoordinates(floodIndices.size());// To check maybe not needed
-
-    // TO DO: test without ordering spatially
-    //orderSpatially(floodIndices, waveNumbers, sortedFloodedCoordinates, _sortedFloodIndices, _sortedWaveNumbers); 
-    _sortedFloodIndices.clear();
-    _sortedWaveNumbers.clear();
-    _sortedFloodIndices = floodIndices;
-    _sortedWaveNumbers = waveNumbers;
-    auto end2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
-    std::cout << "process floodfill data Elapsed time: " << elapsed2.count() << " ms\n";
-
-    // must be put after orderSpatially() and before computeSubsetData()
-    auto start3 = std::chrono::high_resolution_clock::now();
-    _isFloodIndex.clear();
-    _isFloodIndex.resize(_numPoints, false);
-    for (int idx : _sortedFloodIndices) {
-        if (idx < _isFloodIndex.size()) {
-            _isFloodIndex[idx] = true;
-        }
-        else {
-            qDebug() << "ExampleViewJSPlugin::updateFloodfill: idx out of range: " << idx;
-            return;
-        }       
-    }
-    auto end3 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
-    std::cout << "update _isFloodIndex Elapsed time: " << elapsed3.count() << " ms\n";
-
-
-    if (_sliceDataset.isValid()) {      
-        auto start4 = std::chrono::high_resolution_clock::now();
-        _isFloodOnSlice.clear();
-        _isFloodOnSlice.resize(_onSliceIndices.size(), false);
-        for (int i = 0; i < _onSliceIndices.size(); i++)
-        {
-            _isFloodOnSlice[i] = _isFloodIndex[_onSliceIndices[i]];
-        }
-        auto end4 = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> elapsed4 = end4 - start4;
-        std::cout << "update _isFloodOnSlice Elapsed time: " << elapsed4.count() << " ms\n";
-
-        qDebug() << "ExampleViewJSPlugin::updateFloodfill: _isFloodOnSlice size" << _isFloodOnSlice.size();
-
-        // TO DO: no spatial sorting here
-        auto start5 = std::chrono::high_resolution_clock::now();
-        _onSliceFloodIndices.clear();
-        _onSliceWaveNumbers.clear();
-
-        std::set<int> sliceIndicesSet(_onSliceIndices.begin(), _onSliceIndices.end());
-        for (int i = 0; i < _sortedFloodIndices.size(); ++i) {
-            if (sliceIndicesSet.find(_sortedFloodIndices[i]) != sliceIndicesSet.end()) {
-                _onSliceFloodIndices.push_back(_sortedFloodIndices[i]);
-                _onSliceWaveNumbers.push_back(_sortedWaveNumbers[i]);
-            }
-        }
-        auto end5 = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> elapsed5 = end5 - start5;
-        std::cout << "update _onSliceFloodIndices Elapsed time: " << elapsed5.count() << " ms\n";
-    }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed = end - start;
-    std::cout << "updateFloodfill() Elapsed time: " << elapsed.count() << " ms\n";
-
-    updateSelection();
-
-    qDebug() << "ExampleViewJSPlugin::updateFloodfill: finished";
-
-}
+//void ExampleViewJSPlugin::updateFloodFill()
+//{
+//    qDebug() << "ExampleViewJSPlugin::updateFloodfill: start... ";
+//    auto start = std::chrono::high_resolution_clock::now();
+//
+//    if (!_floodFillDataset.isValid())
+//    {
+//        qDebug() << "ExampleViewJSPlugin::updateFloodfill: _floodFillDataset is not valid";
+//        return;
+//    }
+//    
+//    // get flood fill nodes from the core
+//    auto start1 = std::chrono::high_resolution_clock::now();
+//    std::vector<float> floodNodesWave(_floodFillDataset->getNumPoints());
+//    _floodFillDataset->populateDataForDimensions < std::vector<float>, std::vector<float>>(floodNodesWave, { 0 });
+//    auto end1 = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+//    std::cout << "populateDataForDimensions Elapsed time: " << elapsed1.count() << " ms\n";
+//
+//    qDebug() << "ExampleViewJSPlugin::updateFloodfill: floodNodesWave size: " << floodNodesWave.size();
+//
+//    // process the selected flood-fill 
+//    auto start2 = std::chrono::high_resolution_clock::now();
+//    std::vector<int> floodIndices;
+//    std::vector<int> waveNumbers;
+//    int tempWave = 0;
+//
+//    for (int i = 0; i < floodNodesWave.size(); ++i) {
+//        float node = floodNodesWave[i];
+//        if (node == -1.0f) {
+//            tempWave += 1;
+//        }
+//        else {
+//            floodIndices.push_back(static_cast<int>(node));
+//            waveNumbers.push_back(tempWave);
+//        }
+//    }
+//
+//    int maxWaveNumber = std::max_element(waveNumbers.begin(), waveNumbers.end())[0];
+//
+//    for (int i = 0; i < waveNumbers.size(); ++i) {
+//        waveNumbers[i] = maxWaveNumber + 1 - waveNumbers[i];
+//    }
+//
+//    
+//    std::vector<Vector2f> sortedFloodedCoordinates(floodIndices.size());// To check maybe not needed
+//
+//    // TO DO: test without ordering spatially
+//    //orderSpatially(floodIndices, waveNumbers, sortedFloodedCoordinates, _sortedFloodIndices, _sortedWaveNumbers); 
+//    _sortedFloodIndices.clear();
+//    _sortedWaveNumbers.clear();
+//    _sortedFloodIndices = floodIndices;
+//    _sortedWaveNumbers = waveNumbers;
+//    auto end2 = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+//    std::cout << "process floodfill data Elapsed time: " << elapsed2.count() << " ms\n";
+//
+//    // must be put after orderSpatially() and before computeSubsetData()
+//    auto start3 = std::chrono::high_resolution_clock::now();
+//    _isFloodIndex.clear();
+//    _isFloodIndex.resize(_numPoints, false);
+//    for (int idx : _sortedFloodIndices) {
+//        if (idx < _isFloodIndex.size()) {
+//            _isFloodIndex[idx] = true;
+//        }
+//        else {
+//            qDebug() << "ExampleViewJSPlugin::updateFloodfill: idx out of range: " << idx;
+//            return;
+//        }       
+//    }
+//    auto end3 = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
+//    std::cout << "update _isFloodIndex Elapsed time: " << elapsed3.count() << " ms\n";
+//
+//
+//    if (_sliceDataset.isValid()) {      
+//        auto start4 = std::chrono::high_resolution_clock::now();
+//        _isFloodOnSlice.clear();
+//        _isFloodOnSlice.resize(_onSliceIndices.size(), false);
+//        for (int i = 0; i < _onSliceIndices.size(); i++)
+//        {
+//            _isFloodOnSlice[i] = _isFloodIndex[_onSliceIndices[i]];
+//        }
+//        auto end4 = std::chrono::high_resolution_clock::now();
+//        std::chrono::duration<double, std::milli> elapsed4 = end4 - start4;
+//        std::cout << "update _isFloodOnSlice Elapsed time: " << elapsed4.count() << " ms\n";
+//
+//        qDebug() << "ExampleViewJSPlugin::updateFloodfill: _isFloodOnSlice size" << _isFloodOnSlice.size();
+//
+//        // TO DO: no spatial sorting here
+//        auto start5 = std::chrono::high_resolution_clock::now();
+//        _onSliceFloodIndices.clear();
+//        //_onSliceWaveNumbers.clear();
+//
+//        std::set<int> sliceIndicesSet(_onSliceIndices.begin(), _onSliceIndices.end());
+//        for (int i = 0; i < _sortedFloodIndices.size(); ++i) {
+//            if (sliceIndicesSet.find(_sortedFloodIndices[i]) != sliceIndicesSet.end()) {
+//                _onSliceFloodIndices.push_back(_sortedFloodIndices[i]);
+//                //_onSliceWaveNumbers.push_back(_sortedWaveNumbers[i]);
+//            }
+//        }
+//        auto end5 = std::chrono::high_resolution_clock::now();
+//        std::chrono::duration<double, std::milli> elapsed5 = end5 - start5;
+//        std::cout << "update _onSliceFloodIndices Elapsed time: " << elapsed5.count() << " ms\n";
+//    }
+//
+//    auto end = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed = end - start;
+//    std::cout << "updateFloodfill() Elapsed time: " << elapsed.count() << " ms\n";
+//
+//    updateSelection();
+//
+//    qDebug() << "ExampleViewJSPlugin::updateFloodfill: finished";
+//
+//}
 
 void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
     qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): start... ";

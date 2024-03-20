@@ -78,7 +78,7 @@ public:
     void updateSelectedDim();
 
     /** Update the selection of mouse of floodfill data */
-    void updateFloodFill();
+    //void updateFloodFill();
 
     /** Update the point size of _scatterViews and _dimView */
     void updateScatterPointSize();
