@@ -77,8 +77,6 @@ public:
     /** update the selected dim in the scatter plot */
     void updateSelectedDim();
 
-    /** Update the selection of mouse of floodfill data */
-    //void updateFloodFill();
 
     /** Update the point size of _scatterViews and _dimView */
     void updateScatterPointSize();
