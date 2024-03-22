@@ -165,6 +165,7 @@ private:
     /** count distribution of labels within floodfill */
     void countLabelDistribution();
 
+    /** Match the annotations labels in ST and acRNA-seq data in the floodfill*/
     void matchLabelInSubset();
 
     /** load data for labels from ST dataset*/
@@ -178,6 +179,9 @@ private:
 
     /** populate the avg expr values to spatil domain */
     DataMatrix populateAvgExprToSpatial();
+
+    /** compute the mean coordinates by each annotation label in the floodfill - only for 3D data */
+    void computeMeanCoordinatesByCluster(std::vector<float>& xAvg, std::vector<float>& yAvg, std::vector<float>& zAvg);
 
 private:
 

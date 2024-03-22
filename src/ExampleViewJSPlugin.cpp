@@ -774,10 +774,20 @@ void ExampleViewJSPlugin::updateSelection()
     }
     if (_isSingleCell && _sliceDataset.isValid() && _isCorrSpatial) {
         qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorr";
-        DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
+
+        // option 1: compute with all flood cells 
+        /*DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
         std::vector<float> zPositions;
         _positionDataset->extractDataForDimension(zPositions, 2);
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, zPositions, _corrGeneVector);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, zPositions, _corrGeneVector);*/
+
+        // option 2: compute with clusters + mean coordinates
+        std::vector<float> xAvg;
+        std::vector<float> yAvg;
+        std::vector<float> zAvg;
+        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
+
     }
     // -------------- HD Correlation --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
@@ -833,6 +843,67 @@ DataMatrix ExampleViewJSPlugin::populateAvgExprToSpatial() {
     qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
 
     return populatedSubsetAvg;
+}
+
+void ExampleViewJSPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg, std::vector<float>& yAvg, std::vector<float>& zAvg) {
+    std::unordered_map<QString, float> clusterXSums; 
+    std::unordered_map<QString, float> clusterYSums;
+    std::unordered_map<QString, float> clusterZSums;
+
+    std::vector<float> zPositions;
+    _positionDataset->extractDataForDimension(zPositions, 2);
+
+    for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
+        int ptIndex = _sortedFloodIndices[index];
+        QString label = _cellLabels[ptIndex];
+
+        clusterXSums[label] += _positions[ptIndex].x;
+        clusterYSums[label] += _positions[ptIndex].y;
+        clusterZSums[label] += zPositions[ptIndex];
+    }
+
+    xAvg.clear();
+    yAvg.clear();
+    zAvg.clear();
+
+    for (int i = 0; i < _clustersToKeep.size(); ++i) {
+        QString label = _clustersToKeep[i];
+        int count = _countsMap[label];
+
+        float averageX = (count > 0) ? static_cast<float>(clusterXSums[label]) / count : 0.0f;
+        xAvg.push_back(averageX);
+
+        float averageY = (count > 0) ? static_cast<float>(clusterYSums[label]) / count : 0.0f;
+        yAvg.push_back(averageY);
+
+        float averageZ = (count > 0) ? static_cast<float>(clusterZSums[label]) / count : 0.0f;
+        zAvg.push_back(averageZ);
+    }
+
+    // output for manuel check
+    // ---------------------------
+    /*for (int i = 0; i < xAvg.size(); ++i) {
+        qDebug() << "ExampleViewJSPlugin::computeMeanCoordinatesByCluster(): cluster: " << _clustersToKeep[i] << " x: " << xAvg[i] << " y: " << yAvg[i] << " z: " << zAvg[i];
+    }
+    for (int i = 0; i < xAvg.size(); ++i) {
+        float stdDevX = 0.0f;
+        float stdDevY = 0.0f;
+        float stdDevZ = 0.0f;
+        for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
+            int ptIndex = _sortedFloodIndices[index];
+            QString label = _cellLabels[ptIndex];
+
+            if (label == _clustersToKeep[i]) {
+                stdDevX += pow(_positions[ptIndex].x - xAvg[i], 2);
+                stdDevY += pow(_positions[ptIndex].y - yAvg[i], 2);
+                stdDevZ += pow(zPositions[ptIndex] - zAvg[i], 2);
+            }
+        }
+        stdDevX = sqrt(stdDevX / _countsMap[_clustersToKeep[i]]);
+        stdDevY = sqrt(stdDevY / _countsMap[_clustersToKeep[i]]);
+        stdDevZ = sqrt(stdDevZ / _countsMap[_clustersToKeep[i]]);       
+        qDebug() << "ExampleViewJSPlugin::computeMeanCoordinatesByCluster(): cluster: " << _clustersToKeep[i] << " stdDevX: " << stdDevX << " stdDevY: " << stdDevY << " stdDevZ: " << stdDevZ;
+    }*/
 }
 
 void ExampleViewJSPlugin::setCorrelationMode(bool mode) {
