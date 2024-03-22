@@ -761,19 +761,19 @@ void ExampleViewJSPlugin::updateSelection()
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _isCorrSpatial) {
-        qDebug() << ">>>>>Compute subset: 3D + ST + SpatialCorr";
+        qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorr";
         std::vector<float> zPositions;
         _positionDataset->extractDataForDimension(zPositions, 2);
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, _corrGeneVector);
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _isCorrSpatial) {
-        qDebug() << ">>>>>Compute subset: 2D + SingleCell + SpatialCorr";
+        qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorr";
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
 
     }
     if (_isSingleCell && _sliceDataset.isValid() && _isCorrSpatial) {
-        qDebug() << ">>>>>Compute subset: 3D + SingleCell + SpatialCorr";
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorr";
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
         std::vector<float> zPositions;
         _positionDataset->extractDataForDimension(zPositions, 2);
@@ -822,18 +822,14 @@ DataMatrix ExampleViewJSPlugin::populateAvgExprToSpatial() {
     DataMatrix populatedSubsetAvg(_sortedFloodIndices.size(), _geneNamesAvgExpr.size());
 
 #pragma omp parallel for
-    for (int i = 0; i < _geneNamesAvgExpr.size(); ++i)
+    for (int i = 0; i < _sortedFloodIndices.size(); ++i)
     {
-        const Eigen::VectorXf avgValue = _avgExpr(Eigen::all, i);
-        std::vector<float> colSubset(_sortedFloodIndices.size());
-        for (size_t j = 0; j < _sortedFloodIndices.size(); ++j)
-        {
-            int index = _sortedFloodIndices[j];
-            QString label = _cellLabels[index]; // Get the cluster alias label name of the cell
-            colSubset[j] = avgValue[_clusterAliasToRowMap[label]];
-        }
-        populatedSubsetAvg.col(i) = Eigen::Map<Eigen::VectorXf>(colSubset.data(), colSubset.size());
+        int index = _sortedFloodIndices[i];
+        QString label = _cellLabels[index];
+        auto row = _avgExpr(_clusterAliasToRowMap[label], Eigen::all);
+        populatedSubsetAvg.row(i) = row;
     }
+
     qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
 
     return populatedSubsetAvg;
