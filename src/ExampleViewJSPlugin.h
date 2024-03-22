@@ -183,6 +183,9 @@ private:
     /** compute the mean coordinates by each annotation label in the floodfill - only for 3D data */
     void computeMeanCoordinatesByCluster(std::vector<float>& xAvg, std::vector<float>& yAvg, std::vector<float>& zAvg);
 
+    /** compute the mean floodfill wave numbers by each annotation label in the floodfill*/
+    void computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg);
+
 private:
 
     DataStorage                        _dataStore;
@@ -241,7 +244,6 @@ private:
     Eigen::MatrixXf                    _avgExpr;                 // Average expression of each cluster
     Eigen::MatrixXf                    _subsetDataAvgOri;        // Subset of average expression of each cluster - NOT weighted 
     std::vector<QString>               _geneNamesAvgExpr;        // From avg expr single cell data    
-    std::vector<float>                 _waveAvg;                 // Avg of wave numbers for each cluster - same order as subset columns
     bool                               _avgExprDatasetExists = false; // Whether the avg expression dataset exists   
 
     QMap<QString, QStringList>         _simplifiedToIndexGeneMapping; // Map for simplified gene names to extra indexed gene names - for duplicate gene symbols 
@@ -249,7 +251,6 @@ private:
     std::unordered_map<QString, int>   _clusterAliasToRowMap;    // Map label (QString) to row index in _avgExpr
     std::vector<QString>               _cellLabels;              // Labels for each point
     std::unordered_map<QString, int>   _countsMap;               // Count distribution of labels WITHIN floodfill
-    std::unordered_map<QString, float> _clusterWaveNumbers;      // Avg of wave numbers for each cluster, first element is the label
     std::vector<QString>               _clustersToKeep;          // clusters to keep for avg expression - same order as subset row - cluster alias name 
 
     // Flags

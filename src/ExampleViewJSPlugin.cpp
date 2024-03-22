@@ -798,11 +798,15 @@ void ExampleViewJSPlugin::updateSelection()
     }
     if (_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
         qDebug() << ">>>>>Compute subset: 2D + SingleCell + HDCorr";
-        _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneVector);
+        std::vector<float> waveAvg;
+        computeMeanWaveNumbersByCluster(waveAvg);
+        _corrFilter.getHDCorrFilter().computeCorrelationVector(waveAvg, _subsetDataAvgOri, _corrGeneVector);
     }
     if (_isSingleCell && _sliceDataset.isValid() && !_isCorrSpatial) {
         qDebug() << ">>>>>Compute subset: 3D + SingleCell + HDCorr";
-        _corrFilter.getHDCorrFilter().computeCorrelationVector(_waveAvg, _subsetDataAvgOri, _corrGeneVector);
+        std::vector<float> waveAvg;
+        computeMeanWaveNumbersByCluster(waveAvg);
+        _corrFilter.getHDCorrFilter().computeCorrelationVector(waveAvg, _subsetDataAvgOri, _corrGeneVector);
     }
 
     ////////////////////
@@ -841,6 +845,25 @@ DataMatrix ExampleViewJSPlugin::populateAvgExprToSpatial() {
     qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
 
     return populatedSubsetAvg;
+}
+
+void ExampleViewJSPlugin::computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg) {
+    std::unordered_map<QString, int> clusterWaveNumberSums;
+
+    for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
+        int ptIndex = _sortedFloodIndices[index];
+        QString label = _cellLabels[ptIndex];
+        clusterWaveNumberSums[label] += _sortedWaveNumbers[index]; // for computing the average wave number
+    }
+
+    for (int i = 0; i < _clustersToKeep.size(); ++i) {
+        QString label = _clustersToKeep[i];
+        int count = _countsMap[label];
+        float average = (count > 0) ? static_cast<float>(clusterWaveNumberSums[label]) / count : 0.0f;
+        waveAvg.push_back(average);
+    }
+
+    qDebug() << "computeMeanWaveNumbersByCluster(): waveAvg size: " << waveAvg.size();
 }
 
 void ExampleViewJSPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg, std::vector<float>& yAvg, std::vector<float>& zAvg) {
@@ -1476,37 +1499,17 @@ void ExampleViewJSPlugin::loadLabelsFromSTDatasetABCAtlas() {
     qDebug() << "_cellLabels[0]" << _cellLabels[0];
 }
 
-void ExampleViewJSPlugin::countLabelDistribution() {
-
+void ExampleViewJSPlugin::countLabelDistribution() 
+{
     std::unordered_map<QString, int> clusterPointCounts;
-    std::unordered_map<QString, int> clusterWaveNumberSums; // test corrWave - use cluster instead of cell points
-    std::unordered_map<QString, std::map<int, int>> waveNumberDistribution; // New map for wave number distribution
 
     for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
         int ptIndex = _sortedFloodIndices[index];
         QString label = _cellLabels[ptIndex];
         clusterPointCounts[label]++;
-
-        clusterWaveNumberSums[label] += _sortedWaveNumbers[index]; // for computing the average wave number
-
-        int waveNumber = _sortedWaveNumbers[index]; // for outputting the distribution of wave numbers
-        waveNumberDistribution[label][waveNumber]++;
     }
-
-    std::unordered_map<QString, float> clusterWaveAvg;
-    int i = 0;
-    for (const auto& pair : clusterPointCounts) {
-        QString label = pair.first;
-        int count = pair.second;
-        float average = (count > 0) ? static_cast<float>(clusterWaveNumberSums[label]) / count : 0.0f;
-        clusterWaveAvg[label] = average;
-        i++;
-    }
-
     _countsMap.clear();
     _countsMap = clusterPointCounts;
-    _clusterWaveNumbers.clear();
-    _clusterWaveNumbers = clusterWaveAvg;
 
     matchLabelInSubset();
 }
@@ -1547,13 +1550,6 @@ void ExampleViewJSPlugin::matchLabelInSubset()
         qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): No cluster to keep";
         return;
     }
-
-    // match _clusterWaveNumbers to clustersToKeep, i.e. match the column order of subset
-    _waveAvg.clear();
-    for (QString clusterName : clustersToKeep) {
-        _waveAvg.push_back(_clusterWaveNumbers[clusterName]);
-    }
-    qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): _waveAvg size: " << _waveAvg.size();
 
     _clustersToKeep.clear();
     _clustersToKeep = clustersToKeep; // TO DO: dirty copy
