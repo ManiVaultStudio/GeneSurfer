@@ -28,7 +28,9 @@ namespace corrFilter
     class HDCorr
     {
     public:
+        // scRNA-seq
         void computeCorrelationVector(const std::vector<float>& waveNumbers, const DataMatrix& dataMatrix, std::vector<float>& corrVector) const;
+        // ST
         void computeCorrelationVector(const std::vector<int>& waveNumbers, const DataMatrix& dataMatrix, std::vector<float>& corrVector) const;
     };
 

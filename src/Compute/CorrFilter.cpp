@@ -10,6 +10,8 @@
 #include <iomanip>
 #include <QDebug>
 
+#include <chrono>
+
 using namespace mv;
 
 namespace corrFilter
@@ -40,15 +42,14 @@ namespace corrFilter
     }
 
     void SpatialCorr::computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, std::vector<float>& corrVector) const
-    {
-        std::vector<float> xCoords, yCoords;
-        for (int index : floodIndices) {
-            xCoords.push_back(positions[index].x);
-            yCoords.push_back(positions[index].y);
+    {   // 2D
+        Eigen::VectorXf xVector(floodIndices.size());
+        Eigen::VectorXf yVector(floodIndices.size());
+        for (int i = 0; i < floodIndices.size(); ++i) {
+            int index = floodIndices[i];
+            xVector[i] = positions[index].x;
+            yVector[i] = positions[index].y;
         }
-
-        Eigen::VectorXf xVector = Eigen::Map<Eigen::VectorXf>(xCoords.data(), xCoords.size());
-        Eigen::VectorXf yVector = Eigen::Map<Eigen::VectorXf>(yCoords.data(), yCoords.size());
 
         // Precompute means and norms for xVector, yVector
         float meanX = xVector.mean(), meanY = yVector.mean();
@@ -81,18 +82,16 @@ namespace corrFilter
     }
 
     void SpatialCorr::computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, const std::vector<float>& zPositions, std::vector<float>& corrVector) const
-    {
-
-        std::vector<float> xCoords, yCoords, zCoords;
-        for (int index : floodIndices) {
-            xCoords.push_back(positions[index].x);
-            yCoords.push_back(positions[index].y);
-            zCoords.push_back(zPositions[index]);
+    {   // 3D all flood indices
+        Eigen::VectorXf xVector(floodIndices.size());
+        Eigen::VectorXf yVector(floodIndices.size());
+        Eigen::VectorXf zVector(floodIndices.size());
+        for (int i = 0; i < floodIndices.size(); ++i) {
+            int index = floodIndices[i];
+            xVector[i] = positions[index].x;
+            yVector[i] = positions[index].y;
+            zVector[i] = zPositions[index];
         }
-
-        Eigen::VectorXf xVector = Eigen::Map<Eigen::VectorXf>(xCoords.data(), xCoords.size());
-        Eigen::VectorXf yVector = Eigen::Map<Eigen::VectorXf>(yCoords.data(), yCoords.size());
-        Eigen::VectorXf zVector = Eigen::Map<Eigen::VectorXf>(zCoords.data(), zCoords.size());
 
         // Precompute means and norms for xVector, yVector, zVector
         float meanX = xVector.mean(), meanY = yVector.mean(), meanZ = zVector.mean();
@@ -131,7 +130,7 @@ namespace corrFilter
     }
 
     void SpatialCorr::computeCorrelationVector(const DataMatrix& dataMatrix, std::vector<float>& xPositions, std::vector<float>& yPositions, std::vector<float>& zPositions, std::vector<float>& corrVector) const
-    {
+    {   // 3D cluster with mean position
         Eigen::VectorXf xVector = Eigen::Map<Eigen::VectorXf>(xPositions.data(), xPositions.size());
         Eigen::VectorXf yVector = Eigen::Map<Eigen::VectorXf>(yPositions.data(), yPositions.size());
         Eigen::VectorXf zVector = Eigen::Map<Eigen::VectorXf>(zPositions.data(), zPositions.size());
@@ -173,7 +172,7 @@ namespace corrFilter
     }
 
     void HDCorr::computeCorrelationVector(const std::vector<float>& waveNumbers, const DataMatrix& dataMatrix, std::vector<float>& corrVector) const
-    {
+    {   // scRNA-seq
         Eigen::VectorXf eigenWaveNumbers(waveNumbers.size());
         std::copy(waveNumbers.begin(), waveNumbers.end(), eigenWaveNumbers.data());
 
@@ -192,7 +191,7 @@ namespace corrFilter
     }
 
     void HDCorr::computeCorrelationVector(const std::vector<int>& waveNumbers, const DataMatrix& dataMatrix, std::vector<float>& corrVector) const
-    {
+    {   // ST
         Eigen::VectorXf eigenWaveNumbers(waveNumbers.size());
         std::copy(waveNumbers.begin(), waveNumbers.end(), eigenWaveNumbers.data());
 

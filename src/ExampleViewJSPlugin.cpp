@@ -770,7 +770,6 @@ void ExampleViewJSPlugin::updateSelection()
         qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorr";
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
-
     }
     if (_isSingleCell && _sliceDataset.isValid() && _isCorrSpatial) {
         qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorr";
@@ -787,7 +786,6 @@ void ExampleViewJSPlugin::updateSelection()
         std::vector<float> zAvg;
         computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
-
     }
     // -------------- HD Correlation --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
@@ -973,8 +971,7 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
             }
             else {
                 return;
-            }
-            
+            }         
         } 
 
         qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();    
@@ -982,7 +979,6 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
         _settingsAction.getDimensionSelectionAction().getDimensionAction().setCurrentDimensionIndex(-1);*/
         setDimensionNamesForDimensionPicker();
         
-
         // update _enabledDimNames
         _enabledDimNames.clear();
         _enabledDimNames = _geneNamesAvgExpr;
@@ -998,9 +994,7 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
         // update max number of genes in _numGenesThresholdAction
         _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(_enabledDimNames.size());
 
- 
         updateSelection();
-
     }
     else {
         qDebug() << "Using Spatial";
@@ -1082,7 +1076,6 @@ void ExampleViewJSPlugin::updateNumCluster()
     }
 
     updateViewData(_positions);
-
     updateScatterPointSize();
     updateSelection();
 }
