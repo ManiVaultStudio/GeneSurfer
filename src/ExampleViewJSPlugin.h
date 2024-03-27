@@ -7,7 +7,7 @@
 #include "Compute/EnrichmentAnalysis.h"
 #include "Compute/fastcluster.h"
 #include "Compute/CorrFilter.h"
-#include "Compute/FloodSubset.h"
+#include "Compute/DataSubset.h"
 
 #include "Actions/SettingsAction.h"
 
@@ -208,7 +208,7 @@ private:
     std::vector<int>                   _sortedFloodIndices;      // Spatially sorted indices of flood fill at the current cursor position
     std::vector<int>                   _sortedWaveNumbers;       // Spatially sorted wave numbers of flood fill at the current cursor position
     Eigen::MatrixXf                    _subsetData;              // Subset of flooded data, sorted spatially
-    FloodSubset                        _floodSubset;             // Flood subset computing
+    DataSubset                         _computeSubset;             // Flood subset computing
 
     // Filtering genes based on correlation
     std::vector<float>                 _corrGeneVector;          // Vector of correlation values for filtering genes

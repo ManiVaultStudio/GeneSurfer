@@ -268,16 +268,34 @@ void ExampleViewJSPlugin::init()
     // Update the selection from JS
     connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passSelectionToCore, this, &ExampleViewJSPlugin::publishSelection);
 
-    // update floodfill - equal to connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged,...)
     connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, [this]() {
         // Use the flood fill dataset to update the cell subset
         qDebug() << ">>>>>ExampleViewJSPlugin::_floodFillDataset::dataChanged";
         if (!_sliceDataset.isValid()) {
-            _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
+            _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
         }
         else {
-            _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices);
+            _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices);
         }      
+        updateSelection();
+        });
+
+    connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, [this]() {
+        // Use the selected metadata to update the cell subset
+        auto selection = _positionDataset->getSelection<Points>();
+        
+        if (selection->indices.size() <= 1) {
+            return;
+        }
+        qDebug() << ">>>>>ExampleViewJSPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
+
+        if (!_sliceDataset.isValid()) {
+            _computeSubset.updateSelectedData(_positionDataset, selection, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
+        }
+        else {
+            _computeSubset.updateSelectedData(_positionDataset, selection, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices);
+        }
+
         updateSelection();
         });
 
@@ -286,55 +304,6 @@ void ExampleViewJSPlugin::init()
     connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &ExampleViewJSPlugin::noDataEnrichmentTable);
 
     connect(_tableWidget, &QTableWidget::cellClicked, this, &ExampleViewJSPlugin::onTableClicked); // on table clicked
-
-    connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, [this]() {// March27
-        auto selection = _positionDataset->getSelection<Points>();
-        qDebug() << ">>>>>ExampleViewJSPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
-
-        if (selection->indices.size() == 1) {
-            return;
-        }
-
-        // Use the selected metadata to update the cell subset
-        // Mimic the behavior of the flood fill dataset for the selection dataset
-        std::vector<bool> selected;
-        _positionDataset->selectedLocalIndices(selection->indices, selected);
-
-        _sortedFloodIndices.clear();
-        _sortedWaveNumbers.clear();
-        _isFloodIndex.clear();
-
-        std::vector<unsigned int> test = selection->indices;// TODO: check if the values in indices are within range of int
-        std::vector<int> sortedFloodIndices(test.begin(), test.end());
-        _sortedFloodIndices = sortedFloodIndices;
-
-        _sortedWaveNumbers.resize(_sortedFloodIndices.size(), 1);
-
-        _isFloodIndex.resize(_positionDataset->getNumPoints(), 0);
-        for (std::size_t i = 0; i < selected.size(); i++)
-            _isFloodIndex[i] = selected[i] ? 1 : 0;
-
-        if (_sliceDataset.isValid()) {
-            _isFloodOnSlice.clear();
-            _onSliceFloodIndices.clear();
-
-            _isFloodOnSlice.resize(_onSliceIndices.size(), false);
-            for (int i = 0; i < _onSliceIndices.size(); i++)
-            {
-                _isFloodOnSlice[i] = _isFloodIndex[_onSliceIndices[i]];
-            }
-
-            std::set<int> sliceIndicesSet(_onSliceIndices.begin(), _onSliceIndices.end());
-            for (int i = 0; i < _sortedFloodIndices.size(); ++i) {
-                if (sliceIndicesSet.find(_sortedFloodIndices[i]) != sliceIndicesSet.end()) {
-                    _onSliceFloodIndices.push_back(_sortedFloodIndices[i]);
-                }
-            }
-        }
-
-        updateSelection();
-        });
-
 }
 
 void ExampleViewJSPlugin::loadData(const mv::Datasets& datasets)
@@ -496,10 +465,10 @@ void ExampleViewJSPlugin::updateFloodFillDataset()
     qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets size: " << _floodFillDataset->getNumPoints();
      
     if (!_sliceDataset.isValid()) {
-        _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
+        _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
     }
     else {
-        _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices);
+        _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices);
     }
 
     updateSelection();
@@ -777,26 +746,26 @@ void ExampleViewJSPlugin::updateSelection()
     ////////////////////
     if (!_isSingleCell && !_sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 2D + ST";
-        _floodSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData);
+        _computeSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData);
     }
     if (!_isSingleCell && _sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 3D + ST";
         //subset data only contains the onSliceFloodIndice
-        _floodSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData);
+        _computeSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData);
         //subset data contains all floodfill indices     
-        _floodSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
+        _computeSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
     }
     if (_isSingleCell && !_sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 2D + SingleCell";
         countLabelDistribution();
-        _floodSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
+        _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
         _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
         _subsetData = _subsetDataAvgOri;
     }
     if (_isSingleCell && _sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 3D + SingleCell";
         countLabelDistribution();
-        _floodSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
+        _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
         _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
         _subsetData3D = _subsetDataAvgOri;
     }
