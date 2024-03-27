@@ -270,6 +270,8 @@ void ExampleViewJSPlugin::init()
 
     // update floodfill - equal to connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged,...)
     connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, [this]() {
+        // Use the flood fill dataset to update the cell subset
+        qDebug() << ">>>>>ExampleViewJSPlugin::_floodFillDataset::dataChanged";
         if (!_sliceDataset.isValid()) {
             _floodSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
         }
@@ -284,6 +286,54 @@ void ExampleViewJSPlugin::init()
     connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &ExampleViewJSPlugin::noDataEnrichmentTable);
 
     connect(_tableWidget, &QTableWidget::cellClicked, this, &ExampleViewJSPlugin::onTableClicked); // on table clicked
+
+    connect(&_positionDataset, &Dataset<Points>::dataSelectionChanged, this, [this]() {// March27
+        auto selection = _positionDataset->getSelection<Points>();
+        qDebug() << ">>>>>ExampleViewJSPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
+
+        if (selection->indices.size() == 1) {
+            return;
+        }
+
+        // Use the selected metadata to update the cell subset
+        // Mimic the behavior of the flood fill dataset for the selection dataset
+        std::vector<bool> selected;
+        _positionDataset->selectedLocalIndices(selection->indices, selected);
+
+        _sortedFloodIndices.clear();
+        _sortedWaveNumbers.clear();
+        _isFloodIndex.clear();
+
+        std::vector<unsigned int> test = selection->indices;// TODO: check if the values in indices are within range of int
+        std::vector<int> sortedFloodIndices(test.begin(), test.end());
+        _sortedFloodIndices = sortedFloodIndices;
+
+        _sortedWaveNumbers.resize(_sortedFloodIndices.size(), 1);
+
+        _isFloodIndex.resize(_positionDataset->getNumPoints(), 0);
+        for (std::size_t i = 0; i < selected.size(); i++)
+            _isFloodIndex[i] = selected[i] ? 1 : 0;
+
+        if (_sliceDataset.isValid()) {
+            _isFloodOnSlice.clear();
+            _onSliceFloodIndices.clear();
+
+            _isFloodOnSlice.resize(_onSliceIndices.size(), false);
+            for (int i = 0; i < _onSliceIndices.size(); i++)
+            {
+                _isFloodOnSlice[i] = _isFloodIndex[_onSliceIndices[i]];
+            }
+
+            std::set<int> sliceIndicesSet(_onSliceIndices.begin(), _onSliceIndices.end());
+            for (int i = 0; i < _sortedFloodIndices.size(); ++i) {
+                if (sliceIndicesSet.find(_sortedFloodIndices[i]) != sliceIndicesSet.end()) {
+                    _onSliceFloodIndices.push_back(_sortedFloodIndices[i]);
+                }
+            }
+        }
+
+        updateSelection();
+        });
 
 }
 
@@ -821,7 +871,7 @@ void ExampleViewJSPlugin::updateSelection()
     convertDataAndUpdateChart();
     updateScatterColors();
     updateScatterOpacity();
-    updateScatterSelection();
+    //updateScatterSelection();
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
@@ -1127,24 +1177,25 @@ void ExampleViewJSPlugin::updateScatterPointSize()
 
 void ExampleViewJSPlugin::updateScatterSelection()
 {
-    if (!_positionDataset.isValid())
-        return;
+    // March 27 no need to highlight?
+    /*if (!_positionDataset.isValid())
+        return;*/
 
-    // highlight the current selection
-    auto selection = _positionDataset->getSelection<Points>();
+    //// highlight the current selection
+    //auto selection = _positionDataset->getSelection<Points>();
 
-    std::vector<bool> selected;
-    std::vector<char> highlights;
+    //std::vector<bool> selected;
+    //std::vector<char> highlights;
 
-    _positionDataset->selectedLocalIndices(selection->indices, selected);
+    //_positionDataset->selectedLocalIndices(selection->indices, selected);
 
-    highlights.resize(_numPoints, 0);
+    //highlights.resize(_numPoints, 0);
 
-    for (int i = 0; i < selected.size(); i++)
-        highlights[i] = selected[i] ? 1 : 0;
+    //for (int i = 0; i < selected.size(); i++)
+    //    highlights[i] = selected[i] ? 1 : 0;
 
-    for (int i = 0; i < _nclust; i++)
-        _scatterViews[i]->setHighlights(highlights, static_cast<std::int32_t>(selection->indices.size()));
+    //for (int i = 0; i < _nclust; i++)
+    //    _scatterViews[i]->setHighlights(highlights, static_cast<std::int32_t>(selection->indices.size()));
     //qDebug() << " ExampleViewJSPlugin::updateScatterSelection(): scatterViews highlighted";
 
 }
