@@ -2307,6 +2307,8 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
     variantMapMustContain(variantMap, "SettingsAction");
     _settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
 
+    _isCorrSpatial = variantMap["IsCorrSpatial"].toBool();
+
     qDebug() << "ExampleViewJSPlugin::fromVariantMap() 3 ";
 
     QString clusterScalarsId = variantMap["ClusterScalars"].toString();
@@ -2347,6 +2349,8 @@ QVariantMap ExampleViewJSPlugin::toVariantMap() const
     variantMap.insert("ClusterScalars", _clusterScalars.getDatasetId());
 
     variantMap.insert("SelectedDimName", _selectedDimName);
+
+    variantMap.insert("IsCorrSpatial", _isCorrSpatial);
 
     if (_sliceDataset.isValid())
     {
