@@ -100,10 +100,10 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
 
     for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
     {
-        _scatterViews[i] = new ScatterView();
+        _scatterViews[i] = new ScatterView(this);
     }
 
-    _dimView = new ScatterView();
+    _dimView = new ScatterView(this);
 
     for (int i = 0; i < 6; i++) {//TO DO: hard code max 6 scatterViews
         connect(_scatterViews[i], &ScatterView::initialized, this, [this, i]() {_scatterViews[i]->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
@@ -111,7 +111,8 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     }
 
     connect(_dimView, &ScatterView::initialized, this, [this]() {_dimView->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
-    connect(_dimView, &ScatterView::viewSelected, this, [this]() { _selectedClusterIndex = 6; updateClick(); });   
+    connect(_dimView, &ScatterView::viewSelected, this, [this]() { _selectedClusterIndex = 6; updateClick(); });  
+
 }
 
 void ExampleViewJSPlugin::init()
@@ -246,7 +247,7 @@ void ExampleViewJSPlugin::init()
                 dropRegions << new DropWidget::DropRegion(this, "Mask", description, "palette", true, [this, candidateDataset]()
                     {
                         _sliceDataset = candidateDataset;
-                        updateSlice();
+                        updateSlice(0);// TODO: hard code 0?? March29
                     });
             }
             else {
@@ -2235,9 +2236,13 @@ void ExampleViewJSPlugin::updateClick() {
     }
 }
 
-void ExampleViewJSPlugin::updateSlice() {
-   
-    _currentSliceIndex = _settingsAction.getSliceAction().getValue();
+void ExampleViewJSPlugin::updateSlice(int sliceIndex) {
+    qDebug() << "ExampleViewJSPlugin::updateSlice(): sliceIndex = " << sliceIndex;
+
+   // _currentSliceIndex = _settingsAction.getSliceAction().getValue();
+    _currentSliceIndex = sliceIndex;
+
+    _settingsAction.getSliceAction().setValue(_currentSliceIndex);
 
     if (!_sliceDataset.isValid()) {
         qDebug() << "ExampleViewJSPlugin::updateSlice(): _sliceDataset is not valid";
@@ -2318,7 +2323,7 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
     {
         qDebug() << "ExampleViewJSPlugin::fromVariantMap() 4 ";
         _currentSliceIndex = variantMap["CurrentSliceIdx"].toInt();
-        updateSlice();
+        updateSlice(_currentSliceIndex);
     }
 
     qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;

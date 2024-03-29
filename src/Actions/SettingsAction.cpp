@@ -73,8 +73,11 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         _avgExprDatasetPickerAction.setCurrentDataset(dataset);
         });
 
-    connect(&_sliceAction, &IntegralAction::valueChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateSlice);
+    //connect(&_sliceAction, &IntegralAction::valueChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateSlice());
 
+    connect(&_sliceAction, &IntegralAction::valueChanged, this, [this]() {
+        _exampleViewJSPlugin->updateSlice(_sliceAction.getValue());
+        });
 }
 
 void SettingsAction::fromVariantMap(const QVariantMap& variantMap)

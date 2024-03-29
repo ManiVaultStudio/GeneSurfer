@@ -1,4 +1,5 @@
 #include "ScatterView.h"
+#include "ExampleViewJSPlugin.h"
 
 #include "util/Exception.h"
 
@@ -30,7 +31,8 @@ namespace
     }
 }
 
-ScatterView::ScatterView() :
+ScatterView::ScatterView(ExampleViewJSPlugin* viewJSPlugin) :
+    _viewJSPlugin(viewJSPlugin),
     _pointRenderer(),
     _backgroundColor(255, 255, 255, 255)
 {
@@ -365,10 +367,34 @@ bool ScatterView::eventFilter(QObject* target, QEvent* event)
     {
         auto mouseEvent = static_cast<QMouseEvent*>(event);
 
-        qDebug() << "Mouse button press";
+        qDebug() << "ScatterView: Mouse button press";
         _clicked = true;
 
         emit viewSelected();
+
+        break;
+    }
+
+    case QEvent::Wheel:
+    {
+        auto wheelEvent = static_cast<QWheelEvent*>(event);
+
+        qDebug() << "ScatterView: Mouse wheel event 1";
+
+        if (!_viewJSPlugin->getSliceDataset().isValid())
+            break;
+
+        qDebug() << "ScatterView: Mouse wheel event 2";
+
+        int mv = wheelEvent->angleDelta().y() > 0 ? -1 : 1;
+
+        int currentSliceIndex = _viewJSPlugin->getSliceIndex();
+        currentSliceIndex += mv;
+        currentSliceIndex = std::max(std::min(currentSliceIndex, (int)_viewJSPlugin->getSliceDataset()->getClusters().size() - 1), 0);
+
+        _viewJSPlugin->updateSlice(currentSliceIndex);
+
+        qDebug() << "ScatterView: Mouse wheel event 3";
 
         break;
     }

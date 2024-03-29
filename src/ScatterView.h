@@ -11,6 +11,9 @@
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_3_3_Core>
 
+class ExampleViewJSPlugin;
+
+
 using namespace mv;
 using namespace mv::gui;
 
@@ -26,7 +29,7 @@ class ScatterView : public QOpenGLWidget, QOpenGLFunctions_3_3_Core
     Q_OBJECT
 
 public:
-    ScatterView();
+    ScatterView(ExampleViewJSPlugin* viewJSPlugin);
     ~ScatterView();
 
     /** Returns true when the widget was initialized and is ready to be used. */
@@ -89,6 +92,8 @@ protected:
     bool eventFilter(QObject* target, QEvent* event);
 
 private:
+    ExampleViewJSPlugin* _viewJSPlugin;    // Pointer to the main plugin class
+
     PointRenderer   _pointRenderer;
     Bounds          _dataBounds;             /** Bounds of the loaded data */
     QSize           _windowSize;             /** Size of the scatterplot widget */

@@ -43,7 +43,6 @@ set(PLUGIN
     src/ExampleViewJSPlugin.json
 	src/ScatterView.h
     src/ScatterView.cpp
-    
 )
 
 set(Compute

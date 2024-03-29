@@ -79,7 +79,7 @@ public:
     /** Update the opacity of non-flooded nodes in _scatterViews and _dimView */
     void updateScatterOpacity();
 
-    void updateSlice();
+    void updateSlice(int sliceIndex);
 
     void setCorrelationMode(bool mode);// test
 
@@ -281,6 +281,9 @@ public:
 
     mv::Dataset<Clusters>& getSliceDataset() { return _sliceDataset; }
 
+public:
+    int getSliceIndex() { return _currentSliceIndex; }
+
 public: 
     void setAvgExpressionStatus(AvgExpressionStatus status) { _avgExprStatus = status; }
 
@@ -297,7 +300,7 @@ public: // Serialization
 
     /**
     * Save plugin to variant map
-    * @return Variant map representation of the plugin
+    * @return Variant map representation of the plugin 
     */
     QVariantMap toVariantMap() const override;
 
