@@ -163,6 +163,13 @@ void EnrichmentAnalysis::handleEnrichmentReplyToppGene() {
 
         // prepare to send the data to plugin
         if (count != 0) {
+            // sort the outputList by QValueBonferroni
+            std::sort(outputList.begin(), outputList.end(), [](const QVariant& a, const QVariant& b) {
+                double qValueA = a.toMap()["QValueBonferroni"].toDouble();
+                double qValueB = b.toMap()["QValueBonferroni"].toDouble();
+                return qValueA < qValueB;
+                });
+
             emit enrichmentDataReady(outputList);
         } else  {
             qDebug() << "ToppGene reply warning: no GO terms found";
