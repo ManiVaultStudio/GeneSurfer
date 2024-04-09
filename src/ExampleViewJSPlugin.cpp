@@ -2045,22 +2045,22 @@ void ExampleViewJSPlugin::getFuntionalEnrichment()
 
     if (!geneNamesInCluster.isEmpty()) {
         // ToppGene
-        //_client->lookupSymbolsToppGene(geneNamesInCluster);
+        _client->lookupSymbolsToppGene(geneNamesInCluster);
 
         // gProfiler
-        QStringList backgroundGeneNames;
-        if (_isSingleCell != true) {         
-            for (const auto& name : _enabledDimNames) {
-                backgroundGeneNames.append(name);
-            }
-            qDebug() << "getFuntionalEnrichment(): ST mode, with background";
-        }
-        else {
-            // in single cell mode, background is empty
-            qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
-        }
-        qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
-        _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames); 
+        //QStringList backgroundGeneNames;
+        //if (_isSingleCell != true) {         
+        //    for (const auto& name : _enabledDimNames) {
+        //        backgroundGeneNames.append(name);
+        //    }
+        //    qDebug() << "getFuntionalEnrichment(): ST mode, with background";
+        //}
+        //else {
+        //    // in single cell mode, background is empty
+        //    qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
+        //}
+        //qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
+        //_client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames); 
 
         //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);
     }
@@ -2149,10 +2149,12 @@ void ExampleViewJSPlugin::onTableClicked(int row, int column) {
     // match the gene symbols with the gene names in the cluster - gene symbols returned from topGene are all capitals
     QVariantList geneNamesForHighlighting;
     for (const QString& symbol : geneSymbolList) {
-        // Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from topGene are all capitals -not needed using gProfiler
-        /*QString searchGeneSymbol = symbol.toLower();
-        searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();*/
-        QString searchGeneSymbol = symbol; // TO DO: check if the gene symbols are already in the correct format
+        // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all capitals -not needed for gProfiler
+        QString searchGeneSymbol = symbol.toLower();
+        searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
+
+        // gProfiler
+        //QString searchGeneSymbol = symbol; // TO DO: check if the gene symbols are already in the correct format
 
         // Attempt to find original, indexed gene names using the reverse mapping
         QStringList originalGeneNames = _simplifiedToIndexGeneMapping.value(searchGeneSymbol);
@@ -2239,10 +2241,11 @@ void ExampleViewJSPlugin::updateClick() {
 void ExampleViewJSPlugin::updateSlice(int sliceIndex) {
     qDebug() << "ExampleViewJSPlugin::updateSlice(): sliceIndex = " << sliceIndex;
 
-   // _currentSliceIndex = _settingsAction.getSliceAction().getValue();
     _currentSliceIndex = sliceIndex;
 
-    _settingsAction.getSliceAction().setValue(_currentSliceIndex);
+    // TODO: should set the value in ScatterView with eventFilter
+    // Otherwise if updateSlice is called by settingsAction, this is repeated
+    _settingsAction.getSliceAction().setValue(_currentSliceIndex); 
 
     if (!_sliceDataset.isValid()) {
         qDebug() << "ExampleViewJSPlugin::updateSlice(): _sliceDataset is not valid";

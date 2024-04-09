@@ -379,12 +379,10 @@ bool ScatterView::eventFilter(QObject* target, QEvent* event)
     {
         auto wheelEvent = static_cast<QWheelEvent*>(event);
 
-        qDebug() << "ScatterView: Mouse wheel event 1";
-
         if (!_viewJSPlugin->getSliceDataset().isValid())
             break;
 
-        qDebug() << "ScatterView: Mouse wheel event 2";
+        qDebug() << "ScatterView: Mouse wheel event";
 
         int mv = wheelEvent->angleDelta().y() > 0 ? -1 : 1;
 
@@ -394,7 +392,6 @@ bool ScatterView::eventFilter(QObject* target, QEvent* event)
 
         _viewJSPlugin->updateSlice(currentSliceIndex);
 
-        qDebug() << "ScatterView: Mouse wheel event 3";
 
         break;
     }

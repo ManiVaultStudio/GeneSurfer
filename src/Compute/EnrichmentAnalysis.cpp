@@ -7,7 +7,7 @@ EnrichmentAnalysis::EnrichmentAnalysis(QObject* parent)
 }
 
 void EnrichmentAnalysis::lookupSymbolsToppGene(const QStringList& symbols) {
-    
+
     QUrl url("https://toppgene.cchmc.org/API/lookup");
     QJsonObject json;
     QJsonArray jsonSymbols;
@@ -29,6 +29,7 @@ void EnrichmentAnalysis::lookupSymbolsToppGene(const QStringList& symbols) {
 }
 
 void EnrichmentAnalysis::handleLookupReplyToppGene() {
+
     QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
 
     if (reply && reply->error() == QNetworkReply::NoError) {
@@ -79,27 +80,34 @@ void EnrichmentAnalysis::handleEnrichmentReplyToppGene() {
         
         QJsonDocument jsonResponse = QJsonDocument::fromJson(responseData);
         QJsonObject jsonObject = jsonResponse.object();
+
         QJsonArray annotationsArray = jsonObject["Annotations"].toArray();
+
+        qDebug() << "annotationsArray size" << annotationsArray.size();
 
         // output the first maxCount terms
         int count = 0;
-        const int maxCount = 10;
+        const int maxCount = 80;
         QVariantList outputList;
+  
+        for (int i = 0; i < annotationsArray.size(); ++i) {
+            const QJsonValue& value = annotationsArray[i];
 
-        for (const QJsonValue& value : annotationsArray) {         
             QJsonObject annotationObject = value.toObject();
+
             QString category = annotationObject["Category"].toString();
 
-            if (category == "GeneOntologyBiologicalProcess") {
+            if (category == "GeneOntologyBiologicalProcess" || category == "GeneOntologyMolecularFunction" || category == "GeneOntologyCellularComponent") {
                 if (count >= maxCount) {
                     qDebug() << "More terms from ToppGene are not showing...";
                     break;
                 }
                 QString name = annotationObject["Name"].toString();
                 //double pValue = annotationObject["pValue"].toDouble();
-                double QValueBonferroni = annotationObject["QValueBonferroni"].toDouble();
+                double QValueFDRBH = annotationObject["QValueFDRBH"].toDouble();
+                //double QValueBonferroni = annotationObject["QValueBonferroni"].toDouble();
 
-               /* qDebug() << QString("Category: %1, Name: %2, Bonferroni: %3")
+                /*qDebug() << QString("Category: %1, Name: %2, Bonferroni: %3")
                     .arg(category)
                     .arg(name)
                     .arg(QValueBonferroni, 0, 'g', 4);*/
@@ -107,6 +115,76 @@ void EnrichmentAnalysis::handleEnrichmentReplyToppGene() {
                 // extract gene symbols in the GO term
                 QStringList geneSymbols;
                 QJsonArray genesArray = annotationObject["Genes"].toArray();
+
+                for (int i = 0; i < genesArray.size(); ++i) {
+                    QJsonObject geneObject = genesArray[i].toObject();
+                    geneSymbols.append(geneObject["Symbol"].toString());
+                }
+
+                QVariantMap dataMap;
+                dataMap["Category"] = category;
+                dataMap["Name"] = name;
+                //dataMap["QValueBonferroni"] = QValueBonferroni;
+                dataMap["QValueFDRBH"] = QValueFDRBH;
+                dataMap["Symbol"] = geneSymbols.join(",");
+                outputList.append(dataMap);
+
+                count++;
+            }            
+        }
+        // prepare to send the data to plugin
+        if (count != 0) {
+            // Go terms exist
+            if (count < maxCount) {
+                qDebug() << "ToppGene reply warning: Go terms less than " << maxCount << " terms found. Also show terms in other categories";
+                for (const QJsonValue& value : annotationsArray) {
+                    if (count >= maxCount) break; // Stop if max count reached
+
+                    QJsonObject annotationObject = value.toObject();
+                    QString category = annotationObject["Category"].toString();
+
+                    // Skip if already a priority category
+                    if (category == "GeneOntologyBiologicalProcess" || category == "GeneOntologyMolecularFunction" || category == "GeneOntologyCellularComponent") continue;
+
+                    QString name = annotationObject["Name"].toString();
+                    double QValueFDRBH = annotationObject["QValueFDRBH"].toDouble();
+                    QStringList geneSymbols;
+                    QJsonArray genesArray = annotationObject["Genes"].toArray();
+                    for (int i = 0; i < genesArray.size(); ++i) {
+                        QJsonObject geneObject = genesArray[i].toObject();
+                        geneSymbols.append(geneObject["Symbol"].toString());
+                    }
+
+                    QVariantMap dataMap;
+                    dataMap["Category"] = category;
+                    dataMap["Name"] = name;
+                    dataMap["QValueFDRBH"] = QValueFDRBH;
+                    dataMap["Symbol"] = geneSymbols.join(",");
+                    outputList.append(dataMap);
+
+                    count++;
+                }
+            }
+            emit enrichmentDataReady(outputList);
+        }
+        else if (annotationsArray.size() != 0)  {
+            qDebug() << "ToppGene reply warning: no GeneOntology result found, show terms in other categories";               
+            // output max count items in other categories
+            for (int i = 0; i < annotationsArray.size(); ++i) {
+                const QJsonValue& value = annotationsArray[i];
+                QJsonObject annotationObject = value.toObject();
+                QString category = annotationObject["Category"].toString();
+
+                if (i >= maxCount) {
+                    qDebug() << "More terms from ToppGene are not showing...";
+                    break;
+                }
+                QString name = annotationObject["Name"].toString();
+                double QValueBonferroni = annotationObject["QValueBonferroni"].toDouble();
+
+                QStringList geneSymbols;
+                QJsonArray genesArray = annotationObject["Genes"].toArray();
+
                 for (int i = 0; i < genesArray.size(); ++i) {
                     QJsonObject geneObject = genesArray[i].toObject();
                     geneSymbols.append(geneObject["Symbol"].toString());
@@ -118,12 +196,15 @@ void EnrichmentAnalysis::handleEnrichmentReplyToppGene() {
                 dataMap["pValueBonferroni"] = QValueBonferroni;
                 dataMap["Symbol"] = geneSymbols.join(",");
                 outputList.append(dataMap);
+            }
+            emit enrichmentDataReady(outputList);
 
-                count++;
-            }            
+        } else if (annotationsArray.size() == 0) {
+            qDebug() << "ToppGene reply warning: no result found";
+            emit enrichmentDataNotExists();
         }
-
-        emit enrichmentDataReady(outputList);
+   
+        qDebug() << "EnrichmentAnalysis::handleEnrichmentReplyToppGene end...";
 
         //output all items in certain categories
         /*for (const QJsonValue& value : annotationsArray) {
