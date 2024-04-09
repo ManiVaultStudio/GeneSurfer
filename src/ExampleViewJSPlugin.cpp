@@ -134,7 +134,7 @@ void ExampleViewJSPlugin::init()
     _chartWidget = new ChartWidget(this);
     _chartWidget->setPage(":example_chart/bar_chart.html", "qrc:/example_chart/");
 
-    _tableWidget = new QTableWidget();
+    _tableWidget = new MyTableWidget();
 
     tableDimLayout->addWidget(_tableWidget, 50);
     tableDimLayout->addWidget(_dimView, 50);

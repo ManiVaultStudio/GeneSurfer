@@ -10,6 +10,7 @@
 #include "Compute/DataSubset.h"
 
 #include "Actions/SettingsAction.h"
+#include "TableWidget.h"
 
 #include <actions/HorizontalToolbarAction.h>
 #include <actions/ColorMap1DAction.h>
@@ -23,8 +24,8 @@
 
 #include <QWidget>
 #include <QNetworkReply>
-#include <QTableWidget>
 #include <QTableWidgetItem>
+
 
 
 /** All plugin related classes are in the mv plugin namespace */
@@ -191,7 +192,7 @@ private:
     DataStorage                        _dataStore;
 
     ChartWidget*                       _chartWidget;             // WebWidget that sets up the HTML page - bar chart
-    QTableWidget*                      _tableWidget;             // Table widget for enrichment analysis
+    MyTableWidget*                     _tableWidget;             // Customized table widget for enrichment analysis
     DropWidget*                        _dropWidget;              // Widget for drag and drop behavior
 
     // Data
