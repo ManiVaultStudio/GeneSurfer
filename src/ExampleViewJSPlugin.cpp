@@ -1646,7 +1646,7 @@ void ExampleViewJSPlugin::clusterGenes()
     std::vector<int> filteredDimIndices;
     for (int i = 0; i < _numGenesThreshold; ++i) {
         filteredDimNames.push_back(_enabledDimNames[pairs[i].second]);
-        filteredDimIndices.push_back(pairs[i].second);
+        filteredDimIndices.push_back(pairs[i].second); //indices in _enabledDimNames TO DO: might not work with modified _enabledDimNames
     }
      
     qDebug() << "ExampleViewJSPlugin::clusterGenes(): filteredDimNames size: " << filteredDimNames.size();
@@ -1670,18 +1670,19 @@ void ExampleViewJSPlugin::clusterGenes()
     auto start2 = std::chrono::high_resolution_clock::now();
     Eigen::MatrixXf corrFilteredGene(filteredDimNames.size(), filteredDimNames.size());
 
-    std::unordered_map<QString, int> dimNameToIndex;
-    for (int i = 0; i < _enabledDimNames.size(); ++i) {
-        dimNameToIndex[_enabledDimNames[i]] = i;
-    }
+    // April 10
+    //std::unordered_map<QString, int> dimNameToIndex; // TO DO: computePairwiseCorrelationVector() can use filteredDimIndices directly
+    //for (int i = 0; i < _enabledDimNames.size(); ++i) {
+    //    dimNameToIndex[_enabledDimNames[i]] = i;
+    //}
 
     if (!_sliceDataset.isValid()) {
         qDebug() << "computePairwiseCorrelationVector: 2D dataset";
-        _corrFilter.computePairwiseCorrelationVector(filteredDimNames, dimNameToIndex, _subsetData, corrFilteredGene);
+        _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData, corrFilteredGene);// TO DO: dimNames not needed in this function
     } 
     else {
         qDebug() << "computePairwiseCorrelationVector: 3D dataset";
-        _corrFilter.computePairwiseCorrelationVector(filteredDimNames, dimNameToIndex, _subsetData3D, corrFilteredGene);
+        _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGene);
     }
 
     auto end2 = std::chrono::high_resolution_clock::now();

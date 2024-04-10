@@ -16,14 +16,16 @@ using namespace mv;
 
 namespace corrFilter
 {
-    void CorrFilter::computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::unordered_map<QString, int>& dimNameToIndex, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const
+    void CorrFilter::computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const
     {
+        // TO DO: dimNames not needed
         std::vector<Eigen::VectorXf> centeredVectors(dimNames.size());// precompute mean 
         std::vector<float> norms(dimNames.size());
 
         for (int i = 0; i < dimNames.size(); ++i) {
             //int index = dimNameToIndex[dimNames[i]];
-            int index = dimNameToIndex.at(dimNames[i]);
+            //int index = dimNameToIndex.at(dimNames[i]);
+            int index = dimIndices[i];
             Eigen::VectorXf centered = dataMatrix.col(index) - Eigen::VectorXf::Constant(dataMatrix.col(index).size(), dataMatrix.col(index).mean());
             centeredVectors[i] = centered;
             norms[i] = centered.squaredNorm();

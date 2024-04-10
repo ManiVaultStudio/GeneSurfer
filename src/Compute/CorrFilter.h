@@ -40,7 +40,7 @@ namespace corrFilter
     public:
         void setFilterType(CorrFilterType type) { _type = type; }
 
-        void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::unordered_map<QString, int>& dimNameToIndex, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const;
+        void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const;
 
         // Non-const member functions
         SpatialCorr&         getSpatialCorrFilter()  { return _spatialCorr; }
