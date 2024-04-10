@@ -776,22 +776,22 @@ void ExampleViewJSPlugin::updateSelection()
     /////////////////////////////////////////////
     
     // -------------- Spatial Correlation --------------
-    if (!_isSingleCell && !_sliceDataset.isValid() && _isCorrSpatial) {
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorr";
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
     }
-    if (!_isSingleCell && _sliceDataset.isValid() && _isCorrSpatial) {
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
         qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorr";
         std::vector<float> zPositions;
         _positionDataset->extractDataForDimension(zPositions, 2);
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, _corrGeneVector);
     }
-    if (_isSingleCell && !_sliceDataset.isValid() && _isCorrSpatial) {
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
         qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorr";
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
     }
-    if (_isSingleCell && _sliceDataset.isValid() && _isCorrSpatial) {
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
         qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorr";
 
         // option 1: compute with all flood cells 
@@ -808,26 +808,41 @@ void ExampleViewJSPlugin::updateSelection()
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
     }
     // -------------- HD Correlation --------------
-    if (!_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
+    //if (!_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {   
         qDebug() << ">>>>>Compute corr: 2D + ST + HDCorr";
         _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData, _corrGeneVector);
     }
-    if (!_isSingleCell && _sliceDataset.isValid() && !_isCorrSpatial) {
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
         qDebug() << ">>>>>Compute subset: 3D + ST + HDCorr";
         _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData3D, _corrGeneVector);
     }
-    if (_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
         qDebug() << ">>>>>Compute subset: 2D + SingleCell + HDCorr";
         std::vector<float> waveAvg;
         computeMeanWaveNumbersByCluster(waveAvg);
         _corrFilter.getHDCorrFilter().computeCorrelationVector(waveAvg, _subsetDataAvgOri, _corrGeneVector);
     }
-    if (_isSingleCell && _sliceDataset.isValid() && !_isCorrSpatial) {
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
         qDebug() << ">>>>>Compute subset: 3D + SingleCell + HDCorr";
         std::vector<float> waveAvg;
         computeMeanWaveNumbersByCluster(waveAvg);
         _corrFilter.getHDCorrFilter().computeCorrelationVector(waveAvg, _subsetDataAvgOri, _corrGeneVector);
     }
+    // -------------- Diff --------------
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
+        qDebug() << ">>>>>Compute subset: 2D + ST + Diff";
+        _corrFilter.getDiffFilter().computeDiff(_subsetData, _dataStore.getBaseData(), _corrGeneVector);
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
+        qDebug() << ">>>>>Compute subset: 3D + ST + Diff";
+        _corrFilter.getDiffFilter().computeDiff(_subsetData3D, _dataStore.getBaseData(), _corrGeneVector);
+    }
+    if (_isSingleCell && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
+        qDebug() << ">>>>>Compute subset: SingleCell +Diff";
+        _corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector);
+    }
+    
 
     ////////////////////
     // Clustering //
@@ -948,6 +963,7 @@ void ExampleViewJSPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xA
 }
 
 void ExampleViewJSPlugin::setCorrelationMode(bool mode) {
+    // TO DO: remove not needed 
     _isCorrSpatial = mode;
     qDebug() << "ExampleViewJSPlugin::setCorrelationMode(): _isCorrSpatial: " << _isCorrSpatial;
 
@@ -1648,6 +1664,63 @@ void ExampleViewJSPlugin::clusterGenes()
         filteredDimNames.push_back(_enabledDimNames[pairs[i].second]);
         filteredDimIndices.push_back(pairs[i].second); //indices in _enabledDimNames TO DO: might not work with modified _enabledDimNames
     }
+
+    // April 10 test ------------------------------------------------------------
+    // option 3 - filter genes based on the contrast between selection and non-selection
+    //// first hard coded for SingleCell Option 
+
+    /*qDebug() << "ExampleViewJSPlugin::clusterGenes(): _clustersToKeep size: " << _clustersToKeep.size();
+    qDebug() << "ExampleViewJSPlugin::clusterGenes(): _subsetDataAvgOri size: " << _subsetDataAvgOri.rows() << " " << _subsetDataAvgOri.cols();
+    
+    int numGenes = _enabledDimNames.size();
+    Eigen::VectorXf meanA = Eigen::VectorXf::Zero(numGenes);
+    Eigen::VectorXf meanB = Eigen::VectorXf::Zero(numGenes);*/
+
+    
+    //// Compute mean A - selection
+    //for (uint32_t i = 0; i < _subsetDataAvgOri.rows(); i++)
+    //{
+    //    meanA += _subsetDataAvgOri.row(i).transpose();
+    //}
+
+    //// Compute mean B - non-selection/ all?
+    //for (uint32_t i = 0; i < _avgExpr.rows(); i++)
+    //{
+    //    meanB += _avgExpr.row(i).transpose();
+    //}
+
+    //meanA /= _subsetDataAvgOri.rows();
+    //meanB /= _avgExpr.rows();
+
+    //if (_isSingleCell) {
+    //    meanA = _subsetDataAvgOri.colwise().mean();
+    //    meanB = _avgExpr.colwise().mean();
+    //}
+    //else {
+    //    meanA = _subsetData.colwise().mean();
+    //    meanB = _dataStore.getBaseData().colwise().mean();
+    //}
+
+    //// Compute contrast
+    //Eigen::VectorXf contrast = meanA - meanB;
+
+    //// sort the contrast values with gene names
+    //std::vector<std::pair<float, int>> pairs(contrast.size());
+    //for (size_t i = 0; i < contrast.size(); ++i) {
+    //    pairs[i] = std::make_pair(std::abs(contrast[i]), i);
+    //}
+
+    //// partially sort to find the top _numGenesThreshold elements
+    //std::nth_element(pairs.begin(), pairs.begin() + _numGenesThreshold, pairs.end(), std::greater<>());
+
+    //std::vector<QString> filteredDimNames;
+    //std::vector<int> filteredDimIndices;
+    //for (int i = 0; i < _numGenesThreshold; ++i) {
+    //    filteredDimNames.push_back(_enabledDimNames[pairs[i].second]);
+    //    filteredDimIndices.push_back(pairs[i].second); //indices in _enabledDimNames TO DO: might not work with modified _enabledDimNames
+    //}
+
+    // April 10 test ------------------------------------------------------------
      
     qDebug() << "ExampleViewJSPlugin::clusterGenes(): filteredDimNames size: " << filteredDimNames.size();
 
@@ -2316,7 +2389,7 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
     variantMapMustContain(variantMap, "SettingsAction");
     _settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
 
-    _isCorrSpatial = variantMap["IsCorrSpatial"].toBool();
+    _isCorrSpatial = variantMap["IsCorrSpatial"].toBool(); // TO DO: serialize enum class of filter type
 
     qDebug() << "ExampleViewJSPlugin::fromVariantMap() 3 ";
 
@@ -2359,7 +2432,7 @@ QVariantMap ExampleViewJSPlugin::toVariantMap() const
 
     variantMap.insert("SelectedDimName", _selectedDimName);
 
-    variantMap.insert("IsCorrSpatial", _isCorrSpatial);
+    variantMap.insert("IsCorrSpatial", _isCorrSpatial);// TO DO April 10
 
     if (_sliceDataset.isValid())
     {

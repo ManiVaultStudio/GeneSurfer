@@ -211,5 +211,61 @@ namespace corrFilter
         }
     }
 
+    void Diff::computeDiff(const DataMatrix& selectionDataMatrix, const DataMatrix& allDataMatrix, std::vector<float>& diffVector)
+    {
+        // without normalization
+        Eigen::VectorXf meanA = selectionDataMatrix.colwise().mean();
+        Eigen::VectorXf meanB = allDataMatrix.colwise().mean();
+        Eigen::VectorXf contrast = (meanA - meanB).array().abs();
+
+        
+
+
+        // with normalization
+        //int numGenes = selectionDataMatrix.cols();
+        //Eigen::VectorXf minValues = allDataMatrix.colwise().minCoeff();
+        //Eigen::VectorXf maxValues = allDataMatrix.colwise().maxCoeff();
+
+        ///*Eigen::VectorXf scaleFactors(numGenes);
+        //for (int i = 0; i < numGenes; i++) {
+        //    float range = maxValues[i] - minValues[i];
+        //    if (range != 0)
+        //        scaleFactors[i] = 1.0f / range;
+        //    else
+        //        scaleFactors[i] = 1.0f; 
+        //}
+
+        //Eigen::VectorXf meanA = selectionDataMatrix.colwise().mean();*/
+        ///*for (int i = 0; i < numGenes; i++) {
+        //    meanA[i] = (meanA[i] - minValues[i]) * scaleFactors[i];
+        //    meanB[i] = (meanB[i] - minValues[i]) * scaleFactors[i];
+        //}*/
+
+
+        //Eigen::VectorXf rescaleValues = 1.0f / (maxValues - minValues).array();
+
+        //Eigen::MatrixXf normalizedSelectionDataMatrix = (selectionDataMatrix.colwise() - minValues).array().colwise() * rescaleValues.array();
+        //Eigen::VectorXf meanA = normalizedSelectionDataMatrix.colwise().mean();
+        //Eigen::VectorXf meanB = allDataMatrix.colwise().mean();
+
+        //Eigen::VectorXf contrast = (meanA - meanB).array().abs();
+
+        // temp: to range 0-1 for plotting TO DO
+        /*float minContrast = contrast.minCoeff();
+        float maxContrast = contrast.maxCoeff();
+        float rangeContrast = maxContrast - minContrast;
+
+        if (rangeContrast != 0) {
+            contrast = (contrast.array() - minContrast) / rangeContrast;
+        }
+        else {
+            contrast.setZero(); 
+        }*/
+
+        diffVector.clear();
+        diffVector.assign(contrast.data(), contrast.data() + contrast.size());
+
+    }
+
 }
 

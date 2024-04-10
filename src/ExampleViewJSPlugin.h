@@ -82,7 +82,7 @@ public:
 
     void updateSlice(int sliceIndex);
 
-    void setCorrelationMode(bool mode);// test
+    void setCorrelationMode(bool mode);// test TO DO: remove not needed
 
     /** Update the chosen single cell option */
     void updateSingleCellOption();
@@ -101,6 +101,9 @@ public:
 
     /** Work-around for dimensionPicker*/
     void setDimensionNamesForDimensionPicker();
+
+    /** Update the selection of mouse in GradientViewer */
+    void updateSelection();
     
 public slots:
     /** Converts ManiVault's point data to a json-like data structure that Qt can pass to the JS code */
@@ -125,8 +128,7 @@ private:
     /** Read _floodFillDataset from data hierarchy */
     void updateFloodFillDataset();
 
-    /** Update the selection of mouse in GradientViewer */
-    void updateSelection();
+    
 
     /** Update the highlighted selection of mouse in _scatterViews */
     void updateScatterSelection();
@@ -284,6 +286,8 @@ public:
 
 public:
     int getSliceIndex() { return _currentSliceIndex; }
+
+    corrFilter::CorrFilter& getCorrFilter() { return _corrFilter; }
 
 public: 
     void setAvgExpressionStatus(AvgExpressionStatus status) { _avgExprStatus = status; }

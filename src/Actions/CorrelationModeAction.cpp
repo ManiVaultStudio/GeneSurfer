@@ -6,7 +6,8 @@ using namespace mv::gui;
 CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& title) :
     VerticalGroupAction(parent, title),
     _spatialCorrelationAction(this, "Fliter by Spatial Correlation"),
-    _hdCorrelationAction(this, "Filter by HD Correlation")
+    _hdCorrelationAction(this, "Filter by HD Correlation"),
+    _diffAction(this, "Filter by diff")
 {
     setIcon(mv::Application::getIconFont("FontAwesome").getIcon("bullseye"));
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
@@ -14,21 +15,41 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
 
     addAction(&_spatialCorrelationAction);
     addAction(&_hdCorrelationAction);
+    addAction(&_diffAction);
 
     _spatialCorrelationAction.setToolTip("Spatial correlation mode");
     _hdCorrelationAction.setToolTip("HD correlation mode");
+    _diffAction.setToolTip("Diff mode");
 
     auto scatterplotPlugin = dynamic_cast<ExampleViewJSPlugin*>(parent->parent());
     if (scatterplotPlugin == nullptr)
         return;
 
-    connect(&_spatialCorrelationAction, &TriggerAction::triggered, this, [this, scatterplotPlugin]() {
+    corrFilter::CorrFilter& filter = scatterplotPlugin->getCorrFilter();
+
+   /* connect(&_spatialCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin]() {
             scatterplotPlugin->setCorrelationMode(true);
         });
 
-    connect(&_hdCorrelationAction, &TriggerAction::triggered, this, [this, scatterplotPlugin]() {
-            scatterplotPlugin->setCorrelationMode(false);
+    connect(&_hdCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin]() {
+        scatterplotPlugin->setCorrelationMode(false);
+        });*/
+
+    connect(&_spatialCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin, &filter]() {    
+        filter.setFilterType(corrFilter::CorrFilterType::SPATIAL);
+        scatterplotPlugin->updateSelection();
         });
+
+    connect(&_hdCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin, &filter]() {
+        filter.setFilterType(corrFilter::CorrFilterType::HD);
+        scatterplotPlugin->updateSelection();
+        });
+
+    connect(&_diffAction, &TriggerAction::triggered, this, [scatterplotPlugin, &filter]() {
+        filter.setFilterType(corrFilter::CorrFilterType::DIFF);
+        scatterplotPlugin->updateSelection();
+        });
+   
 }
 
 

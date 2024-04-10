@@ -46,10 +46,12 @@ public: // Serialization
 public: // Action getters
     TriggerAction& getSpatialCorrelationAction() { return _spatialCorrelationAction; }
     TriggerAction& getHDCorrelationAction() { return _hdCorrelationAction; }
+    TriggerAction& getDiffAction() { return _diffAction; }
 
 private:
     TriggerAction       _spatialCorrelationAction;     /** Trigger action for activating the spatial correlation mode */
     TriggerAction       _hdCorrelationAction;     /** Trigger action for activating the HD correlation mode */
+    TriggerAction       _diffAction;     /** Trigger action for activating the diff mode */
 
     //friend class mv::AbstractActionsManager;
 };
