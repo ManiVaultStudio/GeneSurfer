@@ -104,6 +104,8 @@ public:
 
     /** Update the selection of mouse in GradientViewer */
     void updateSelection();
+
+    void updateFilterLabel();
     
 public slots:
     /** Converts ManiVault's point data to a json-like data structure that Qt can pass to the JS code */
@@ -215,6 +217,7 @@ private:
     std::vector<float>                 _corrGeneVector;          // Vector of correlation values for filtering genes
     int                                _numGenesThreshold = 50;
     corrFilter::CorrFilter             _corrFilter;
+    QLabel*                            _filterLabel;             // Label for filtering genes on the bar chart
 
     // Clustering
     int                                _nclust;                  // Number of clusters

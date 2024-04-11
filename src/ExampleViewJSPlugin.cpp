@@ -137,6 +137,13 @@ void ExampleViewJSPlugin::init()
     _chartWidget = new ChartWidget(this);
     _chartWidget->setPage(":example_chart/bar_chart.html", "qrc:/example_chart/");
 
+    // Add label for filtering on top of the barchart
+    _filterLabel = new QLabel(_chartWidget);
+    QFont sansFont("Helvetica [Cronyx]", 18);
+    _filterLabel->setFont(sansFont);   
+    _filterLabel->setGeometry(10, 10, 400, 30);
+    _filterLabel->setText("Filter genes by:" + _corrFilter.getCorrFilterTypeAsString());
+    
     _tableWidget = new MyTableWidget();
 
     tableDimLayout->addWidget(_secondaryToolbarAction.createWidget(&getWidget()));
@@ -1182,6 +1189,11 @@ void ExampleViewJSPlugin::updateScatterPointSize()
         _scatterViews[i]->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
     }
     _dimView->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
+}
+
+void ExampleViewJSPlugin::updateFilterLabel()
+{
+    _filterLabel->setText("Filter genes by:" + _corrFilter.getCorrFilterTypeAsString());
 }
 
 void ExampleViewJSPlugin::updateScatterSelection()

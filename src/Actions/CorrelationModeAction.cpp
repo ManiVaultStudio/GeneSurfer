@@ -37,16 +37,19 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
 
     connect(&_spatialCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin, &filter]() {    
         filter.setFilterType(corrFilter::CorrFilterType::SPATIAL);
+        scatterplotPlugin->updateFilterLabel();
         scatterplotPlugin->updateSelection();
         });
 
     connect(&_hdCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin, &filter]() {
         filter.setFilterType(corrFilter::CorrFilterType::HD);
+        scatterplotPlugin->updateFilterLabel();
         scatterplotPlugin->updateSelection();
         });
 
     connect(&_diffAction, &TriggerAction::triggered, this, [scatterplotPlugin, &filter]() {
         filter.setFilterType(corrFilter::CorrFilterType::DIFF);
+        scatterplotPlugin->updateFilterLabel();
         scatterplotPlugin->updateSelection();
         });
    

@@ -43,6 +43,17 @@ namespace corrFilter
         }
     }
 
+    QString CorrFilter::getCorrFilterTypeAsString() {
+        switch (_type) {
+        case CorrFilterType::SPATIAL:
+            return "Spatial";
+        case CorrFilterType::HD:
+            return "HD";
+        case CorrFilterType::DIFF:
+            return "Diff";
+        }
+    }
+
     void SpatialCorr::computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, std::vector<float>& corrVector) const
     {   // 2D
         Eigen::VectorXf xVector(floodIndices.size());
