@@ -216,12 +216,10 @@ namespace corrFilter
         // without normalization
         Eigen::VectorXf meanA = selectionDataMatrix.colwise().mean();
         Eigen::VectorXf meanB = allDataMatrix.colwise().mean();
-        Eigen::VectorXf contrast = (meanA - meanB).array().abs();
-
-        
+        Eigen::VectorXf contrast = meanA - meanB;
 
 
-        // with normalization
+        // with normalization - back up code
         //int numGenes = selectionDataMatrix.cols();
         //Eigen::VectorXf minValues = allDataMatrix.colwise().minCoeff();
         //Eigen::VectorXf maxValues = allDataMatrix.colwise().maxCoeff();
@@ -241,17 +239,14 @@ namespace corrFilter
         //    meanB[i] = (meanB[i] - minValues[i]) * scaleFactors[i];
         //}*/
 
-
         //Eigen::VectorXf rescaleValues = 1.0f / (maxValues - minValues).array();
-
         //Eigen::MatrixXf normalizedSelectionDataMatrix = (selectionDataMatrix.colwise() - minValues).array().colwise() * rescaleValues.array();
         //Eigen::VectorXf meanA = normalizedSelectionDataMatrix.colwise().mean();
         //Eigen::VectorXf meanB = allDataMatrix.colwise().mean();
+        //Eigen::VectorXf contrast = meanA - meanB;
 
-        //Eigen::VectorXf contrast = (meanA - meanB).array().abs();
-
-        // temp: to range 0-1 for plotting TO DO
-        /*float minContrast = contrast.minCoeff();
+        // Norm to range [0, 1] for plotting in the bar chart
+        float minContrast = contrast.minCoeff();
         float maxContrast = contrast.maxCoeff();
         float rangeContrast = maxContrast - minContrast;
 
@@ -260,7 +255,7 @@ namespace corrFilter
         }
         else {
             contrast.setZero(); 
-        }*/
+        }
 
         diffVector.clear();
         diffVector.assign(contrast.data(), contrast.data() + contrast.size());
