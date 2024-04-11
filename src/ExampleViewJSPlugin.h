@@ -219,6 +219,7 @@ private:
     // Clustering
     int                                _nclust;                  // Number of clusters
     std::unordered_map<QString, int>   _dimNameToClusterLabel;   // Map dimension name to cluster label
+    std::map<int, int>                 _numGenesInCluster;        // Number of genes in each gene-set cluster
 
     // Interaction
     int                                _selectedClusterIndex;

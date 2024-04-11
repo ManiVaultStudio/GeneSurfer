@@ -758,11 +758,6 @@ void ExampleViewJSPlugin::updateSelection()
     qDebug() << "ExampleViewJSPlugin::updateSelection(): start... ";
     auto start = std::chrono::high_resolution_clock::now();
 
-    for (int i = 0; i < _nclust; i++) {
-        QString clusterIdx = QString::number(i);
-        _scatterViews[i]->setProjectionName("Gene cluster: " + clusterIdx); // TO DO: remove redundant code
-    }
-
     ////////////////////
     // Compute subset //
     ////////////////////
@@ -871,9 +866,16 @@ void ExampleViewJSPlugin::updateSelection()
     clusterGenes();
     qDebug() << "updateSelection(): data clustered";
 
+
     ////////////////////
     // Update Plots //
     ////////////////////
+    for (const auto& pair : _numGenesInCluster) {
+        QString clusterIdx = QString::number(pair.first);
+        QString numGenesInThisCluster = QString::number(pair.second);
+        _scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " genes)"); // TO DO: remove redundant code
+    }
+
     convertDataAndUpdateChart();
     updateScatterColors();
     updateScatterOpacity();
@@ -1859,11 +1861,11 @@ void ExampleViewJSPlugin::clusterGenes()
     }*/
 
     // temporary code: output the number of genes in each cluster
-    std::map<int, int> clusterCounts;
+    _numGenesInCluster.clear();
     for (int i = 0; i < filteredDimNames.size(); ++i) {
-        clusterCounts[labels[i]]++;
+        _numGenesInCluster[labels[i]]++;
     }
-    for (const auto& pair : clusterCounts) {
+    for (const auto& pair : _numGenesInCluster) {
         qDebug() << "Cluster " << pair.first << " contains " << pair.second << " genes";
     }
 
