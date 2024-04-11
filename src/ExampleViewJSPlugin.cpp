@@ -86,17 +86,21 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
     _dropWidget(nullptr),
     _settingsAction(this, "Settings Action"),
     _primaryToolbarAction(this, "PrimaryToolbar"),
+    _secondaryToolbarAction(this, "SecondaryToolbar"),
     _selectedDimIndex(-1),
     _selectedClusterIndex(0),
     _colorMapAction(this, "Color map", "RdYlBu")
 
 {
+
     _primaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 2, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction());
+
+    _secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
 
     for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
     {
@@ -127,7 +131,6 @@ void ExampleViewJSPlugin::init()
 
     layout->setContentsMargins(0, 0, 0, 0);
 
-    //test
     layout->addWidget(_primaryToolbarAction.createWidget(&getWidget()));
 
     // Create barchart widget and set html contents of webpage 
@@ -136,6 +139,7 @@ void ExampleViewJSPlugin::init()
 
     _tableWidget = new MyTableWidget();
 
+    tableDimLayout->addWidget(_secondaryToolbarAction.createWidget(&getWidget()));
     tableDimLayout->addWidget(_tableWidget, 50);
     tableDimLayout->addWidget(_dimView, 50);
 
@@ -719,6 +723,23 @@ void ExampleViewJSPlugin::setLabelDataset() {
 
     _settingsAction.getSingleCellModeAction().getComputeAvgExpressionAction().setEnabled(true);
 
+}
+
+void ExampleViewJSPlugin::setEnrichmentAPI()
+{
+    const QString currentAPI = _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().getCurrentText();
+    qDebug() << "Enrichment API changed to: " << currentAPI;
+
+    _currentEnrichmentAPI = _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().getCurrentIndex();
+    qDebug() << "Enrichment API changed to: " << _currentEnrichmentAPI;
+    
+    if (_dimNameToClusterLabel.size() == 0)
+        {
+        qDebug() << "ExampleViewJSPlugin::setEnrichmentAPI(): _dimNameToClusterLabel is empty";
+        return;
+    }
+
+    getFuntionalEnrichment();
 }
 
 void ExampleViewJSPlugin::updateSelection()
@@ -2118,23 +2139,28 @@ void ExampleViewJSPlugin::getFuntionalEnrichment()
     }
 
     if (!geneNamesInCluster.isEmpty()) {
+
+        if (_currentEnrichmentAPI == 0) {
         // ToppGene
         _client->lookupSymbolsToppGene(geneNamesInCluster);
+        }
 
-        // gProfiler
-        //QStringList backgroundGeneNames;
-        //if (_isSingleCell != true) {         
-        //    for (const auto& name : _enabledDimNames) {
-        //        backgroundGeneNames.append(name);
-        //    }
-        //    qDebug() << "getFuntionalEnrichment(): ST mode, with background";
-        //}
-        //else {
-        //    // in single cell mode, background is empty
-        //    qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
-        //}
-        //qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
-        //_client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames); 
+        if (_currentEnrichmentAPI == 1) {
+            // gProfiler
+            QStringList backgroundGeneNames;
+            if (_isSingleCell != true) {
+                for (const auto& name : _enabledDimNames) {
+                    backgroundGeneNames.append(name);
+                }
+                qDebug() << "getFuntionalEnrichment(): ST mode, with background";
+            }
+            else {
+                // in single cell mode, background is empty
+                qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
+            }
+            qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
+            _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames);
+        }
 
         //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);
     }
@@ -2223,12 +2249,19 @@ void ExampleViewJSPlugin::onTableClicked(int row, int column) {
     // match the gene symbols with the gene names in the cluster - gene symbols returned from topGene are all capitals
     QVariantList geneNamesForHighlighting;
     for (const QString& symbol : geneSymbolList) {
+        
+        QString searchGeneSymbol;
+
+        if (_currentEnrichmentAPI == 0) {      
         // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all capitals -not needed for gProfiler
-        QString searchGeneSymbol = symbol.toLower();
+        searchGeneSymbol = symbol.toLower();
         searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
+        }
 
         // gProfiler
-        //QString searchGeneSymbol = symbol; // TO DO: check if the gene symbols are already in the correct format
+        if (_currentEnrichmentAPI == 1) {
+            searchGeneSymbol = symbol; // TO DO: check if the gene symbols are already in the correct format
+        }
 
         // Attempt to find original, indexed gene names using the reverse mapping
         QStringList originalGeneNames = _simplifiedToIndexGeneMapping.value(searchGeneSymbol);

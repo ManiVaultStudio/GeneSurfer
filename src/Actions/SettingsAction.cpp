@@ -27,7 +27,9 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
 
     _sliceAction(this, "Slice"),
 
-    _correlationModeAction(this, "Correlation Mode")
+    _correlationModeAction(this, "Correlation Mode"),
+
+    _enrichmentAction(this, "Enrichment settings")
 {
     setText("Settings");
     setSerializationName("SettingsAction");
@@ -54,6 +56,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         _pointPlotAction.setEnabled(hasDataset);
         _singleCellModeAction.setEnabled(hasDataset);
         _dimensionSelectionAction.setEnabled(hasDataset);
+        _enrichmentAction.setEnabled(hasDataset);
     };
 
     connect(&_exampleViewJSPlugin->getPositionDataset(), &Dataset<Points>::changed, this, updateEnabled);

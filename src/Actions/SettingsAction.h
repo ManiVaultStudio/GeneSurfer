@@ -13,6 +13,7 @@
 #include "SingleCellModeAction.h"
 #include "ClusteringAction.h"
 #include "DimensionSelectionAction.h"
+#include "EnrichmentAction.h"
 
 using namespace mv::gui;
 
@@ -69,6 +70,8 @@ public: // Action getters
 
     IntegralAction& getSliceAction() { return _sliceAction; }   
 
+    EnrichmentAction& getEnrichmentAction() { return _enrichmentAction; }
+
 private:
     ExampleViewJSPlugin*    _exampleViewJSPlugin;       /** Pointer to Example OpenGL Viewer Plugin */
 
@@ -90,4 +93,6 @@ private:
     ClusteringAction        _clusteringAction;          /** clustering action */
 
     IntegralAction          _sliceAction;           /** slice action */
+
+    EnrichmentAction        _enrichmentAction;          /** enrichment action */
 };

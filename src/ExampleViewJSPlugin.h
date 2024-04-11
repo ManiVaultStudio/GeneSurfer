@@ -128,8 +128,6 @@ private:
     /** Read _floodFillDataset from data hierarchy */
     void updateFloodFillDataset();
 
-    
-
     /** Update the highlighted selection of mouse in _scatterViews */
     void updateScatterSelection();
 
@@ -263,6 +261,7 @@ private:
     bool                               _loadingFromProject = false;
     AvgExpressionStatus                _avgExprStatus = AvgExpressionStatus::NONE;
     QString                            _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
+    int                                _currentEnrichmentAPI = 0; // current enrichment API
   
 
 public:
@@ -292,6 +291,8 @@ public:
 public: 
     void setAvgExpressionStatus(AvgExpressionStatus status) { _avgExprStatus = status; }
 
+    void setEnrichmentAPI();
+
 public: 
     /** Get reference to the scatter plot widget */
     std::vector<ScatterView*>& getProjectionViews() { return _scatterViews; }
@@ -313,12 +314,12 @@ signals:
     void avgExprDatasetExistsChanged(bool exists);
 
 protected:
-    std::vector<ScatterView*>    _scatterViews; // scatter plots for cluster images
-    ScatterView*                 _dimView; // scatter plot for selected dimensions
-    SettingsAction               _settingsAction;/** Settings action */
-    ColorMap1DAction             _colorMapAction;/** Color map action */
-    HorizontalToolbarAction      _primaryToolbarAction;      /** Horizontal toolbar for primary content */
-
+    std::vector<ScatterView*>    _scatterViews;           // scatter plots for cluster images
+    ScatterView*                 _dimView;                // scatter plot for selected dimensions
+    SettingsAction               _settingsAction;         // Settings action
+    ColorMap1DAction             _colorMapAction;         // Color map action
+    HorizontalToolbarAction      _primaryToolbarAction;   // Horizontal toolbar for primary content 
+    HorizontalToolbarAction      _secondaryToolbarAction; // Secondary toolbar for secondary content - for enrichment analysis settings
 };
 
 /**
