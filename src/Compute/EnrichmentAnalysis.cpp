@@ -207,14 +207,14 @@ void EnrichmentAnalysis::postGeneGprofiler(const QStringList& query, const QStri
 
     QJsonObject json;
     json["organism"] = "mmusculus"; // TO DO: hard-coded for mouse dataset
+    json["sources"] = QJsonArray({ "GO" }); // Gene Ontology categories
     json["query"] = QJsonArray::fromStringList(query);
+    json["significance_threshold_method"] = "bonferroni";
    
     if (!background.isEmpty()) {
         json["domain_scope"] = "custom";
         json["background"] = QJsonArray::fromStringList(background);
     }   // else background is empty 
-
-    json["significance_threshold_method"] = "fdr";
 
     QJsonDocument document(json);
     QByteArray jsonData = document.toJson();
@@ -258,8 +258,7 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
                 if (resultObj.contains("name") && resultObj.contains("p_value")) {
                     QString name = resultObj["name"].toString();
                     double pValue = resultObj["p_value"].toDouble();
-
-                    //qDebug() << "g:Profiler Name:" << name << ", P-Value:" << pValue;
+                    QString source = resultObj["source"].toString();
 
                     validResultsFound = true;
 
@@ -274,8 +273,9 @@ void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
                     //qDebug() << "Gene Symbols:" << geneSymbols.join(", ");
 
                     QVariantMap dataMap;
+                    dataMap["Category"] = source;
                     dataMap["Name"] = name;
-                    dataMap["PValueFDR"] = pValue;
+                    dataMap["Padj_bonferroni"] = pValue;
                     dataMap["Symbol"] = geneSymbols.join(",");
                     outputList.append(dataMap);
                 }
