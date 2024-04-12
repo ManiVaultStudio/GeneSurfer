@@ -117,9 +117,17 @@ void EnrichmentAnalysis::handleEnrichmentReplyToppGene() {
                                           "GeneOntologyBiologicalProcess",
                                           "GeneOntologyCellularComponent"};*/
 
+        // map full category names to abbreviations
+        QMap<QString, QString> categoryMap = {
+            {"GeneOntologyMolecularFunction", "GO:MF"},
+            {"GeneOntologyBiologicalProcess", "GO:BP"},
+            {"GeneOntologyCellularComponent", "GO:CC"}
+        };
+
+
         // output the first maxCount terms
         int count = 0;
-        const int maxCount = 80;
+        //const int maxCount = 80;
         QVariantList outputList;
   
         for (int i = 0; i < annotationsArray.size(); ++i) {
@@ -127,10 +135,15 @@ void EnrichmentAnalysis::handleEnrichmentReplyToppGene() {
             QJsonObject annotationObject = value.toObject();
             QString category = annotationObject["Category"].toString();
 
-            if (count >= maxCount) {
+            if (categoryMap.contains(category)) {
+                category = categoryMap[category];
+            }
+
+            /*if (count >= maxCount) {
                 qDebug() << "More terms from ToppGene are not showing...";
                 break;
-            }
+            }*/
+
             QString name = annotationObject["Name"].toString();
             //double pValue = annotationObject["pValue"].toDouble();
             //double QValueFDRBH = annotationObject["QValueFDRBH"].toDouble();
