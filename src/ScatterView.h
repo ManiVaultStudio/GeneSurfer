@@ -11,7 +11,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_3_3_Core>
 
-class ExampleViewJSPlugin;
+class GeneSurferPlugin;
 
 
 using namespace mv;
@@ -29,7 +29,7 @@ class ScatterView : public QOpenGLWidget, QOpenGLFunctions_3_3_Core
     Q_OBJECT
 
 public:
-    ScatterView(ExampleViewJSPlugin* viewJSPlugin);
+    ScatterView(GeneSurferPlugin* geneSurferPlugin);
     ~ScatterView();
 
     /** Returns true when the widget was initialized and is ready to be used. */
@@ -92,7 +92,7 @@ protected:
     bool eventFilter(QObject* target, QEvent* event);
 
 private:
-    ExampleViewJSPlugin* _viewJSPlugin;    // Pointer to the main plugin class
+    GeneSurferPlugin* _geneSurferPlugin;    // Pointer to the main plugin class
 
     PointRenderer   _pointRenderer;
     Bounds          _dataBounds;             /** Bounds of the loaded data */

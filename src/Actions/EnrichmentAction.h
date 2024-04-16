@@ -4,7 +4,7 @@
 
 using namespace mv::gui;
 
-class ExampleViewJSPlugin;
+class GeneSurferPlugin;
 
 /**
  * Enrichment action class

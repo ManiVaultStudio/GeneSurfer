@@ -1,6 +1,6 @@
 #include "SettingsAction.h"
 
-#include "src/ExampleViewJSPlugin.h"
+#include "src/GeneSurferPlugin.h"
 
 #include <QHBoxLayout>
 
@@ -8,7 +8,7 @@ using namespace mv::gui;
 
 SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     GroupAction(parent, title),
-    _exampleViewJSPlugin(dynamic_cast<ExampleViewJSPlugin*>(parent)),
+    _geneSurferPlugin(dynamic_cast<GeneSurferPlugin*>(parent)),
 
     _positionDatasetPickerAction(this, "PositionDataset"),
     _sliceDatasetPickerAction(this, "SliceDataset"),
@@ -37,10 +37,10 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     setShowLabels(true);
     setLabelSizingType(LabelSizingType::Auto);
 
-    if (_exampleViewJSPlugin == nullptr)
+    if (_geneSurferPlugin == nullptr)
         return;
 
-    _singleCellModeAction.initialize(_exampleViewJSPlugin);
+    _singleCellModeAction.initialize(_geneSurferPlugin);
 
     _correlationModeAction.setToolTip("Correlation Mode");
     _positionAction.setToolTip("Position Dimension");
@@ -48,7 +48,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _clusteringAction.setToolTip("Cluster Settings");
 
     const auto updateEnabled = [this]() {
-        bool hasDataset = _exampleViewJSPlugin->getPositionDataset().isValid();
+        bool hasDataset = _geneSurferPlugin->getPositionDataset().isValid();
 
         _clusteringAction.setEnabled(hasDataset);
         _positionAction.setEnabled(hasDataset);
@@ -59,27 +59,27 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         _enrichmentAction.setEnabled(hasDataset);
     };
 
-    connect(&_exampleViewJSPlugin->getPositionDataset(), &Dataset<Points>::changed, this, updateEnabled);
+    connect(&_geneSurferPlugin->getPositionDataset(), &Dataset<Points>::changed, this, updateEnabled);
 
     updateEnabled();
 
     connect(&_positionDatasetPickerAction, &DatasetPickerAction::datasetPicked, [this](Dataset<DatasetImpl> pickedDataset) -> void {
-        _exampleViewJSPlugin->getPositionDataset() = pickedDataset;
+        _geneSurferPlugin->getPositionDataset() = pickedDataset;
         });
-    connect(&_exampleViewJSPlugin->getPositionDataset(), &Dataset<Points>::changed, this, [this](DatasetImpl* dataset) -> void {
+    connect(&_geneSurferPlugin->getPositionDataset(), &Dataset<Points>::changed, this, [this](DatasetImpl* dataset) -> void {
         _positionDatasetPickerAction.setCurrentDataset(dataset);
         });
-    connect(&_exampleViewJSPlugin->getSliceDataset(), &Dataset<Clusters>::changed, this, [this](DatasetImpl* dataset) -> void {
+    connect(&_geneSurferPlugin->getSliceDataset(), &Dataset<Clusters>::changed, this, [this](DatasetImpl* dataset) -> void {
         _sliceDatasetPickerAction.setCurrentDataset(dataset);
         });
-    connect(&_exampleViewJSPlugin->getAvgExprDataset(), &Dataset<Clusters>::changed, this, [this](DatasetImpl* dataset) -> void {
+    connect(&_geneSurferPlugin->getAvgExprDataset(), &Dataset<Clusters>::changed, this, [this](DatasetImpl* dataset) -> void {
         _avgExprDatasetPickerAction.setCurrentDataset(dataset);
         });
 
-    //connect(&_sliceAction, &IntegralAction::valueChanged, _exampleViewJSPlugin, &ExampleViewJSPlugin::updateSlice());
+    //connect(&_sliceAction, &IntegralAction::valueChanged, _exampleViewJSPlugin, &GeneSurferPlugin::updateSlice());
 
     connect(&_sliceAction, &IntegralAction::valueChanged, this, [this]() {
-        _exampleViewJSPlugin->updateSlice(_sliceAction.getValue());
+        _geneSurferPlugin->updateSlice(_sliceAction.getValue());
         });
 }
 
@@ -97,7 +97,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     {
         qDebug() << ">>>>> Found position dataset " << positionDataset->getGuiName();
         Dataset pickedDataset = mv::data().getDataset(positionDataset.getDatasetId());
-        _exampleViewJSPlugin->getPositionDataset() = pickedDataset;
+        _geneSurferPlugin->getPositionDataset() = pickedDataset;
     }
 
     // Load slice dataset
@@ -106,7 +106,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     {
         qDebug() << ">>>>> Found a slice dataset " << sliceDataset->getGuiName();
         Dataset pickedDataset = mv::data().getDataset(sliceDataset.getDatasetId());
-        _exampleViewJSPlugin->getSliceDataset() = pickedDataset;
+        _geneSurferPlugin->getSliceDataset() = pickedDataset;
     }
 
     // Load average expression dataset
@@ -115,7 +115,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     {
         qDebug() << ">>>>> Found Avg Expression dataset " << avgExprDataset->getGuiName();
         Dataset pickedDataset = mv::data().getDataset(avgExprDataset.getDatasetId());
-        _exampleViewJSPlugin->getAvgExprDataset() = pickedDataset;
+        _geneSurferPlugin->getAvgExprDataset() = pickedDataset;
     }
     qDebug() << ">>>>> SettingsAction::fromVariantMap 1";
     qDebug() << ">>>>> SettingsAction::fromVariantMap 2";

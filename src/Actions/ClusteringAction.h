@@ -5,7 +5,7 @@
 
 using namespace mv::gui;
 
-class ExampleViewJSPlugin;
+class GeneSurferPlugin;
 
 /**
  * Clustering setting action class

@@ -17,7 +17,7 @@
 
 using namespace mv::gui;
 
-class ExampleViewJSPlugin;
+class GeneSurferPlugin;
 /**
  * Settings action class
  *
@@ -73,7 +73,7 @@ public: // Action getters
     EnrichmentAction& getEnrichmentAction() { return _enrichmentAction; }
 
 private:
-    ExampleViewJSPlugin*    _exampleViewJSPlugin;       /** Pointer to Example OpenGL Viewer Plugin */
+    GeneSurferPlugin*       _geneSurferPlugin;       /** Pointer to Gene Surfer Plugin */
 
     DatasetPickerAction     _positionDatasetPickerAction;
     DatasetPickerAction     _sliceDatasetPickerAction;

@@ -6,7 +6,7 @@
 
 using namespace mv::gui;
 
-class ExampleViewJSPlugin;
+class GeneSurferPlugin;
 
 /**
  * Correlation mode action class

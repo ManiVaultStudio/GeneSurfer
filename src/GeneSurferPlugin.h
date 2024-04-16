@@ -47,7 +47,7 @@ enum class AvgExpressionStatus
 class ChartWidget;
 class ScatterView;
 
-class ExampleViewJSPlugin : public ViewPlugin
+class GeneSurferPlugin : public ViewPlugin
 {
     Q_OBJECT
 
@@ -56,10 +56,10 @@ public:
      * Constructor
      * @param factory Pointer to the plugin factory
      */
-    ExampleViewJSPlugin(const PluginFactory* factory);
+    GeneSurferPlugin(const PluginFactory* factory);
 
     /** Destructor */
-    ~ExampleViewJSPlugin() override = default;
+    ~GeneSurferPlugin() override = default;
     
     /** This function is called by the core after the view plugin has been created */
     void init() override;
@@ -327,32 +327,32 @@ protected:
 };
 
 /**
- * Example view plugin factory class
+ * GeneSurfer plugin factory class
  *
  * Note: Factory does not need to be altered (merely responsible for generating new plugins when requested)
  */
-class ExampleViewJSPluginFactory : public ViewPluginFactory
+class GeneSurferPluginFactory : public ViewPluginFactory
 {
     Q_INTERFACES(mv::plugin::ViewPluginFactory mv::plugin::PluginFactory)
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID   "nl.BioVault.ExampleViewJSPlugin"
-                      FILE  "ExampleViewJSPlugin.json")
+    Q_PLUGIN_METADATA(IID   "nl.BioVault.GeneSurferPlugin"
+                      FILE  "GeneSurferPlugin.json")
 
 public:
 
     /** Default constructor */
-    ExampleViewJSPluginFactory() {}
+    GeneSurferPluginFactory() {}
 
     /** Destructor */
-    ~ExampleViewJSPluginFactory() override {}
+    ~GeneSurferPluginFactory() override {}
     
     /** Get plugin icon */
     QIcon getIcon(const QColor& color = Qt::black) const override;
 
-    /** Creates an instance of the example view plugin */
+    /** Creates an instance of the gene surfer plugin */
     ViewPlugin* produce() override;
 
-    /** Returns the data types that are supported by the example view plugin */
+    /** Returns the data types that are supported by the gene surfer plugin */
     mv::DataTypes supportedDataTypes() const override;
 
     /**

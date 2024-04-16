@@ -9,7 +9,7 @@ function drawChart(data) {
     d3.select("div#container").select("*").remove();
 
     if (data.length == 0) {
-        log("ExampleViewJS: bar_chart.tools.js: data empty")
+        log("GeneSurfer: bar_chart.tools.js: data empty")
 
         // add text to the container
         d3.select("div#container")
@@ -22,7 +22,7 @@ function drawChart(data) {
         return
     }
 
-    log("ExampleViewJS: bar_chart.tools.js: draw chart")
+    log("GeneSurfer: bar_chart.tools.js: draw chart")
 
     // set the dimensions and margins of the graph
     //var svgWidth = document.querySelector(".svg-container").offsetWidth;
@@ -209,11 +209,11 @@ function drawChart(data) {
 function highlightBars(dimensions) {
 
     if (dimensions.length == 0) {
-        log("ExampleViewJS: bar_chart.tools.js: dimensions empty")
+        log("GeneSurfer: bar_chart.tools.js: dimensions empty")
         return
     }
 
-    log("ExampleViewJS: bar_chart.tools.js: highlight bars")
+    log("GeneSurfer: bar_chart.tools.js: highlight bars")
     
     d3.selectAll(".myRect").style("opacity", 0.2);
 

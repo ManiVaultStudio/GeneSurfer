@@ -1,5 +1,5 @@
 #include "SingleCellModeAction.h"
-#include "src/ExampleViewJSPlugin.h"
+#include "src/GeneSurferPlugin.h"
 
 #include <QMenu>
 #include <QGroupBox>
@@ -8,7 +8,6 @@ using namespace mv::gui;
 
 SingleCellModeAction::SingleCellModeAction(QObject* parent, const QString& title) :
     WidgetAction(parent, title),
-	_exampleViewJSPlugin(nullptr),
     _singleCellOptionAction(this, "Use scRNA-seq genes", false),
     _computeAvgExpressionAction(this, "Compute average expression"),
     _loadAvgExpressionAction(this, "Load average expression"),
@@ -24,24 +23,24 @@ SingleCellModeAction::SingleCellModeAction(QObject* parent, const QString& title
 
 }
 
-void SingleCellModeAction::initialize(ExampleViewJSPlugin* exampleViewJSPlugin)
+void SingleCellModeAction::initialize(GeneSurferPlugin* geneSurferPlugin)
 {
-    connect(&_singleCellOptionAction, &ToggleAction::toggled, exampleViewJSPlugin, &ExampleViewJSPlugin::updateSingleCellOption);
+    connect(&_singleCellOptionAction, &ToggleAction::toggled, geneSurferPlugin, &GeneSurferPlugin::updateSingleCellOption);
 
-    connect(&_labelDatasetPickerAction, &DatasetPickerAction::datasetPicked, exampleViewJSPlugin, &ExampleViewJSPlugin::setLabelDataset);
+    connect(&_labelDatasetPickerAction, &DatasetPickerAction::datasetPicked, geneSurferPlugin, &GeneSurferPlugin::setLabelDataset);
 
     _singleCellOptionAction.setEnabled(false);
     _computeAvgExpressionAction.setEnabled(false);
 
-    connect(&_computeAvgExpressionAction, &TriggerAction::triggered, this, [exampleViewJSPlugin](bool enabled)
+    connect(&_computeAvgExpressionAction, &TriggerAction::triggered, this, [geneSurferPlugin](bool enabled)
         {
-            exampleViewJSPlugin->setAvgExpressionStatus(AvgExpressionStatus::COMPUTED);
-            exampleViewJSPlugin->computeAvgExpression();
+            geneSurferPlugin->setAvgExpressionStatus(AvgExpressionStatus::COMPUTED);
+            geneSurferPlugin->computeAvgExpression();
         });
-    connect(&_loadAvgExpressionAction, &TriggerAction::triggered, this, [exampleViewJSPlugin](bool enabled)
+    connect(&_loadAvgExpressionAction, &TriggerAction::triggered, this, [geneSurferPlugin](bool enabled)
         {
-            exampleViewJSPlugin->setAvgExpressionStatus(AvgExpressionStatus::LOADED);
-            exampleViewJSPlugin->loadAvgExpression();
+            geneSurferPlugin->setAvgExpressionStatus(AvgExpressionStatus::LOADED);
+            geneSurferPlugin->loadAvgExpression();
         });
 
 }

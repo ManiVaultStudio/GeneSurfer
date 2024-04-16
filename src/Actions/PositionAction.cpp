@@ -1,5 +1,5 @@
 #include "PositionAction.h"
-#include "src/ExampleViewJSPlugin.h"
+#include "src/GeneSurferPlugin.h"
 
 using namespace mv::gui;
 
@@ -18,23 +18,23 @@ PositionAction::PositionAction(QObject* parent, const QString& title) :
     _yDimensionPickerAction.setToolTip("Y dimension");
 
 
-    auto exampleViewJSPlugin = dynamic_cast<ExampleViewJSPlugin*>(parent->parent());
-    if (exampleViewJSPlugin == nullptr)
+    auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
+    if (geneSurferPlugin == nullptr)
         return;
 
-connect(&_xDimensionPickerAction, &DimensionPickerAction::currentDimensionIndexChanged, [this, exampleViewJSPlugin](const std::uint32_t& currentDimensionIndex) {
-         if (exampleViewJSPlugin->isDataInitialized())
-             exampleViewJSPlugin->updateSelectedDim();
+connect(&_xDimensionPickerAction, &DimensionPickerAction::currentDimensionIndexChanged, [this, geneSurferPlugin](const std::uint32_t& currentDimensionIndex) {
+         if (geneSurferPlugin->isDataInitialized())
+             geneSurferPlugin->updateSelectedDim();
      });
 
-     connect(&_yDimensionPickerAction, &DimensionPickerAction::currentDimensionIndexChanged, [this, exampleViewJSPlugin](const std::uint32_t& currentDimensionIndex) {
-         if (exampleViewJSPlugin->isDataInitialized())
-             exampleViewJSPlugin->updateSelectedDim();
+     connect(&_yDimensionPickerAction, &DimensionPickerAction::currentDimensionIndexChanged, [this, geneSurferPlugin](const std::uint32_t& currentDimensionIndex) {
+         if (geneSurferPlugin->isDataInitialized())
+             geneSurferPlugin->updateSelectedDim();
      });
 
-     connect(&exampleViewJSPlugin->getPositionDataset(), &Dataset<Points>::changed, this, [this, exampleViewJSPlugin]() {
-         _xDimensionPickerAction.setPointsDataset(exampleViewJSPlugin->getPositionDataset());
-         _yDimensionPickerAction.setPointsDataset(exampleViewJSPlugin->getPositionDataset());
+     connect(&geneSurferPlugin->getPositionDataset(), &Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
+         _xDimensionPickerAction.setPointsDataset(geneSurferPlugin->getPositionDataset());
+         _yDimensionPickerAction.setPointsDataset(geneSurferPlugin->getPositionDataset());
 
          _xDimensionPickerAction.setCurrentDimensionIndex(0);
 
@@ -43,13 +43,13 @@ connect(&_xDimensionPickerAction, &DimensionPickerAction::currentDimensionIndexC
          _yDimensionPickerAction.setCurrentDimensionIndex(yIndex);
          });
 
-     const auto updateReadOnly = [this, exampleViewJSPlugin]() -> void {
-         setEnabled(exampleViewJSPlugin->getPositionDataset().isValid());
+     const auto updateReadOnly = [this, geneSurferPlugin]() -> void {
+         setEnabled(geneSurferPlugin->getPositionDataset().isValid());
      };
 
      updateReadOnly();
 
-     connect(&exampleViewJSPlugin->getPositionDataset(), &Dataset<Points>::changed, this, updateReadOnly);
+     connect(&geneSurferPlugin->getPositionDataset(), &Dataset<Points>::changed, this, updateReadOnly);
      // TO DO: how do the following work? - end
 
 }

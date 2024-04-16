@@ -1,5 +1,5 @@
 #include "ClusteringAction.h"
-#include "src/ExampleViewJSPlugin.h"
+#include "src/GeneSurferPlugin.h"
 
 using namespace mv::gui;
 
@@ -21,24 +21,24 @@ ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
     _numGenesThresholdAction.setToolTip("Number of filtered genes");
 
 
-    auto exampleViewJSPlugin = dynamic_cast<ExampleViewJSPlugin*>(parent->parent());
-    if (exampleViewJSPlugin == nullptr)
+    auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
+    if (geneSurferPlugin == nullptr)
         return;
 
-    connect(&_numClusterAction, &IntegralAction::valueChanged, [this, exampleViewJSPlugin](int32_t val) {
-            exampleViewJSPlugin->updateNumCluster();
+    connect(&_numClusterAction, &IntegralAction::valueChanged, [this, geneSurferPlugin](int32_t val) {
+            geneSurferPlugin->updateNumCluster();
      });
 
-   /* connect(&_corrThresholdAction, &DecimalAction::valueChanged, [this, exampleViewJSPlugin](float val) {
-         exampleViewJSPlugin->updateCorrThreshold();
+   /* connect(&_corrThresholdAction, &DecimalAction::valueChanged, [this, geneSurferPlugin](float val) {
+         geneSurferPlugin->updateCorrThreshold();
     });*/
 
-    connect(&_numGenesThresholdAction, &IntegralAction::valueChanged, [this, exampleViewJSPlugin](float val) {
-        exampleViewJSPlugin->updateCorrThreshold();
+    connect(&_numGenesThresholdAction, &IntegralAction::valueChanged, [this, geneSurferPlugin](float val) {
+        geneSurferPlugin->updateCorrThreshold();
         });
 
-    connect(&exampleViewJSPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this, exampleViewJSPlugin]() {
-        _numGenesThresholdAction.setMaximum(exampleViewJSPlugin->getPositionSourceDataset()->getDimensionsPickerAction().getEnabledDimensions().size());
+    connect(&geneSurferPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
+        _numGenesThresholdAction.setMaximum(geneSurferPlugin->getPositionSourceDataset()->getDimensionsPickerAction().getEnabledDimensions().size());
         });
 
 }

@@ -1,5 +1,5 @@
 #include "PointPlotAction.h"
-#include "src/ExampleViewJSPlugin.h"
+#include "src/GeneSurferPlugin.h"
 
 using namespace mv::gui;
 
@@ -18,16 +18,16 @@ PointPlotAction::PointPlotAction(QObject* parent, const QString& title) :
     _pointOpacityAction.setToolTip("Opacity of individual points");
 
 
-    auto exampleViewJSPlugin = dynamic_cast<ExampleViewJSPlugin*>(parent->parent());
-    if (exampleViewJSPlugin == nullptr)
+    auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
+    if (geneSurferPlugin == nullptr)
         return;
 
- connect(&_pointSizeAction, &DecimalAction::valueChanged, [this, exampleViewJSPlugin](float val) {
-         exampleViewJSPlugin->updateScatterPointSize();
+ connect(&_pointSizeAction, &DecimalAction::valueChanged, [this, geneSurferPlugin](float val) {
+         geneSurferPlugin->updateScatterPointSize();
      });
 
-     connect(&_pointOpacityAction, &DecimalAction::valueChanged, [this, exampleViewJSPlugin](float val) {
-         exampleViewJSPlugin->updateScatterOpacity();
+     connect(&_pointOpacityAction, &DecimalAction::valueChanged, [this, geneSurferPlugin](float val) {
+         geneSurferPlugin->updateScatterOpacity();
      });
 
 }

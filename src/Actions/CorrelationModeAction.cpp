@@ -1,5 +1,5 @@
 #include "CorrelationModeAction.h"
-#include "src/ExampleViewJSPlugin.h"
+#include "src/GeneSurferPlugin.h"
 
 using namespace mv::gui;
 
@@ -21,11 +21,11 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _hdCorrelationAction.setToolTip("HD correlation mode");
     _diffAction.setToolTip("Diff mode");
 
-    auto scatterplotPlugin = dynamic_cast<ExampleViewJSPlugin*>(parent->parent());
-    if (scatterplotPlugin == nullptr)
+    auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
+    if (geneSurferPlugin == nullptr)
         return;
 
-    corrFilter::CorrFilter& filter = scatterplotPlugin->getCorrFilter();
+    corrFilter::CorrFilter& filter = geneSurferPlugin->getCorrFilter();
 
    /* connect(&_spatialCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin]() {
             scatterplotPlugin->setCorrelationMode(true);
@@ -35,22 +35,22 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
         scatterplotPlugin->setCorrelationMode(false);
         });*/
 
-    connect(&_spatialCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin, &filter]() {    
+    connect(&_spatialCorrelationAction, &TriggerAction::triggered, this, [geneSurferPlugin, &filter]() {
         filter.setFilterType(corrFilter::CorrFilterType::SPATIAL);
-        scatterplotPlugin->updateFilterLabel();
-        scatterplotPlugin->updateSelection();
+        geneSurferPlugin->updateFilterLabel();
+        geneSurferPlugin->updateSelection();
         });
 
-    connect(&_hdCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin, &filter]() {
+    connect(&_hdCorrelationAction, &TriggerAction::triggered, this, [geneSurferPlugin, &filter]() {
         filter.setFilterType(corrFilter::CorrFilterType::HD);
-        scatterplotPlugin->updateFilterLabel();
-        scatterplotPlugin->updateSelection();
+        geneSurferPlugin->updateFilterLabel();
+        geneSurferPlugin->updateSelection();
         });
 
-    connect(&_diffAction, &TriggerAction::triggered, this, [scatterplotPlugin, &filter]() {
+    connect(&_diffAction, &TriggerAction::triggered, this, [geneSurferPlugin, &filter]() {
         filter.setFilterType(corrFilter::CorrFilterType::DIFF);
-        scatterplotPlugin->updateFilterLabel();
-        scatterplotPlugin->updateSelection();
+        geneSurferPlugin->updateFilterLabel();
+        geneSurferPlugin->updateSelection();
         });
    
 }

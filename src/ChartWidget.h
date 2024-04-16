@@ -4,7 +4,7 @@
 
 #include <QVariantList>
 
-class ExampleViewJSPlugin;
+class GeneSurferPlugin;
 
 // =============================================================================
 // ParlCoorCommunicationObject
@@ -46,7 +46,7 @@ class ChartWidget : public mv::gui::WebWidget
 {
     Q_OBJECT
 public:
-    ChartWidget(ExampleViewJSPlugin* viewJSPlugin);
+    ChartWidget(GeneSurferPlugin* geneSurferPlugin);
 
     ChartCommObject& getCommunicationObject() { return _comObject; };
 
@@ -56,7 +56,7 @@ private slots:
     void initWebPage() override;
 
 private:
-    ExampleViewJSPlugin*  _viewJSPlugin;    // Pointer to the main plugin class
+    GeneSurferPlugin*  _geneSurferPlugin;    // Pointer to the main plugin class
     ChartCommObject       _comObject;       // Communication Object between Qt (cpp) and JavaScript
 };
 

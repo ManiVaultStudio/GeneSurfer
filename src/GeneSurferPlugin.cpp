@@ -1,4 +1,4 @@
-#include "ExampleViewJSPlugin.h"
+#include "GeneSurferPlugin.h"
 
 #include "ChartWidget.h"
 #include "ScatterView.h"
@@ -36,7 +36,7 @@
 
 
 
-Q_PLUGIN_METADATA(IID "nl.BioVault.ExampleViewJSPlugin")
+Q_PLUGIN_METADATA(IID "nl.BioVault.GeneSurferPlugin")
 
 using namespace mv;
 
@@ -69,7 +69,7 @@ namespace
     }
 }
 
-ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
+GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     ViewPlugin(factory),
     _nclust(3),
     _positionDataset(),
@@ -119,7 +119,7 @@ ExampleViewJSPlugin::ExampleViewJSPlugin(const PluginFactory* factory) :
 
 }
 
-void ExampleViewJSPlugin::init()
+void GeneSurferPlugin::init()
 {
     //getWidget().setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
@@ -135,7 +135,7 @@ void ExampleViewJSPlugin::init()
 
     // Create barchart widget and set html contents of webpage 
     _chartWidget = new ChartWidget(this);
-    _chartWidget->setPage(":example_chart/bar_chart.html", "qrc:/example_chart/");
+    _chartWidget->setPage(":chart/bar_chart.html", "qrc:/chart/");
 
     // Add label for filtering on top of the barchart
     _filterLabel = new QLabel(_chartWidget);
@@ -177,7 +177,7 @@ void ExampleViewJSPlugin::init()
 
     // Instantiate new drop widget: See ExampleViewPlugin for details
     _dropWidget = new DropWidget(_chartWidget);
-    _dropWidget->setDropIndicatorWidget(new DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "Drag the ExampleViewJSData in this view"));
+    _dropWidget->setDropIndicatorWidget(new DropWidget::DropIndicatorWidget(&getWidget(), "No data loaded", "Drag the GeneSurferData in this view"));
 
     _dropWidget->initialize([this](const QMimeData* mimeData) -> DropWidget::DropRegions {
 
@@ -272,17 +272,17 @@ void ExampleViewJSPlugin::init()
         });
 
     // Load points when the pointer to the position dataset changes
-    connect(&_positionDataset, &Dataset<Points>::changed, this, &ExampleViewJSPlugin::positionDatasetChanged);
+    connect(&_positionDataset, &Dataset<Points>::changed, this, &GeneSurferPlugin::positionDatasetChanged);
 
     // update data when data set changed
-    //connect(&_positionDataset, &Dataset<Points>::dataChanged, this, &ExampleViewJSPlugin::convertDataAndUpdateChart);
+    //connect(&_positionDataset, &Dataset<Points>::dataChanged, this, &GeneSurferPlugin::convertDataAndUpdateChart);
 
     // Update the selection from JS
-    connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passSelectionToCore, this, &ExampleViewJSPlugin::publishSelection);
+    connect(&_chartWidget->getCommunicationObject(), &ChartCommObject::passSelectionToCore, this, &GeneSurferPlugin::publishSelection);
 
     connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, [this]() {
         // Use the flood fill dataset to update the cell subset
-        qDebug() << ">>>>>ExampleViewJSPlugin::_floodFillDataset::dataChanged";
+        qDebug() << ">>>>>GeneSurferPlugin::_floodFillDataset::dataChanged";
         if (!_sliceDataset.isValid()) {
             _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
         }
@@ -299,7 +299,7 @@ void ExampleViewJSPlugin::init()
         if (selection->indices.size() <= 1) {
             return;
         }
-        qDebug() << ">>>>>ExampleViewJSPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
+        qDebug() << ">>>>>GeneSurferPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
 
         // test to output the first n selected indices
         /*int testSize;
@@ -324,13 +324,13 @@ void ExampleViewJSPlugin::init()
         });
 
     _client = new EnrichmentAnalysis(this);
-    connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &ExampleViewJSPlugin::updateEnrichmentTable);
-    connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &ExampleViewJSPlugin::noDataEnrichmentTable);
+    connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &GeneSurferPlugin::updateEnrichmentTable);
+    connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &GeneSurferPlugin::noDataEnrichmentTable);
 
-    connect(_tableWidget, &QTableWidget::cellClicked, this, &ExampleViewJSPlugin::onTableClicked); // on table clicked
+    connect(_tableWidget, &QTableWidget::cellClicked, this, &GeneSurferPlugin::onTableClicked); // on table clicked
 }
 
-void ExampleViewJSPlugin::loadData(const mv::Datasets& datasets)
+void GeneSurferPlugin::loadData(const mv::Datasets& datasets)
 {
     // Exit if there is nothing to load
     if (datasets.isEmpty())
@@ -340,12 +340,12 @@ void ExampleViewJSPlugin::loadData(const mv::Datasets& datasets)
     _positionDataset = datasets.first();
 }
 
-void ExampleViewJSPlugin::positionDatasetChanged()
+void GeneSurferPlugin::positionDatasetChanged()
 {
     if (!_positionDataset.isValid())
         return;
 
-    qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): New data dropped";
+    qDebug() << "GeneSurferPlugin::positionDatasetChanged(): New data dropped";
 
     _dropWidget->setShowDropIndicator(!_positionDataset.isValid());
 
@@ -364,7 +364,7 @@ void ExampleViewJSPlugin::positionDatasetChanged()
             _enabledDimNames.push_back(dimNames[i]);
     }
 
-    qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): enabledDimensions size: " << _enabledDimNames.size();
+    qDebug() << "GeneSurferPlugin::positionDatasetChanged(): enabledDimensions size: " << _enabledDimNames.size();
 
     if (!_clusterScalars.isValid())
     {
@@ -378,13 +378,13 @@ void ExampleViewJSPlugin::positionDatasetChanged()
         }
     }
 
-    qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): start converting dataset ... ";
+    qDebug() << "GeneSurferPlugin::positionDatasetChanged(): start converting dataset ... ";
     convertToEigenMatrix(_positionDataset, _positionSourceDataset, _dataStore.getBaseData());
     convertToEigenMatrixProjection(_positionDataset, _dataStore.getBaseFullProjection());
 
     standardizeData(_dataStore.getBaseData(), _dataStore.getVariances()); // getBaseData() is standardized here TO DO: temporarily disabled
     //normalizeDataEigen(_dataStore.getBaseData(), _dataStore.getBaseNormalizedData());TO DO: getBaseData() or getBaseNormalizedData()
-    qDebug() << "ExampleViewJSPlugin::positionDatasetChanged(): finish converting dataset ... ";
+    qDebug() << "GeneSurferPlugin::positionDatasetChanged(): finish converting dataset ... ";
 
     _dataStore.createDataView();
     updateSelectedDim();
@@ -394,15 +394,15 @@ void ExampleViewJSPlugin::positionDatasetChanged()
     _dataInitialized = true;
 }
 
-void ExampleViewJSPlugin::convertDataAndUpdateChart()
+void GeneSurferPlugin::convertDataAndUpdateChart()
 {
     if (!_positionDataset.isValid()) {
-        qDebug() << "ExampleViewJSPlugin::convertDataAndUpdateChart: No data to convert";
+        qDebug() << "GeneSurferPlugin::convertDataAndUpdateChart: No data to convert";
         return;
     }
 
     if (_toClearBarchart) {
-        qDebug() << "ExampleViewJSPlugin::convertDataAndUpdateChart: Clear barchart";
+        qDebug() << "GeneSurferPlugin::convertDataAndUpdateChart: Clear barchart";
         return;
     }
 
@@ -448,19 +448,19 @@ void ExampleViewJSPlugin::convertDataAndUpdateChart()
         payload.push_back(entry);
     }
 
-    qDebug() << "ExampleViewJSPlugin::convertDataAndUpdateChart: Send data from Qt cpp to D3 js";
+    qDebug() << "GeneSurferPlugin::convertDataAndUpdateChart: Send data from Qt cpp to D3 js";
     emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payload);
 }
 
-void ExampleViewJSPlugin::publishSelection(const QString& selection)
+void GeneSurferPlugin::publishSelection(const QString& selection)
 {
     _selectedDimName = selection;
     updateDimView(_selectedDimName);
 
-    qDebug() << "ExampleViewJSPlugin::publishSelection: selection: " << selection;
+    qDebug() << "GeneSurferPlugin::publishSelection: selection: " << selection;
 }
 
-QString ExampleViewJSPlugin::getCurrentDataSetID() const
+QString GeneSurferPlugin::getCurrentDataSetID() const
 {
     if (_positionDataset.isValid())
         return _positionDataset->getId();
@@ -468,7 +468,7 @@ QString ExampleViewJSPlugin::getCurrentDataSetID() const
         return QString{};
 }
 
-void ExampleViewJSPlugin::updateFloodFillDataset()
+void GeneSurferPlugin::updateFloodFillDataset()
 {
     bool floodFillDatasetFound = false;
 
@@ -486,7 +486,7 @@ void ExampleViewJSPlugin::updateFloodFillDataset()
         qDebug() << "Warning: No floodFillDataset named allFloodNodesIndices found!";
         return;
     }
-    qDebug() << "ExampleViewJSPlugin::updateFloodFillDataset: dataSets size: " << _floodFillDataset->getNumPoints();
+    qDebug() << "GeneSurferPlugin::updateFloodFillDataset: dataSets size: " << _floodFillDataset->getNumPoints();
      
     if (!_sliceDataset.isValid()) {
         _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
@@ -498,15 +498,15 @@ void ExampleViewJSPlugin::updateFloodFillDataset()
     updateSelection();
 }
 
-void ExampleViewJSPlugin::updateSelectedDim() {
+void GeneSurferPlugin::updateSelectedDim() {
     int xDim = _settingsAction.getPositionAction().getXDimensionPickerAction().getCurrentDimensionIndex();
     int yDim = _settingsAction.getPositionAction().getYDimensionPickerAction().getCurrentDimensionIndex();
 
-    //qDebug() << "ExampleViewJSPlugin::updateSelectedDim(): xDim: " << xDim << " yDim: " << yDim;
+    //qDebug() << "GeneSurferPlugin::updateSelectedDim(): xDim: " << xDim << " yDim: " << yDim;
 
     _dataStore.createProjectionView(xDim, yDim);
 
-    //qDebug()<< "ExampleViewJSPlugin::updateSelectedDim(): getProjectionSize()"<< _dataStore.getProjectionSize();
+    //qDebug()<< "GeneSurferPlugin::updateSelectedDim(): getProjectionSize()"<< _dataStore.getProjectionSize();
 
     _positions.clear();
     _positions.resize(_dataStore.getProjectionView().rows());
@@ -515,12 +515,12 @@ void ExampleViewJSPlugin::updateSelectedDim() {
         _positions[i].set(_dataStore.getProjectionView()(i, 0), _dataStore.getProjectionView()(i, 1));
     }
 
-    //qDebug() << "ExampleViewJSPlugin::updateSelectedDim(): positions size: " << positions.size();
+    //qDebug() << "GeneSurferPlugin::updateSelectedDim(): positions size: " << positions.size();
 
     updateViewData(_positions);
 }
 
-void ExampleViewJSPlugin::updateViewData(std::vector<Vector2f>& positions) {
+void GeneSurferPlugin::updateViewData(std::vector<Vector2f>& positions) {
 
     // TO DO: can save some time here only computing data bounds once
     // pass the 2d points to the scatter plot widget
@@ -532,14 +532,14 @@ void ExampleViewJSPlugin::updateViewData(std::vector<Vector2f>& positions) {
 
 }
 
-void ExampleViewJSPlugin::updateShowDimension() {
+void GeneSurferPlugin::updateShowDimension() {
     int shownDimension = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionIndex();
     QString shownDimensionName = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionName();
-    qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension: " << shownDimension;
-    qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimensionName: " << shownDimensionName;
+    qDebug() << "GeneSurferPlugin::updateShowDimension(): shownDimension: " << shownDimension;
+    qDebug() << "GeneSurferPlugin::updateShowDimension(): shownDimensionName: " << shownDimensionName;
 
     if (shownDimension < 0) {
-        qDebug() << "ExampleViewJSPlugin::updateShowDimension(): shownDimension < 0: " << shownDimension;
+        qDebug() << "GeneSurferPlugin::updateShowDimension(): shownDimension < 0: " << shownDimension;
         return;
     }
 
@@ -547,7 +547,7 @@ void ExampleViewJSPlugin::updateShowDimension() {
     updateDimView(_selectedDimName);
 }
 
-void ExampleViewJSPlugin::computeAvgExpression() {
+void GeneSurferPlugin::computeAvgExpression() {
     qDebug() << "computeAvgExpression() started ";
 
     // Attention: data used below should all from a singlecell dataset
@@ -563,17 +563,17 @@ void ExampleViewJSPlugin::computeAvgExpression() {
 
     Dataset<Points> scSourceDataset = scLabelDataset->getParent()->getSourceDataset<Points>();
     
-    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): scSourceDataset name: " << scSourceDataset->getGuiName();
-    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): scSourceDataset numPoints: " << scSourceDataset->getNumPoints();
+    qDebug() << "GeneSurferPlugin::computeAvgExpression(): scSourceDataset name: " << scSourceDataset->getGuiName();
+    qDebug() << "GeneSurferPlugin::computeAvgExpression(): scSourceDataset numPoints: " << scSourceDataset->getNumPoints();
     
     int numPoints = scSourceDataset->getNumPoints();
     int numClusters = labelClusters.size();
     int numGenes = scSourceDataset->getNumDimensions();
-    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): numPoints: " << numPoints << " numClusters: " << numClusters << " numGenes: " << numGenes;
+    qDebug() << "GeneSurferPlugin::computeAvgExpression(): numPoints: " << numPoints << " numClusters: " << numClusters << " numGenes: " << numGenes;
 
     Eigen::MatrixXf scSourceMatrix;
     convertToEigenMatrixProjection(scSourceDataset, scSourceMatrix);
-    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): scSourceMatrix size: " << scSourceMatrix.rows() << " " << scSourceMatrix.cols();
+    qDebug() << "GeneSurferPlugin::computeAvgExpression(): scSourceMatrix size: " << scSourceMatrix.rows() << " " << scSourceMatrix.cols();
 
     std::vector<float> scCellLabels(numPoints, 0);
 
@@ -588,7 +588,7 @@ void ExampleViewJSPlugin::computeAvgExpression() {
             clusterToIndicesMap[clusterName].push_back(ptIndex);
         }
     }
-    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): clusterToIndicesMap size: " << clusterToIndicesMap.size();
+    qDebug() << "GeneSurferPlugin::computeAvgExpression(): clusterToIndicesMap size: " << clusterToIndicesMap.size();
 
     _avgExpr.resize(numClusters, numGenes);
 
@@ -608,7 +608,7 @@ void ExampleViewJSPlugin::computeAvgExpression() {
         _avgExpr.row(clusterIndex) = clusterMean;
     }
 
-    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();
+    qDebug() << "GeneSurferPlugin::computeAvgExpression(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();
     
     // Flatten the Eigen::MatrixXf data to a std::vector<float>
     std::vector<float> allData(numClusters * numGenes);
@@ -627,8 +627,8 @@ void ExampleViewJSPlugin::computeAvgExpression() {
         _clusterNamesAvgExpr.push_back(cluster.first);
     }
 
-    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): _geneNamesAvgExpr size: " << _geneNamesAvgExpr.size();
-    qDebug() << "ExampleViewJSPlugin::computeAvgExpression(): _clusterNamesAvgExpr size: " << _clusterNamesAvgExpr.size();
+    qDebug() << "GeneSurferPlugin::computeAvgExpression(): _geneNamesAvgExpr size: " << _geneNamesAvgExpr.size();
+    qDebug() << "GeneSurferPlugin::computeAvgExpression(): _clusterNamesAvgExpr size: " << _clusterNamesAvgExpr.size();
 
     _clusterAliasToRowMap.clear();// _clusterAliasToRowMap: first element is label name, second element is row index in _avgExpr
     for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
@@ -655,7 +655,7 @@ void ExampleViewJSPlugin::computeAvgExpression() {
 
 }
 
-void ExampleViewJSPlugin::loadAvgExpression() {
+void GeneSurferPlugin::loadAvgExpression() {
     qDebug() << "ONLY FOR ABCAtlas";
 
     loadAvgExpressionABCAtlas();// TO DO: only for ABC Atlas
@@ -673,15 +673,15 @@ void ExampleViewJSPlugin::loadAvgExpression() {
 
 }
 
-void ExampleViewJSPlugin::loadLabelsFromSTDataset() {
+void GeneSurferPlugin::loadLabelsFromSTDataset() {
     // this is loading label from ST dataset!!!
     // Different from loading from singlecell datset!!!
 
     QString stParentName = _positionDataset->getParent()->getGuiName();
-    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): stParentName: " << stParentName;
+    qDebug() << "GeneSurferPlugin::loadLabelsFromSTDataset(): stParentName: " << stParentName;
 
     QString selectedDataName = _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentText();
-    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): selectedDataName: " << selectedDataName;
+    qDebug() << "GeneSurferPlugin::loadLabelsFromSTDataset(): selectedDataName: " << selectedDataName;
 
     Dataset<Clusters> labelDataset;
     
@@ -692,7 +692,7 @@ void ExampleViewJSPlugin::loadLabelsFromSTDataset() {
             qDebug() << "data->getParent()->getGuiName() " << data->getParent()->getGuiName();
             if (data->getParent()->getGuiName() == stParentName) {
                 labelDataset = data;
-                qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): labelDataset name: " << labelDataset->getGuiName();
+                qDebug() << "GeneSurferPlugin::loadLabelsFromSTDataset(): labelDataset name: " << labelDataset->getGuiName();
                 break;
             }
         }
@@ -700,7 +700,7 @@ void ExampleViewJSPlugin::loadLabelsFromSTDataset() {
 
     QVector<Cluster> labelClusters = labelDataset->getClusters();
 
-    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): labelClusters size: " << labelClusters.size();
+    qDebug() << "GeneSurferPlugin::loadLabelsFromSTDataset(): labelClusters size: " << labelClusters.size();
 
     // precompute the cell-label array
     _cellLabels.clear();
@@ -715,10 +715,10 @@ void ExampleViewJSPlugin::loadLabelsFromSTDataset() {
         }
     }
 
-    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDataset(): _cellLabels size: " << _cellLabels.size();
+    qDebug() << "GeneSurferPlugin::loadLabelsFromSTDataset(): _cellLabels size: " << _cellLabels.size();
 }
 
-void ExampleViewJSPlugin::setLabelDataset() {
+void GeneSurferPlugin::setLabelDataset() {
     qDebug() << _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentText();
 
     // check if there are two datasets with the same selected name
@@ -744,7 +744,7 @@ void ExampleViewJSPlugin::setLabelDataset() {
 
 }
 
-void ExampleViewJSPlugin::setEnrichmentAPI()
+void GeneSurferPlugin::setEnrichmentAPI()
 {
     const QString currentAPI = _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().getCurrentText();
     qDebug() << "Enrichment API changed to: " << currentAPI;
@@ -754,14 +754,14 @@ void ExampleViewJSPlugin::setEnrichmentAPI()
     
     if (_dimNameToClusterLabel.size() == 0)
         {
-        qDebug() << "ExampleViewJSPlugin::setEnrichmentAPI(): _dimNameToClusterLabel is empty";
+        qDebug() << "GeneSurferPlugin::setEnrichmentAPI(): _dimNameToClusterLabel is empty";
         return;
     }
 
     getFuntionalEnrichment();
 }
 
-void ExampleViewJSPlugin::updateSelection()
+void GeneSurferPlugin::updateSelection()
 {
     // clear table content
     _tableWidget->clearContents(); 
@@ -770,11 +770,11 @@ void ExampleViewJSPlugin::updateSelection()
         return;
 
     if (_isFloodIndex.empty()) {
-        qDebug() << "ExampleViewJSPlugin::updateSelection(): _isFloodIndex is empty";
+        qDebug() << "GeneSurferPlugin::updateSelection(): _isFloodIndex is empty";
         return;
     }
 
-    qDebug() << "ExampleViewJSPlugin::updateSelection(): start... ";
+    qDebug() << "GeneSurferPlugin::updateSelection(): start... ";
     auto start = std::chrono::high_resolution_clock::now();
 
     ////////////////////
@@ -903,10 +903,10 @@ void ExampleViewJSPlugin::updateSelection()
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "updateSelection() Elapsed time: " << elapsed.count() << " ms\n";
-    qDebug() << "ExampleViewJSPlugin::updateSelection(): end... ";
+    qDebug() << "GeneSurferPlugin::updateSelection(): end... ";
 }
 
-DataMatrix ExampleViewJSPlugin::populateAvgExprToSpatial() {
+DataMatrix GeneSurferPlugin::populateAvgExprToSpatial() {
     // populate the data in subset for singlecell option
     DataMatrix populatedSubsetAvg(_sortedFloodIndices.size(), _geneNamesAvgExpr.size());
 
@@ -924,7 +924,7 @@ DataMatrix ExampleViewJSPlugin::populateAvgExprToSpatial() {
     return populatedSubsetAvg;
 }
 
-void ExampleViewJSPlugin::computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg) {
+void GeneSurferPlugin::computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg) {
     std::unordered_map<QString, int> clusterWaveNumberSums;
 
     for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
@@ -943,7 +943,7 @@ void ExampleViewJSPlugin::computeMeanWaveNumbersByCluster(std::vector<float>& wa
     qDebug() << "computeMeanWaveNumbersByCluster(): waveAvg size: " << waveAvg.size();
 }
 
-void ExampleViewJSPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg, std::vector<float>& yAvg, std::vector<float>& zAvg) {
+void GeneSurferPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg, std::vector<float>& yAvg, std::vector<float>& zAvg) {
     std::unordered_map<QString, float> clusterXSums; 
     std::unordered_map<QString, float> clusterYSums;
     std::unordered_map<QString, float> clusterZSums;
@@ -981,7 +981,7 @@ void ExampleViewJSPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xA
     // output for manuel check
     // ---------------------------
     /*for (int i = 0; i < xAvg.size(); ++i) {
-        qDebug() << "ExampleViewJSPlugin::computeMeanCoordinatesByCluster(): cluster: " << _clustersToKeep[i] << " x: " << xAvg[i] << " y: " << yAvg[i] << " z: " << zAvg[i];
+        qDebug() << "GeneSurferPlugin::computeMeanCoordinatesByCluster(): cluster: " << _clustersToKeep[i] << " x: " << xAvg[i] << " y: " << yAvg[i] << " z: " << zAvg[i];
     }
     for (int i = 0; i < xAvg.size(); ++i) {
         float stdDevX = 0.0f;
@@ -1000,29 +1000,29 @@ void ExampleViewJSPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xA
         stdDevX = sqrt(stdDevX / _countsMap[_clustersToKeep[i]]);
         stdDevY = sqrt(stdDevY / _countsMap[_clustersToKeep[i]]);
         stdDevZ = sqrt(stdDevZ / _countsMap[_clustersToKeep[i]]);       
-        qDebug() << "ExampleViewJSPlugin::computeMeanCoordinatesByCluster(): cluster: " << _clustersToKeep[i] << " stdDevX: " << stdDevX << " stdDevY: " << stdDevY << " stdDevZ: " << stdDevZ;
+        qDebug() << "GeneSurferPlugin::computeMeanCoordinatesByCluster(): cluster: " << _clustersToKeep[i] << " stdDevX: " << stdDevX << " stdDevY: " << stdDevY << " stdDevZ: " << stdDevZ;
     }*/
 }
 
-void ExampleViewJSPlugin::setCorrelationMode(bool mode) {
+void GeneSurferPlugin::setCorrelationMode(bool mode) {
     // TO DO: remove not needed 
     _isCorrSpatial = mode;
-    qDebug() << "ExampleViewJSPlugin::setCorrelationMode(): _isCorrSpatial: " << _isCorrSpatial;
+    qDebug() << "GeneSurferPlugin::setCorrelationMode(): _isCorrSpatial: " << _isCorrSpatial;
 
     updateSelection();
 }
 
-void ExampleViewJSPlugin::updateSingleCellOption() {
-    qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): start... ";
+void GeneSurferPlugin::updateSingleCellOption() {
+    qDebug() << "GeneSurferPlugin::updateSingleCellOption(): start... ";
 
     _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().isChecked() ? _isSingleCell = true : _isSingleCell = false;
-    qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _isSingleCell: " << _isSingleCell;
+    qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _isSingleCell: " << _isSingleCell;
 
     if (_isSingleCell) {
         qDebug() << "Using Single Cell";
 
         if (_avgExpr.size() == 0) {
-            qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr is empty";
+            qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr is empty";
             qDebug() << "_loadingFromProject = " << _loadingFromProject;
             qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
 
@@ -1047,7 +1047,7 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
                     for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
                         _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
                     }
-                    qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+                    qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
                     loadLabelsFromSTDataset();
                     break;
                 case AvgExpressionStatus::LOADED:
@@ -1064,7 +1064,7 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
                     for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
                         _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
                     }
-                    qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+                    qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
                     loadLabelsFromSTDatasetABCAtlas();
 
                     break;
@@ -1075,7 +1075,7 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
             }         
         } 
 
-        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();    
+        qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();    
         /*_settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_avgExprDataset);
         _settingsAction.getDimensionSelectionAction().getDimensionAction().setCurrentDimensionIndex(-1);*/
         setDimensionNamesForDimensionPicker();
@@ -1083,7 +1083,7 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
         // update _enabledDimNames
         _enabledDimNames.clear();
         _enabledDimNames = _geneNamesAvgExpr;
-        qDebug() << "ExampleViewJSPlugin::updateSingleCellOption(): _enabledDimNames size: " << _enabledDimNames.size();
+        qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _enabledDimNames size: " << _enabledDimNames.size();
 
         // TO DO: temporary code to avoid too many genes for single cell option - NOT needed if use _numGenesThreshold
         /*if (_settingsAction.getClusteringAction().getCorrThresholdAction().getValue() < 0.6)
@@ -1119,7 +1119,7 @@ void ExampleViewJSPlugin::updateSingleCellOption() {
     }
 }
 
-void ExampleViewJSPlugin::setDimensionNamesForDimensionPicker() {
+void GeneSurferPlugin::setDimensionNamesForDimensionPicker() {
     // Work around for dimensionPickerAction
     // sort the strings to avoid the issue of the original dimensionPickerAction: 
     // e.g.select "Hoxb5" but "Hoxb5os" was selected because "Hoxb5os" was the first matched one in the list
@@ -1132,7 +1132,7 @@ void ExampleViewJSPlugin::setDimensionNamesForDimensionPicker() {
     else {
         sortedGeneNames = _positionSourceDataset->getDimensionNames();
     }
-    qDebug() << "ExampleViewJSPlugin::setDimensionNamesForDimensionPicker(): sortedGeneNames size: " << sortedGeneNames.size();
+    qDebug() << "GeneSurferPlugin::setDimensionNamesForDimensionPicker(): sortedGeneNames size: " << sortedGeneNames.size();
 
     // sort the gene names, to make the shortest in the front if one is a prefix of the other
     std::sort(sortedGeneNames.begin(), sortedGeneNames.end(), [](const QString& a, const QString& b) {
@@ -1146,20 +1146,20 @@ void ExampleViewJSPlugin::setDimensionNamesForDimensionPicker() {
         // If one is a prefix of the other, or they are identical up to the minLength, sort by length
         return a.length() < b.length();
      });
-    qDebug() << "ExampleViewJSPlugin::setDimensionNamesForDimensionPicker(): sortedGeneNames sorted";
+    qDebug() << "GeneSurferPlugin::setDimensionNamesForDimensionPicker(): sortedGeneNames sorted";
 
     QStringList sortedGeneNamesList;
     for (const auto& str : sortedGeneNames) {
         sortedGeneNamesList.append(str);
     }
-    qDebug() << "ExampleViewJSPlugin::setDimensionNamesForDimensionPicker(): sortedGeneNamesList size: " << sortedGeneNamesList.size();
+    qDebug() << "GeneSurferPlugin::setDimensionNamesForDimensionPicker(): sortedGeneNamesList size: " << sortedGeneNamesList.size();
 
     _settingsAction.getDimensionSelectionAction().getDimensionAction().setDimensionNames(sortedGeneNamesList);
     _settingsAction.getDimensionSelectionAction().getDimensionAction().setCurrentDimensionIndex(-1);
 
 }
 
-void ExampleViewJSPlugin::updateNumCluster()
+void GeneSurferPlugin::updateNumCluster()
 {
     int newNCluster = _settingsAction.getClusteringAction().getNumClusterAction().getValue();
     if (newNCluster < _nclust) {
@@ -1172,7 +1172,7 @@ void ExampleViewJSPlugin::updateNumCluster()
 
     // cannot be changed before plotting
     if (_isFloodIndex.empty()) {
-        qDebug() << "ExampleViewJSPlugin::updateNumCluster(): _isFloodIndex is empty";
+        qDebug() << "GeneSurferPlugin::updateNumCluster(): _isFloodIndex is empty";
         return;
     }
 
@@ -1181,21 +1181,21 @@ void ExampleViewJSPlugin::updateNumCluster()
     updateSelection();
 }
 
-void ExampleViewJSPlugin::updateCorrThreshold() {
+void GeneSurferPlugin::updateCorrThreshold() {
     //_corrThreshold = _settingsAction.getClusteringAction().getCorrThresholdAction().getValue();
 
     _numGenesThreshold = _settingsAction.getClusteringAction().getNumGenesThresholdAction().getValue();
 
     // cannot be changed before plotting
     if (_isFloodIndex.empty()) {
-        qDebug() << "ExampleViewJSPlugin::updateCorrThreshold: _isFloodIndex is empty";
+        qDebug() << "GeneSurferPlugin::updateCorrThreshold: _isFloodIndex is empty";
         return;
     }
 
     updateSelection();
 }
 
-void ExampleViewJSPlugin::updateScatterPointSize()
+void GeneSurferPlugin::updateScatterPointSize()
 {
     for (int i = 0; i < _nclust; i++) {
         _scatterViews[i]->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
@@ -1203,12 +1203,12 @@ void ExampleViewJSPlugin::updateScatterPointSize()
     _dimView->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
 }
 
-void ExampleViewJSPlugin::updateFilterLabel()
+void GeneSurferPlugin::updateFilterLabel()
 {
     _filterLabel->setText("Filter genes by:" + _corrFilter.getCorrFilterTypeAsString());
 }
 
-void ExampleViewJSPlugin::updateScatterSelection()
+void GeneSurferPlugin::updateScatterSelection()
 {
     // March 27 no need to highlight?
     /*if (!_positionDataset.isValid())
@@ -1229,17 +1229,17 @@ void ExampleViewJSPlugin::updateScatterSelection()
 
     //for (int i = 0; i < _nclust; i++)
     //    _scatterViews[i]->setHighlights(highlights, static_cast<std::int32_t>(selection->indices.size()));
-    //qDebug() << " ExampleViewJSPlugin::updateScatterSelection(): scatterViews highlighted";
+    //qDebug() << " GeneSurferPlugin::updateScatterSelection(): scatterViews highlighted";
 
 }
 
-void ExampleViewJSPlugin::updateScatterOpacity()
+void GeneSurferPlugin::updateScatterOpacity()
 {
     if (!_positionDataset.isValid())
         return;
 
     if (_isFloodIndex.empty()) {
-        qDebug() << "ExampleViewJSPlugin::updateScatterOpacity: _isFloodIndex is empty";
+        qDebug() << "GeneSurferPlugin::updateScatterOpacity: _isFloodIndex is empty";
         return;
     }
 
@@ -1273,10 +1273,10 @@ void ExampleViewJSPlugin::updateScatterOpacity()
         }
         _dimView->setPointOpacityScalars(opacityScalars);
     }
-    qDebug() << "ExampleViewJSPlugin::updateScatterOpacity: finished ...";
+    qDebug() << "GeneSurferPlugin::updateScatterOpacity: finished ...";
 }
 
-void ExampleViewJSPlugin::updateScatterColors()
+void GeneSurferPlugin::updateScatterColors()
 {
     if (!_positionDataset.isValid())
         return;
@@ -1301,13 +1301,13 @@ void ExampleViewJSPlugin::updateScatterColors()
         // 3D dataset
 
         if (_colorScalars[0].empty()) {
-            qDebug() << "ExampleViewJSPlugin::updateScatterColors: _colorScalars[0] is empty";
+            qDebug() << "GeneSurferPlugin::updateScatterColors: _colorScalars[0] is empty";
             return;
         }
 
         for (int j = 0; j < _nclust; j++) {
             if (j >= _colorScalars.size()) {
-                qDebug() << "ExampleViewJSPlugin::updateScatterColors: Row index out of range: j=" << j;
+                qDebug() << "GeneSurferPlugin::updateScatterColors: Row index out of range: j=" << j;
                 break;
             }
 
@@ -1328,7 +1328,7 @@ void ExampleViewJSPlugin::updateScatterColors()
     }
 }
 
-void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
+void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
 {
     // Clear clicked frame - _dimView
     if (_selectedClusterIndex == 6) {
@@ -1382,8 +1382,8 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
         dimV.assign(dimValues.data(), dimValues.data() + dimValues.size());
     }
     
-    qDebug() << "ExampleViewJSPlugin::updateDimView: selected dim Name :" << dimName << " _selectedDimIndex: " << _selectedDimIndex;
-    qDebug() << "ExampleViewJSPlugin::updateDimView: dimV size: " << dimV.size();
+    qDebug() << "GeneSurferPlugin::updateDimView: selected dim Name :" << dimName << " _selectedDimIndex: " << _selectedDimIndex;
+    qDebug() << "GeneSurferPlugin::updateDimView: dimV size: " << dimV.size();
 
     if(!_sliceDataset.isValid()) {
         // 2D dataset
@@ -1431,8 +1431,8 @@ void ExampleViewJSPlugin::updateDimView(const QString& selectedDimName)
 
 }
 
-void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
-    qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): start... ";
+void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
+    qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): start... ";
 
     /*load file of avg expr - file from Michael */
     //std::ifstream file("precomputed_stats_ABC_revision_230821_alias_identifier.csv"); // in this file column:gene identifier, row:cluster alias
@@ -1440,7 +1440,7 @@ void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
     //std::ifstream file("avg_MERFISH_aliasgenesymbol_august.csv");// august data, self computed from MERFISH data
 
     if (!file.is_open()) {
-        qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas Error: Could not open the avg expr file.";
+        qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas Error: Could not open the avg expr file.";
         return;
     }
 
@@ -1501,8 +1501,8 @@ void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
         _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
     }
 
-    qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas()" << numGenes << " genes and " << numClusters << " clusters"; 
-    qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): finished";
+    qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas()" << numGenes << " genes and " << numClusters << " clusters"; 
+    qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): finished";
 
     // identify duplicate gene symbols and append an index to them
     std::map<QString, int> geneSymbolCount;
@@ -1525,7 +1525,7 @@ void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
         allData.insert(allData.end(), row.begin(), row.end());
     }
 
-    qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): allData size: " << allData.size();
+    qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): allData size: " << allData.size();
 
     if (!_avgExprDataset.isValid()) {
         qDebug() << "Create an avgExprDataset";
@@ -1539,7 +1539,7 @@ void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
     _avgExprDataset->setData(allData.data(), numClusters, numGenes); // Assuming this function signature is (data, rows, columns)
     _avgExprDataset->setDimensionNames(_geneNamesAvgExpr);
     events().notifyDatasetDataChanged(_avgExprDataset);
-    qDebug() << "ExampleViewJSPlugin::loadAvgExpressionABCAtlas(): _avgExprDataset dataset created";
+    qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): _avgExprDataset dataset created";
 
     // test convert to eigen
     // TO DO: maybe connect _avgExprDataset to _avgExpr directly??
@@ -1548,7 +1548,7 @@ void ExampleViewJSPlugin::loadAvgExpressionABCAtlas() {
 
 }
 
-void ExampleViewJSPlugin::loadLabelsFromSTDatasetABCAtlas() {
+void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
     // this is loading label from ST dataset!!!
     // Different from loading from singlecell datset!!!
 
@@ -1563,7 +1563,7 @@ void ExampleViewJSPlugin::loadLabelsFromSTDatasetABCAtlas() {
 
     QVector<Cluster> labelClusters = labelDataset->getClusters();
 
-    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDatasetABCAtlas(): labelClusters size: " << labelClusters.size();
+    qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): labelClusters size: " << labelClusters.size();
 
     // precompute the cell-label array
     _cellLabels.clear();
@@ -1579,11 +1579,11 @@ void ExampleViewJSPlugin::loadLabelsFromSTDatasetABCAtlas() {
         }
     }
 
-    qDebug() << "ExampleViewJSPlugin::loadLabelsFromSTDatasetABCAtlas(): _cellLabels size: " << _cellLabels.size();
+    qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): _cellLabels size: " << _cellLabels.size();
     qDebug() << "_cellLabels[0]" << _cellLabels[0];
 }
 
-void ExampleViewJSPlugin::countLabelDistribution() 
+void GeneSurferPlugin::countLabelDistribution() 
 {
     std::unordered_map<QString, int> clusterPointCounts;
 
@@ -1598,11 +1598,11 @@ void ExampleViewJSPlugin::countLabelDistribution()
     matchLabelInSubset();
 }
 
-void ExampleViewJSPlugin::matchLabelInSubset()
+void GeneSurferPlugin::matchLabelInSubset()
 {
     int numClusters = _avgExpr.rows();
     int numGenes = _avgExpr.cols();
-    qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): before matching numClusters: " << numClusters << " numGenes: " << numGenes;
+    qDebug() << "GeneSurferPlugin::matchLabelInSubset(): before matching numClusters: " << numClusters << " numGenes: " << numGenes;
 
     std::vector<QString> clustersToKeep; // it is cluster names 1
     for (int i = 0; i < numClusters; ++i) {
@@ -1614,7 +1614,7 @@ void ExampleViewJSPlugin::matchLabelInSubset()
 
     // to check if any columns are not in _columnNamesAvgExpr
     if (clustersToKeep.size() != _countsMap.size()) {
-        qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): " << _countsMap.size() - clustersToKeep.size() << "clusters not found in avgExpr";
+        qDebug() << "GeneSurferPlugin::matchLabelInSubset(): " << _countsMap.size() - clustersToKeep.size() << "clusters not found in avgExpr";
         // output the cluster names that are not in
         QString output;
         for (const auto& pair : _countsMap) {
@@ -1623,25 +1623,25 @@ void ExampleViewJSPlugin::matchLabelInSubset()
                 output += clusterName + " ";
             }
         }
-        qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): not found cluster names: " << output;
+        qDebug() << "GeneSurferPlugin::matchLabelInSubset(): not found cluster names: " << output;
     }
     else {
-        qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): all clusters found in avgExpr";
+        qDebug() << "GeneSurferPlugin::matchLabelInSubset(): all clusters found in avgExpr";
     }
 
     // Handle case where no columns are to be kept // TO DO: check if needed
     if (clustersToKeep.empty()) {
-        qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): No cluster to keep";
+        qDebug() << "GeneSurferPlugin::matchLabelInSubset(): No cluster to keep";
         return;
     }
 
     _clustersToKeep.clear();
     _clustersToKeep = clustersToKeep; // TO DO: dirty copy
-    qDebug() << "ExampleViewJSPlugin::matchLabelInSubset(): after matching numClusters: " << _clustersToKeep.size();
+    qDebug() << "GeneSurferPlugin::matchLabelInSubset(): after matching numClusters: " << _clustersToKeep.size();
 
 }
 
-void ExampleViewJSPlugin::orderSpatially(const std::vector<int>& unsortedIndices, const std::vector<int>& unsortedWave, std::vector<Vector2f>& sortedCoordinates, std::vector<int>& sortedIndices, std::vector<int>& sortedWave)
+void GeneSurferPlugin::orderSpatially(const std::vector<int>& unsortedIndices, const std::vector<int>& unsortedWave, std::vector<Vector2f>& sortedCoordinates, std::vector<int>& sortedIndices, std::vector<int>& sortedWave)
 {
     // TO DO:compute once for the entire data and lookup every time
 
@@ -1673,10 +1673,10 @@ void ExampleViewJSPlugin::orderSpatially(const std::vector<int>& unsortedIndices
         sortedWave[i] = unsortedWave[indiceMap[i]];
     }
 
-    qDebug() << "ExampleViewJSPlugin::orderSpatially(): spatial sorting finished";
+    qDebug() << "GeneSurferPlugin::orderSpatially(): spatial sorting finished";
 }
 
-void ExampleViewJSPlugin::clusterGenes()
+void GeneSurferPlugin::clusterGenes()
 {
     qDebug() << "clusterGenes start...";
 
@@ -1716,8 +1716,8 @@ void ExampleViewJSPlugin::clusterGenes()
     // option 3 - filter genes based on the contrast between selection and non-selection
     //// first hard coded for SingleCell Option 
 
-    /*qDebug() << "ExampleViewJSPlugin::clusterGenes(): _clustersToKeep size: " << _clustersToKeep.size();
-    qDebug() << "ExampleViewJSPlugin::clusterGenes(): _subsetDataAvgOri size: " << _subsetDataAvgOri.rows() << " " << _subsetDataAvgOri.cols();
+    /*qDebug() << "GeneSurferPlugin::clusterGenes(): _clustersToKeep size: " << _clustersToKeep.size();
+    qDebug() << "GeneSurferPlugin::clusterGenes(): _subsetDataAvgOri size: " << _subsetDataAvgOri.rows() << " " << _subsetDataAvgOri.cols();
     
     int numGenes = _enabledDimNames.size();
     Eigen::VectorXf meanA = Eigen::VectorXf::Zero(numGenes);
@@ -1769,10 +1769,10 @@ void ExampleViewJSPlugin::clusterGenes()
 
     // April 10 test ------------------------------------------------------------
      
-    qDebug() << "ExampleViewJSPlugin::clusterGenes(): filteredDimNames size: " << filteredDimNames.size();
+    qDebug() << "GeneSurferPlugin::clusterGenes(): filteredDimNames size: " << filteredDimNames.size();
 
     if (filteredDimNames.size() < _nclust) {
-        qDebug() << "ExampleViewJSPlugin::clusterGenes(): Not enough genes for clustering";
+        qDebug() << "GeneSurferPlugin::clusterGenes(): Not enough genes for clustering";
 
         _toClearBarchart = true;
 
@@ -1808,7 +1808,7 @@ void ExampleViewJSPlugin::clusterGenes()
     auto end2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
     std::cout << "clusterGenes() computeCorrFilteredGene Elapsed time: " << elapsed2.count() << " ms\n";
-    qDebug() << "ExampleViewJSPlugin::clusterGenes():corrFilteredGene is computed";
+    qDebug() << "GeneSurferPlugin::clusterGenes():corrFilteredGene is computed";
 
     // substract correlation from 1 to get distance
     auto start3 = std::chrono::high_resolution_clock::now();
@@ -1872,7 +1872,7 @@ void ExampleViewJSPlugin::clusterGenes()
     std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
     std::cout << "clusterGenes() Apply clustering Elapsed time: " << elapsed3.count() << " ms\n";
  
-    //qDebug() << "ExampleViewJSPlugin::clusterGenes():hcluster finished";
+    //qDebug() << "GeneSurferPlugin::clusterGenes():hcluster finished";
 
     // temporary code: out put gene names in each cluster
    /* for (int cluster = 0; cluster < _nclust; ++cluster) {
@@ -1908,7 +1908,7 @@ void ExampleViewJSPlugin::clusterGenes()
         std::cout << "clusterGenes() computeFloodedClusterScalars Elapsed time: " << elapsed5.count() << " ms\n";
     }
     else {
-        qDebug() << "ExampleViewJSPlugin::clusterGenes(): _isSingleCell is true";
+        qDebug() << "GeneSurferPlugin::clusterGenes(): _isSingleCell is true";
         auto start5 = std::chrono::high_resolution_clock::now();
         computeFloodedClusterScalarsSingleCell(filteredDimIndices, labels);
         auto end5 = std::chrono::high_resolution_clock::now();
@@ -1923,7 +1923,7 @@ void ExampleViewJSPlugin::clusterGenes()
 
 }
 
-void ExampleViewJSPlugin::computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
+void GeneSurferPlugin::computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
 {
     // Compute mean expression for each cluster
     // for the entire spaial map
@@ -2016,7 +2016,7 @@ void ExampleViewJSPlugin::computeEntireClusterScalars(const std::vector<int> fil
 
 }
 
-void ExampleViewJSPlugin::computeFloodedClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
+void GeneSurferPlugin::computeFloodedClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
 {
     // Compute mean expression for each cluster
     // only for flooded cells, others are filled with the lowest value
@@ -2072,7 +2072,7 @@ void ExampleViewJSPlugin::computeFloodedClusterScalars(const std::vector<int> fi
     }
 }
 
-void ExampleViewJSPlugin::computeFloodedClusterScalarsSingleCell(const std::vector<int> filteredDimIndices, const int* labels) {
+void GeneSurferPlugin::computeFloodedClusterScalarsSingleCell(const std::vector<int> filteredDimIndices, const int* labels) {
     // Compute mean expression for each cluster
     // only for flooded cells, others are filled with the lowest value
     _colorScalars.clear();
@@ -2127,14 +2127,14 @@ void ExampleViewJSPlugin::computeFloodedClusterScalarsSingleCell(const std::vect
     }
 }
 
-void ExampleViewJSPlugin::updateClusterScalarOutput(const std::vector<float>& scalars)
+void GeneSurferPlugin::updateClusterScalarOutput(const std::vector<float>& scalars)
 {
     _clusterScalars->setData<float>(scalars.data(), scalars.size(), 1);
     events().notifyDatasetDataChanged(_clusterScalars);
-    qDebug() << "ExampleViewJSPlugin::updateClusterScalarOutput(): finished";
+    qDebug() << "GeneSurferPlugin::updateClusterScalarOutput(): finished";
 }
 
-void ExampleViewJSPlugin::getFuntionalEnrichment()
+void GeneSurferPlugin::getFuntionalEnrichment()
 {
     QStringList geneNamesInCluster;
     _simplifiedToIndexGeneMapping.clear();
@@ -2202,8 +2202,8 @@ void ExampleViewJSPlugin::getFuntionalEnrichment()
     std::cout << std::endl;
 }
 
-void ExampleViewJSPlugin::updateEnrichmentTable(const QVariantList& data) {
-    //qDebug() << "ExampleViewJSPlugin::updateEnrichmentTable(): start";
+void GeneSurferPlugin::updateEnrichmentTable(const QVariantList& data) {
+    //qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): start";
 
     _enrichmentResult = data;
 
@@ -2243,10 +2243,10 @@ void ExampleViewJSPlugin::updateEnrichmentTable(const QVariantList& data) {
 
     _tableWidget->show();
 
-    qDebug() << "ExampleViewJSPlugin::updateEnrichmentTable(): finished";
+    qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): finished";
 }
 
-void ExampleViewJSPlugin::noDataEnrichmentTable() {
+void GeneSurferPlugin::noDataEnrichmentTable() {
     _tableWidget->clearContents();
     _tableWidget->setRowCount(1);
     _tableWidget->setColumnCount(1);
@@ -2259,7 +2259,7 @@ void ExampleViewJSPlugin::noDataEnrichmentTable() {
     _tableWidget->resizeColumnsToContents();
 }
 
-void ExampleViewJSPlugin::onTableClicked(int row, int column) {
+void GeneSurferPlugin::onTableClicked(int row, int column) {
     qDebug() << "Cell clicked in row:" << row << "column:" << column;
 
     // get gene symbols of the selected row
@@ -2304,7 +2304,7 @@ void ExampleViewJSPlugin::onTableClicked(int row, int column) {
     emit _chartWidget->getCommunicationObject().qt_js_highlightInJS(geneNamesForHighlighting);
 }
 
-void ExampleViewJSPlugin::updateClick() {
+void GeneSurferPlugin::updateClick() {
     for (int i = 0; i < 6; i++) {// TO DO: hard coded for the current layout
         _scatterViews[i]->selectView(false);
     }
@@ -2368,8 +2368,8 @@ void ExampleViewJSPlugin::updateClick() {
     }
 }
 
-void ExampleViewJSPlugin::updateSlice(int sliceIndex) {
-    qDebug() << "ExampleViewJSPlugin::updateSlice(): sliceIndex = " << sliceIndex;
+void GeneSurferPlugin::updateSlice(int sliceIndex) {
+    qDebug() << "GeneSurferPlugin::updateSlice(): sliceIndex = " << sliceIndex;
 
     _currentSliceIndex = sliceIndex;
 
@@ -2378,7 +2378,7 @@ void ExampleViewJSPlugin::updateSlice(int sliceIndex) {
     _settingsAction.getSliceAction().setValue(_currentSliceIndex); 
 
     if (!_sliceDataset.isValid()) {
-        qDebug() << "ExampleViewJSPlugin::updateSlice(): _sliceDataset is not valid";
+        qDebug() << "GeneSurferPlugin::updateSlice(): _sliceDataset is not valid";
         return;
     }
 
@@ -2396,7 +2396,7 @@ void ExampleViewJSPlugin::updateSlice(int sliceIndex) {
 
     // update floodfill mask on 2D
     if (_isFloodIndex.empty()) {
-        qDebug() << "ExampleViewJSPlugin::updateSlice(): _isFloodIndex is empty";
+        qDebug() << "GeneSurferPlugin::updateSlice(): _isFloodIndex is empty";
     }
     else {
         _isFloodOnSlice.clear(); // TO DO: repeated code with updateFloodFill()
@@ -2417,15 +2417,15 @@ void ExampleViewJSPlugin::updateSlice(int sliceIndex) {
 ////////////////////
 // Serialization ///
 ////////////////////
-void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
+void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
 {
-    qDebug() << "ExampleViewJSPlugin::fromVariantMap() 1 ";
+    qDebug() << "GeneSurferPlugin::fromVariantMap() 1 ";
     _loadingFromProject = true;
 
     ViewPlugin::fromVariantMap(variantMap);
 
     _avgExprStatus = static_cast<AvgExpressionStatus>(variantMap["AvgExpressionStatus"].toInt());
-    qDebug() << "ExampleViewJSPlugin::fromVariantMap() 2 ";
+    qDebug() << "GeneSurferPlugin::fromVariantMap() 2 ";
 
     if (_avgExprStatus != AvgExpressionStatus::NONE)
     {
@@ -2438,8 +2438,8 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
                 _clusterNamesAvgExpr[index] = clusterNamesAvgExprVariant[key].toString();
             }
         }
-        qDebug() << ">>>>>ExampleViewJSPlugin::fromVariantMap(): clusterNamesAvgExpr.size();" << _clusterNamesAvgExpr.size();
-        qDebug() << ">>>>>ExampleViewJSPlugin::fromVariantMap(): clusterNamesAvgExpr[0];" << _clusterNamesAvgExpr[0];
+        qDebug() << ">>>>>GeneSurferPlugin::fromVariantMap(): clusterNamesAvgExpr.size();" << _clusterNamesAvgExpr.size();
+        qDebug() << ">>>>>GeneSurferPlugin::fromVariantMap(): clusterNamesAvgExpr[0];" << _clusterNamesAvgExpr[0];
     }
 
     variantMapMustContain(variantMap, "SettingsAction");
@@ -2447,23 +2447,23 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
 
     _isCorrSpatial = variantMap["IsCorrSpatial"].toBool(); // TO DO: serialize enum class of filter type
 
-    qDebug() << "ExampleViewJSPlugin::fromVariantMap() 3 ";
+    qDebug() << "GeneSurferPlugin::fromVariantMap() 3 ";
 
     QString clusterScalarsId = variantMap["ClusterScalars"].toString();
     _clusterScalars = mv::data().getDataset<Points>(clusterScalarsId);
 
     if (_sliceDataset.isValid())
     {
-        qDebug() << "ExampleViewJSPlugin::fromVariantMap() 4 ";
+        qDebug() << "GeneSurferPlugin::fromVariantMap() 4 ";
         _currentSliceIndex = variantMap["CurrentSliceIdx"].toInt();
         updateSlice(_currentSliceIndex);
     }
 
-    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;
+    qDebug() << "GeneSurferPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;
     _selectedDimName = variantMap["SelectedDimName"].toString();
     if (_selectedDimName != "NoneSelected")
         updateDimView(_selectedDimName);
-    qDebug() << "ExampleViewJSPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;
+    qDebug() << "GeneSurferPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;
 
     if (_avgExprStatus != AvgExpressionStatus::NONE)
     {
@@ -2475,7 +2475,7 @@ void ExampleViewJSPlugin::fromVariantMap(const QVariantMap& variantMap)
 
 }
 
-QVariantMap ExampleViewJSPlugin::toVariantMap() const
+QVariantMap GeneSurferPlugin::toVariantMap() const
 {
     QVariantMap variantMap = ViewPlugin::toVariantMap();
 
@@ -2513,17 +2513,17 @@ QVariantMap ExampleViewJSPlugin::toVariantMap() const
 // Plugin Factory 
 // =============================================================================
 
-QIcon ExampleViewJSPluginFactory::getIcon(const QColor& color /*= Qt::black*/) const
+QIcon GeneSurferPluginFactory::getIcon(const QColor& color /*= Qt::black*/) const
 {
     return mv::Application::getIconFont("FontAwesome").getIcon("bullseye", color);
 }
 
-ViewPlugin* ExampleViewJSPluginFactory::produce()
+ViewPlugin* GeneSurferPluginFactory::produce()
 {
-    return new ExampleViewJSPlugin(this);
+    return new GeneSurferPlugin(this);
 }
 
-mv::DataTypes ExampleViewJSPluginFactory::supportedDataTypes() const
+mv::DataTypes GeneSurferPluginFactory::supportedDataTypes() const
 {
     // This example analysis plugin is compatible with points datasets
     DataTypes supportedTypes;
@@ -2531,18 +2531,18 @@ mv::DataTypes ExampleViewJSPluginFactory::supportedDataTypes() const
     return supportedTypes;
 }
 
-mv::gui::PluginTriggerActions ExampleViewJSPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
+mv::gui::PluginTriggerActions GeneSurferPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
 {
     PluginTriggerActions pluginTriggerActions;
 
-    const auto getPluginInstance = [this]() -> ExampleViewJSPlugin* {
-        return dynamic_cast<ExampleViewJSPlugin*>(plugins().requestViewPlugin(getKind()));
+    const auto getPluginInstance = [this]() -> GeneSurferPlugin* {
+        return dynamic_cast<GeneSurferPlugin*>(plugins().requestViewPlugin(getKind()));
     };
 
     const auto numberOfDatasets = datasets.count();
 
     if (numberOfDatasets >= 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
-        auto pluginTriggerAction = new PluginTriggerAction(const_cast<ExampleViewJSPluginFactory*>(this), this, "Example JS", "View JavaScript visualization", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
+        auto pluginTriggerAction = new PluginTriggerAction(const_cast<GeneSurferPluginFactory*>(this), this, "Gene Surfer", "Gene Surfer visualization", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
             for (auto dataset : datasets)
                 getPluginInstance()->loadData(Datasets({ dataset }));
 

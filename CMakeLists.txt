@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 
-set(EXAMPLEVIEWJS "ExampleViewJS")
-PROJECT(${EXAMPLEVIEWJS})
+set(GENESURFER "GeneSurfer")
+PROJECT(${GENESURFER})
 
 # -----------------------------------------------------------------------------
 # Library versions for Artifactory sourced binaries
@@ -36,11 +36,11 @@ find_package(Qt6 COMPONENTS Widgets WebEngineWidgets OpenGL OpenGLWidgets REQUIR
 
 # Define the plugin sources
 set(PLUGIN
-    src/ExampleViewJSPlugin.h
-    src/ExampleViewJSPlugin.cpp
+    src/GeneSurferPlugin.h
+    src/GeneSurferPlugin.cpp
     src/ChartWidget.h
     src/ChartWidget.cpp
-    src/ExampleViewJSPlugin.json
+    src/GeneSurferPlugin.json
 	src/ScatterView.h
     src/ScatterView.cpp
 	src/TableWidget.h
@@ -89,17 +89,17 @@ set(Actions
 
 
 set(WEB
-    res/example_chart/bar_chart.html
-    res/example_chart/bar_chart.tools.js
+    res/chart/bar_chart.html
+    res/chart/bar_chart.tools.js
     res/js_libs/d3.v3.min.js
     res/js_libs/qwebchannel.tools.js
 )
 
 set(AUX
-    res/example_chart.qrc
+    res/chart.qrc
 )
 
-qt6_add_resources(RESOURCE_FILES res/example_chart.qrc)
+qt6_add_resources(RESOURCE_FILES res/chart.qrc)
 
 
 source_group(Plugin FILES ${PLUGIN})
@@ -110,8 +110,8 @@ source_group(Aux FILES ${AUX})
 
 
 # Create dynamic library for the plugin
-add_library(${EXAMPLEVIEWJS} SHARED ${PLUGIN} ${Compute} ${Actions} ${AUX} ${WEB} ${RESOURCE_FILES})
-set_target_properties(${EXAMPLEVIEWJS} PROPERTIES CXX_STANDARD 17)
+add_library(${GENESURFER} SHARED ${PLUGIN} ${Compute} ${Actions} ${AUX} ${WEB} ${RESOURCE_FILES})
+set_target_properties(${GENESURFER} PROPERTIES CXX_STANDARD 17)
 
 
 set(LIBRARY_INSTALL_DIR ${PROJECT_BINARY_DIR})
@@ -136,24 +136,24 @@ if(USE_ARTIFACTORY_LIBS AND JS_ARTIFACTORY_LIBS_INSTALLED)
     find_package(HDILib COMPONENTS hdidimensionalityreduction hdiutils hdidata PATHS "${LIBRARY_INSTALL_DIR}/HDILib" CONFIG REQUIRED)
 
     #HDILib include dir
-    target_include_directories(${EXAMPLEVIEWJS} PRIVATE "${HDILib_INCLUDE_DIR}")
+    target_include_directories(${GENESURFER} PRIVATE "${HDILib_INCLUDE_DIR}")
 
     # HDILib linking
-    target_link_libraries(${EXAMPLEVIEWJS} PRIVATE ${HDILib_LINK_LIBS})
+    target_link_libraries(${GENESURFER} PRIVATE ${HDILib_LINK_LIBS})
 endif()
 
 # Include mv headers, including system data plugins
-target_include_directories(${EXAMPLEVIEWJS} PRIVATE "${MV_INSTALL_DIR}/$<CONFIGURATION>/include/")
-target_include_directories(${EXAMPLEVIEWJS} SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/Eigen/include)
+target_include_directories(${GENESURFER} PRIVATE "${MV_INSTALL_DIR}/$<CONFIGURATION>/include/")
+target_include_directories(${GENESURFER} SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/Eigen/include)
 
 # Request C++17
-#target_compile_features(${EXAMPLEVIEWJS} PRIVATE cxx_std_17)
+#target_compile_features(${GENESURFER} PRIVATE cxx_std_17)
 
 # Link to Qt libraries
-target_link_libraries(${EXAMPLEVIEWJS} PRIVATE Qt6::Widgets)
-target_link_libraries(${EXAMPLEVIEWJS} PRIVATE Qt6::WebEngineWidgets)
-target_link_libraries(${EXAMPLEVIEWJS} PRIVATE Qt6::OpenGL)
-target_link_libraries(${EXAMPLEVIEWJS} PRIVATE Qt6::OpenGLWidgets)
+target_link_libraries(${GENESURFER} PRIVATE Qt6::Widgets)
+target_link_libraries(${GENESURFER} PRIVATE Qt6::WebEngineWidgets)
+target_link_libraries(${GENESURFER} PRIVATE Qt6::OpenGL)
+target_link_libraries(${GENESURFER} PRIVATE Qt6::OpenGLWidgets)
 
 # Link to mv and data plugins
 # The link path in this repo assumes that the ManiVault core was built locally
@@ -167,22 +167,22 @@ set(MV_LINK_LIBRARY "${MV_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}MV_Public${MV
 set(POINTDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}PointData${MV_LINK_SUFFIX}") 
 set(CLUSTERDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}ClusterData${MV_LINK_SUFFIX}") 
 
-target_link_libraries(${EXAMPLEVIEWJS} PRIVATE "${MV_LINK_LIBRARY}")
-target_link_libraries(${EXAMPLEVIEWJS} PRIVATE "${POINTDATA_LINK_LIBRARY}")
-target_link_libraries(${EXAMPLEVIEWJS} PRIVATE "${CLUSTERDATA_LINK_LIBRARY}")
+target_link_libraries(${GENESURFER} PRIVATE "${MV_LINK_LIBRARY}")
+target_link_libraries(${GENESURFER} PRIVATE "${POINTDATA_LINK_LIBRARY}")
+target_link_libraries(${GENESURFER} PRIVATE "${CLUSTERDATA_LINK_LIBRARY}")
 
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(${EXAMPLEVIEWJS} PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(${GENESURFER} PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
 # Install the shared plugin libary to the "Plugins" folder in the ManiVault install directory
-install(TARGETS ${EXAMPLEVIEWJS}
+install(TARGETS ${GENESURFER}
     RUNTIME DESTINATION Plugins COMPONENT PLUGINS # Windows .dll
     LIBRARY DESTINATION Plugins COMPONENT PLUGINS # Linux/Mac .so
 )
 
-add_custom_command(TARGET ${EXAMPLEVIEWJS} POST_BUILD
+add_custom_command(TARGET ${GENESURFER} POST_BUILD
     COMMAND "${CMAKE_COMMAND}"
         --install ${CMAKE_CURRENT_BINARY_DIR}
         --config $<CONFIGURATION>
@@ -191,6 +191,6 @@ add_custom_command(TARGET ${EXAMPLEVIEWJS} POST_BUILD
 
 # Automatically set the debug environment (command + working directory) for MSVC
 if(MSVC)
-    set_property(TARGET ${EXAMPLEVIEWJS} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<IF:$<CONFIG:DEBUG>,${MV_INSTALL_DIR}/debug,${MV_INSTALL_DIR}/release>)
-    set_property(TARGET ${EXAMPLEVIEWJS} PROPERTY VS_DEBUGGER_COMMAND $<IF:$<CONFIG:DEBUG>,"${MV_INSTALL_DIR}/debug/ManiVault Studio.exe","${MV_INSTALL_DIR}/release/ManiVault Studio.exe">)
+    set_property(TARGET ${GENESURFER} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<IF:$<CONFIG:DEBUG>,${MV_INSTALL_DIR}/debug,${MV_INSTALL_DIR}/release>)
+    set_property(TARGET ${GENESURFER} PROPERTY VS_DEBUGGER_COMMAND $<IF:$<CONFIG:DEBUG>,"${MV_INSTALL_DIR}/debug/ManiVault Studio.exe","${MV_INSTALL_DIR}/release/ManiVault Studio.exe">)
 endif()

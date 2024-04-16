@@ -4,7 +4,7 @@
 
 using namespace mv::gui;
 
-class ExampleViewJSPlugin;
+class GeneSurferPlugin;
 
 /**
  * position action class
@@ -47,7 +47,7 @@ public: // Action getters
     DimensionPickerAction& getYDimensionPickerAction() { return _yDimensionPickerAction; }
 
 private:
-    //ExampleViewJSPlugin*  _scatterplotPlugin;     /** Pointer to scatterplot plugin */
+    //GeneSurferPlugin*  _scatterplotPlugin;     /** Pointer to scatterplot plugin */
     DimensionPickerAction   _xDimensionPickerAction;    /** X-dimension picker action */
     DimensionPickerAction   _yDimensionPickerAction;    /** Y-dimension picker action */
 

@@ -17,7 +17,7 @@ try {
         notifyBridgeAvailable();
     });
 } catch (error) {
-	log("ExampleViewJSPlugin: qwebchannel: could not connect qt");
+	log("GeneSurferPlugin: qwebchannel: could not connect qt");
 }
 
 // The slot js_available is defined by ManiVault's WebWidget and will
@@ -28,7 +28,7 @@ function notifyBridgeAvailable() {
         QtBridge.js_available();
     }
     else {
-        log("ExampleViewJSPlugin: qwebchannel: QtBridge is not available - something went wrong");
+        log("GeneSurferPlugin: qwebchannel: QtBridge is not available - something went wrong");
     }
 
 }
@@ -43,7 +43,7 @@ function passSelectionToQt(dat) {
 
 // utility function: pipe errors to log
 window.onerror = function (msg, url, num) {
-    log("ExampleViewJSPlugin: qwebchannel: Error: " + msg + "\nURL: " + url + "\nLine: " + num);
+    log("GeneSurferPlugin: qwebchannel: Error: " + msg + "\nURL: " + url + "\nLine: " + num);
 };
 
 // utility function: auto log for Qt and console

@@ -6,7 +6,7 @@
 
 using namespace mv::gui;
 
-class ExampleViewJSPlugin;
+class GeneSurferPlugin;
 
 /**
  * SingleCell mode action class
@@ -37,7 +37,7 @@ public:
      */
     Q_INVOKABLE SingleCellModeAction(QObject* parent, const QString& title);
 
-    void initialize(ExampleViewJSPlugin* exampleViewJSPlugin);
+    void initialize(GeneSurferPlugin* geneSurferPlugin);
 
 public: // Serialization
 
@@ -65,7 +65,6 @@ public: // Action getters
     DatasetPickerAction& getLabelDatasetPickerAction() { return _labelDatasetPickerAction; }
 
 private:
-    ExampleViewJSPlugin*    _exampleViewJSPlugin;     /** Pointer to scatterplot plugin */
     ToggleAction            _singleCellOptionAction;          /** single cell option action */
 
     TriggerAction           _computeAvgExpressionAction;

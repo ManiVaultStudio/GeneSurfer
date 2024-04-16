@@ -3,7 +3,7 @@
 #include <actions/VerticalGroupAction.h>
 using namespace mv::gui;
 
-class ExampleViewJSPlugin;
+class GeneSurferPlugin;
 
 /**
  * Point plot action class
@@ -47,7 +47,6 @@ public: // Action getters
     DecimalAction& getPointOpacityAction() { return _pointOpacityAction; }
 
 private:
-    //ExampleViewJSPlugin*  _scatterplotPlugin;     /** Pointer to scatterplot plugin */
     DecimalAction           _pointSizeAction;           /** point size action */
     DecimalAction           _pointOpacityAction;        /** point opacity action */
 

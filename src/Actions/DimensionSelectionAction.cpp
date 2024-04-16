@@ -1,5 +1,5 @@
 #include "DimensionSelectionAction.h"
-#include "src/ExampleViewJSPlugin.h"
+#include "src/GeneSurferPlugin.h"
 
 using namespace mv::gui;
 
@@ -15,18 +15,18 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
     _dimensionAction.setToolTip("Select the dimension to be shown");
 
 
-    auto exampleViewJSPlugin = dynamic_cast<ExampleViewJSPlugin*>(parent->parent());
-    if (exampleViewJSPlugin == nullptr)
+    auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
+    if (geneSurferPlugin == nullptr)
         return;
 
-    connect(&_dimensionAction, &GenePickerAction::currentDimensionIndexChanged, [this, exampleViewJSPlugin](const std::uint32_t& currentDimensionIndex) {
-        if (exampleViewJSPlugin->isDataInitialized() && _dimensionAction.getCurrentDimensionIndex() != -1) {
-            exampleViewJSPlugin->updateShowDimension();
+    connect(&_dimensionAction, &GenePickerAction::currentDimensionIndexChanged, [this, geneSurferPlugin](const std::uint32_t& currentDimensionIndex) {
+        if (geneSurferPlugin->isDataInitialized() && _dimensionAction.getCurrentDimensionIndex() != -1) {
+            geneSurferPlugin->updateShowDimension();
         }
         });
 
-    connect(&exampleViewJSPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this, exampleViewJSPlugin]() {
-        auto sortedGeneNames = exampleViewJSPlugin->getPositionSourceDataset()->getDimensionNames();
+    connect(&geneSurferPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
+        auto sortedGeneNames = geneSurferPlugin->getPositionSourceDataset()->getDimensionNames();
 
         std::sort(sortedGeneNames.begin(), sortedGeneNames.end(), [](const QString& a, const QString& b) {
             // Compare alphabetically first

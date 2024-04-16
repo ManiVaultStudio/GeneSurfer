@@ -1,5 +1,5 @@
 #include "ScatterView.h"
-#include "ExampleViewJSPlugin.h"
+#include "GeneSurferPlugin.h"
 
 #include "util/Exception.h"
 
@@ -31,8 +31,8 @@ namespace
     }
 }
 
-ScatterView::ScatterView(ExampleViewJSPlugin* viewJSPlugin) :
-    _viewJSPlugin(viewJSPlugin),
+ScatterView::ScatterView(GeneSurferPlugin* geneSurferPlugin) :
+    _geneSurferPlugin(geneSurferPlugin),
     _pointRenderer(),
     _backgroundColor(255, 255, 255, 255)
 {
@@ -379,18 +379,18 @@ bool ScatterView::eventFilter(QObject* target, QEvent* event)
     {
         auto wheelEvent = static_cast<QWheelEvent*>(event);
 
-        if (!_viewJSPlugin->getSliceDataset().isValid())
+        if (!_geneSurferPlugin->getSliceDataset().isValid())
             break;
 
         qDebug() << "ScatterView: Mouse wheel event";
 
         int mv = wheelEvent->angleDelta().y() > 0 ? -1 : 1;
 
-        int currentSliceIndex = _viewJSPlugin->getSliceIndex();
+        int currentSliceIndex = _geneSurferPlugin->getSliceIndex();
         currentSliceIndex += mv;
-        currentSliceIndex = std::max(std::min(currentSliceIndex, (int)_viewJSPlugin->getSliceDataset()->getClusters().size() - 1), 0);
+        currentSliceIndex = std::max(std::min(currentSliceIndex, (int)_geneSurferPlugin->getSliceDataset()->getClusters().size() - 1), 0);
 
-        _viewJSPlugin->updateSlice(currentSliceIndex);
+        _geneSurferPlugin->updateSlice(currentSliceIndex);
 
 
         break;
