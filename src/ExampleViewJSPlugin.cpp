@@ -301,6 +301,18 @@ void ExampleViewJSPlugin::init()
         }
         qDebug() << ">>>>>ExampleViewJSPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
 
+        // test to output the first n selected indices
+        /*int testSize;
+        if (selection->indices.size() > 500)
+            testSize = 500;
+        else 
+            testSize = selection->indices.size();
+
+        for (int i = 0; i < testSize; i++) {
+            std::cout << selection->indices[i] << ", ";
+        }
+        std::cout << std::endl;*/
+
         if (!_sliceDataset.isValid()) {
             _computeSubset.updateSelectedData(_positionDataset, selection, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
         }
@@ -2180,17 +2192,14 @@ void ExampleViewJSPlugin::getFuntionalEnrichment()
     }
 
     // output the gene names
-    int counter = 0;
-    for (const auto& item : geneNamesInCluster) {
-        if (counter >= 30) {
-            qDebug() << "more genes are not shown";
-            break;
-        }
-
-        qDebug() << item.toUtf8().constData();
-        ++counter;
+    for (int i = 0; i < geneNamesInCluster.size(); i++) {
+        QString item = geneNamesInCluster[i];
+        if (i == 0)
+            std::cout << "Genes in this cluster: " << item.toUtf8().constData() << " ";
+        else 
+            std::cout << item.toUtf8().constData() << " ";
     }
-
+    std::cout << std::endl;
 }
 
 void ExampleViewJSPlugin::updateEnrichmentTable(const QVariantList& data) {
