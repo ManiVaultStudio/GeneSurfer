@@ -324,6 +324,7 @@ protected:
     ColorMap1DAction             _colorMapAction;         // Color map action
     HorizontalToolbarAction      _primaryToolbarAction;   // Horizontal toolbar for primary content 
     HorizontalToolbarAction      _secondaryToolbarAction; // Secondary toolbar for secondary content - for enrichment analysis settings
+    HorizontalToolbarAction      _tertiaryToolbarAction;  // Tertiary toolbar for tertiary content - for slice slider
 };
 
 /**

@@ -25,7 +25,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
 
     _clusteringAction(this, "Cluster Settings"),
 
-    _sliceAction(this, "Slice"),
+    _sliceAction(this, "Slice", 0, 52), // TODO: hardcoded values for ABC Atlas
 
     _correlationModeAction(this, "Correlation Mode"),
 
@@ -42,6 +42,9 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
 
     _singleCellModeAction.initialize(_geneSurferPlugin);
 
+    //_sliceAction.setStretch(100);
+    _sliceAction.setConfigurationFlag(WidgetAction::ConfigurationFlag::User);
+    
     _correlationModeAction.setToolTip("Correlation Mode");
     _positionAction.setToolTip("Position Dimension");
     _pointPlotAction.setToolTip("Point Plot");

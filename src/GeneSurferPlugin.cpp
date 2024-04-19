@@ -87,6 +87,7 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _settingsAction(this, "Settings Action"),
     _primaryToolbarAction(this, "PrimaryToolbar"),
     _secondaryToolbarAction(this, "SecondaryToolbar"),
+    _tertiaryToolbarAction(this, "TertiaryToolbar"),
     _selectedDimIndex(-1),
     _selectedClusterIndex(0),
     _colorMapAction(this, "Color map", "RdYlBu")
@@ -101,6 +102,8 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction());
 
     _secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
+
+    _tertiaryToolbarAction.addAction(&_settingsAction.getSliceAction());
 
     for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
     {
@@ -153,7 +156,7 @@ void GeneSurferPlugin::init()
     chartTableDimLayout->addWidget(_chartWidget, 60);
     chartTableDimLayout->addLayout(tableDimLayout, 40);
 
-    layout->addLayout(chartTableDimLayout, 1);// stretch factor same as clusterViewLayout
+    layout->addLayout(chartTableDimLayout, 50);// stretch factor same as clusterViewLayout
 
     auto clusterViewMainLayout = new QVBoxLayout();
     clusterViewMainLayout->setContentsMargins(6, 6, 6, 6);
@@ -170,7 +173,9 @@ void GeneSurferPlugin::init()
     }
     clusterViewMainLayout->addLayout(clusterViewRow2);
 
-    layout->addLayout(clusterViewMainLayout, 1);
+    layout->addWidget(_tertiaryToolbarAction.createWidget(&getWidget()));
+
+    layout->addLayout(clusterViewMainLayout, 50);
 
     // Apply the layout
     getWidget().setLayout(layout);
