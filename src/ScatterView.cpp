@@ -254,7 +254,7 @@ void ScatterView::paintGL()
             //glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 
             // Clear the widget to the background color
-            glClearColor(0.1f, 0.1f, 0.1f, 1);//black
+            glClearColor(20/255.0f, 20/255.0f, 20/255.0f, 1);
             //glClearColor(_backgroundColor.redF(), _backgroundColor.greenF(), _backgroundColor.blueF(), _backgroundColor.alphaF());//white
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

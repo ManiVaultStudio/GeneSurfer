@@ -1,10 +1,13 @@
+
 #include "CorrelationModeAction.h"
 #include "src/GeneSurferPlugin.h"
+
 
 using namespace mv::gui;
 
 CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& title) :
     VerticalGroupAction(parent, title),
+    _geneSurferPlugin(dynamic_cast<GeneSurferPlugin*>(parent->parent())),
     _spatialCorrelationAction(this, "Fliter by Spatial Correlation"),
     _hdCorrelationAction(this, "Filter by HD Correlation"),
     _diffAction(this, "Filter by diff")
@@ -21,36 +24,27 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _hdCorrelationAction.setToolTip("HD correlation mode");
     _diffAction.setToolTip("Diff mode");
 
-    auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
-    if (geneSurferPlugin == nullptr)
+    if (_geneSurferPlugin == nullptr)
         return;
 
-    corrFilter::CorrFilter& filter = geneSurferPlugin->getCorrFilter();
+    corrFilter::CorrFilter& corrFilter = _geneSurferPlugin->getCorrFilter();
 
-   /* connect(&_spatialCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin]() {
-            scatterplotPlugin->setCorrelationMode(true);
+    connect(&_spatialCorrelationAction, &TriggerAction::triggered, [this, &corrFilter]() {
+        corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIAL);
+        _geneSurferPlugin->updateFilterLabel();
+        _geneSurferPlugin->updateSelection();
         });
 
-    connect(&_hdCorrelationAction, &TriggerAction::triggered, this, [scatterplotPlugin]() {
-        scatterplotPlugin->setCorrelationMode(false);
-        });*/
-
-    connect(&_spatialCorrelationAction, &TriggerAction::triggered, this, [geneSurferPlugin, &filter]() {
-        filter.setFilterType(corrFilter::CorrFilterType::SPATIAL);
-        geneSurferPlugin->updateFilterLabel();
-        geneSurferPlugin->updateSelection();
+    connect(&_hdCorrelationAction, &TriggerAction::triggered, [this, &corrFilter]() {
+        corrFilter.setFilterType(corrFilter::CorrFilterType::HD);
+        _geneSurferPlugin->updateFilterLabel();
+        _geneSurferPlugin->updateSelection();
         });
 
-    connect(&_hdCorrelationAction, &TriggerAction::triggered, this, [geneSurferPlugin, &filter]() {
-        filter.setFilterType(corrFilter::CorrFilterType::HD);
-        geneSurferPlugin->updateFilterLabel();
-        geneSurferPlugin->updateSelection();
-        });
-
-    connect(&_diffAction, &TriggerAction::triggered, this, [geneSurferPlugin, &filter]() {
-        filter.setFilterType(corrFilter::CorrFilterType::DIFF);
-        geneSurferPlugin->updateFilterLabel();
-        geneSurferPlugin->updateSelection();
+    connect(&_diffAction, &TriggerAction::triggered, [this, &corrFilter]() {
+        corrFilter.setFilterType(corrFilter::CorrFilterType::DIFF);
+        _geneSurferPlugin->updateFilterLabel();
+        _geneSurferPlugin->updateSelection();
         });
    
 }
@@ -92,16 +86,24 @@ void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
 {
     VerticalGroupAction::fromVariantMap(variantMap);
 
-    _spatialCorrelationAction.fromParentVariantMap(variantMap);
-    _hdCorrelationAction.fromParentVariantMap(variantMap);
+    corrFilter::CorrFilter& corrFilter = _geneSurferPlugin->getCorrFilter();
+
+    if (variantMap["FilterMode"] == "Spatial")
+        corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIAL);
+    else if (variantMap["FilterMode"] == "HD")
+        corrFilter.setFilterType(corrFilter::CorrFilterType::HD);
+    else if (variantMap["FilterMode"] == "Diff")
+        corrFilter.setFilterType(corrFilter::CorrFilterType::DIFF);
+    _geneSurferPlugin->updateFilterLabel();
 }
 
 QVariantMap CorrelationModeAction::toVariantMap() const
 {
     auto variantMap = VerticalGroupAction::toVariantMap();
 
-    _spatialCorrelationAction.insertIntoVariantMap(variantMap);
-    _hdCorrelationAction.insertIntoVariantMap(variantMap);
+    corrFilter::CorrFilter& corrFilter = _geneSurferPlugin->getCorrFilter();
+
+    variantMap.insert("FilterMode", corrFilter.getCorrFilterTypeAsString());
 
     return variantMap;
 }

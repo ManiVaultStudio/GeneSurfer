@@ -1,8 +1,8 @@
 #pragma once
 
 #include <actions/VerticalGroupAction.h>
-#include <actions/ToggleAction.h>
 #include <actions/TriggerAction.h>
+
 
 using namespace mv::gui;
 
@@ -49,6 +49,7 @@ public: // Action getters
     TriggerAction& getDiffAction() { return _diffAction; }
 
 private:
+    GeneSurferPlugin*   _geneSurferPlugin;     /** Pointer to the GeneSurfer plugin */
     TriggerAction       _spatialCorrelationAction;     /** Trigger action for activating the spatial correlation mode */
     TriggerAction       _hdCorrelationAction;     /** Trigger action for activating the HD correlation mode */
     TriggerAction       _diffAction;     /** Trigger action for activating the diff mode */

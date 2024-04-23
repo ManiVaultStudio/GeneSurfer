@@ -43,7 +43,8 @@ namespace corrFilter
         }
     }
 
-    QString CorrFilter::getCorrFilterTypeAsString() {
+    QString CorrFilter::getCorrFilterTypeAsString() const
+    {
         switch (_type) {
         case CorrFilterType::SPATIAL:
             return "Spatial";

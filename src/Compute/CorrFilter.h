@@ -49,7 +49,7 @@ namespace corrFilter
 
         void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const;
 
-        QString getCorrFilterTypeAsString();
+        QString getCorrFilterTypeAsString() const;
 
         // Non-const member functions
         SpatialCorr&         getSpatialCorrFilter()  { return _spatialCorr; }
@@ -63,7 +63,7 @@ namespace corrFilter
         const Diff&   getDiffFilter()       const { return _diff; }
 
     private:
-        CorrFilterType        _type{CorrFilterType::HD};
+        CorrFilterType        _type{CorrFilterType::SPATIAL};
         SpatialCorr          _spatialCorr;
         HDCorr          _highdimCorr;
         Diff          _diff;
