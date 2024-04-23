@@ -82,8 +82,6 @@ public:
 
     void updateSlice(int sliceIndex);
 
-    void setCorrelationMode(bool mode);// test TO DO: remove not needed
-
     /** Update the chosen single cell option */
     void updateSingleCellOption();
 
@@ -105,7 +103,7 @@ public:
     /** Update the selection of mouse in GradientViewer */
     void updateSelection();
 
-    void updateFilterLabel();
+    void updateFilterLabel();//TODO: connect with filter type change
     
 public slots:
     /** Converts ManiVault's point data to a json-like data structure that Qt can pass to the JS code */
@@ -259,7 +257,6 @@ private:
     std::vector<QString>               _clustersToKeep;          // clusters to keep for avg expression - same order as subset row - cluster alias name 
 
     // Flags
-    bool                               _isCorrSpatial = false;   // whether to use spatial coordinates for correlation
     bool                               _isSingleCell = false;    // whether to use avg expression from single cell data
     bool                               _toClearBarchart = false; //whether to clear the bar chart
     bool                               _loadingFromProject = false;

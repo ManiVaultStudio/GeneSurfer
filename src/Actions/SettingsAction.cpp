@@ -118,8 +118,8 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
         _geneSurferPlugin->getAvgExprDataset() = pickedDataset;
     }
     qDebug() << ">>>>> SettingsAction::fromVariantMap 1";
+    _correlationModeAction.fromParentVariantMap(variantMap);
     qDebug() << ">>>>> SettingsAction::fromVariantMap 2";
-    //_correlationModeAction.fromParentVariantMap(variantMap);
     _singleCellModeAction.fromParentVariantMap(variantMap);
     qDebug() << ">>>>> SettingsAction::fromVariantMap 3";
     _clusteringAction.fromParentVariantMap(variantMap);
@@ -145,7 +145,7 @@ QVariantMap SettingsAction::toVariantMap() const
     _singleCellModeAction.insertIntoVariantMap(variantMap);
     _clusteringAction.insertIntoVariantMap(variantMap);
     _sliceAction.insertIntoVariantMap(variantMap);
-    //_correlationModeAction.insertIntoVariantMap(variantMap);
+    _correlationModeAction.insertIntoVariantMap(variantMap);
     //_dimensionSelectionAction.insertIntoVariantMap(variantMap); // TO DO: not needed, done in plugin.cpp
 
     return variantMap;

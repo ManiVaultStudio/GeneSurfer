@@ -843,7 +843,6 @@ void GeneSurferPlugin::updateSelection()
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
     }
     // -------------- HD Correlation --------------
-    //if (!_isSingleCell && !_sliceDataset.isValid() && !_isCorrSpatial) {
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {   
         qDebug() << ">>>>>Compute corr: 2D + ST + HDCorr";
         _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData, _corrGeneVector);
@@ -1002,14 +1001,6 @@ void GeneSurferPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg,
         stdDevZ = sqrt(stdDevZ / _countsMap[_clustersToKeep[i]]);       
         qDebug() << "GeneSurferPlugin::computeMeanCoordinatesByCluster(): cluster: " << _clustersToKeep[i] << " stdDevX: " << stdDevX << " stdDevY: " << stdDevY << " stdDevZ: " << stdDevZ;
     }*/
-}
-
-void GeneSurferPlugin::setCorrelationMode(bool mode) {
-    // TO DO: remove not needed 
-    _isCorrSpatial = mode;
-    qDebug() << "GeneSurferPlugin::setCorrelationMode(): _isCorrSpatial: " << _isCorrSpatial;
-
-    updateSelection();
 }
 
 void GeneSurferPlugin::updateSingleCellOption() {
@@ -2444,9 +2435,6 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
 
     variantMapMustContain(variantMap, "SettingsAction");
     _settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
-
-    _isCorrSpatial = variantMap["IsCorrSpatial"].toBool(); // TO DO: serialize enum class of filter type
-
     qDebug() << "GeneSurferPlugin::fromVariantMap() 3 ";
 
     QString clusterScalarsId = variantMap["ClusterScalars"].toString();
@@ -2487,8 +2475,6 @@ QVariantMap GeneSurferPlugin::toVariantMap() const
     variantMap.insert("ClusterScalars", _clusterScalars.getDatasetId());
 
     variantMap.insert("SelectedDimName", _selectedDimName);
-
-    variantMap.insert("IsCorrSpatial", _isCorrSpatial);// TO DO April 10
 
     if (_sliceDataset.isValid())
     {
