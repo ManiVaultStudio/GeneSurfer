@@ -187,6 +187,7 @@ private:
     /** compute the mean floodfill wave numbers by each annotation label in the floodfill*/
     void computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg);
 
+
 private:
 
     DataStorage                        _dataStore;

@@ -12,7 +12,8 @@ namespace corrFilter
     {
         SPATIAL,
         HD,
-        DIFF
+        DIFF,
+        MORAN
     };
 
     class SpatialCorr
@@ -50,6 +51,13 @@ namespace corrFilter
         void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const;
 
         QString getCorrFilterTypeAsString() const;
+
+        // experiment moran's I
+        std::vector<float> normalize(const std::vector<float>& x);
+        float distanceCalculate(float x1, float y1, float x2, float y2);
+        std::vector<float> calc_moran(const std::vector<float>& x, const std::vector<float>& c1, const std::vector<float>& c2); //moranfast
+        std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates);
+        std::vector<float> moranTest_C(const std::vector<float>& x, std::vector<std::vector<float>>& weight);// MERINGUE
 
         // Non-const member functions
         SpatialCorr&         getSpatialCorrFilter()  { return _spatialCorr; }

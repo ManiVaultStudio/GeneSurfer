@@ -782,6 +782,7 @@ void GeneSurferPlugin::updateSelection()
     qDebug() << "GeneSurferPlugin::updateSelection(): start... ";
     auto start = std::chrono::high_resolution_clock::now();
 
+
     ////////////////////
     // Compute subset //
     ////////////////////
@@ -811,11 +812,12 @@ void GeneSurferPlugin::updateSelection()
         _subsetData3D = _subsetDataAvgOri;
     }
 
+    
     //////////////////////////////////////////////
     // Compute correlation for filtering genes //
     /////////////////////////////////////////////
     
-    // -------------- Spatial Correlation --------------
+    //-------------- Spatial Correlation --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorr";
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
@@ -881,6 +883,57 @@ void GeneSurferPlugin::updateSelection()
         qDebug() << ">>>>>Compute subset: SingleCell +Diff";
         _corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector);
     }
+    // -------------- Experiment Moran's I --------------
+    
+    // temporary code only for 2D data and is very slow 
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN) {
+        std::vector<float> xCoordinates;
+        std::vector<float> yCoordinates;
+        std::vector<float> geneExpression;
+
+        for (int i = 0; i < _sortedFloodIndices.size(); ++i)
+        {
+            int index = _sortedFloodIndices[i];
+            xCoordinates.push_back(_positions[index].x);
+            yCoordinates.push_back(_positions[index].y);
+        }
+        std::vector<std::vector<float>> distanceMat = _corrFilter.computeWeightMatrix(xCoordinates, yCoordinates);
+
+        _corrGeneVector.clear();
+
+        for (int i = 0; i < _subsetData.cols(); ++i)
+        {
+            auto col = _subsetData.col(i);
+            geneExpression.assign(col.data(), col.data() + col.size());
+            //std::vector<float> result = _corrFilter.calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
+            std::vector<float> result = _corrFilter.moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
+
+            float moranI = result[0];
+            float expectedI = result[1];
+            float sd = result[2];
+            float zScore;
+            if (sd != 0)
+                zScore = (moranI - expectedI) / sd;
+            else
+                zScore = 0;
+
+            //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
+            _corrGeneVector.push_back(zScore);
+        }
+
+        // normalize the correlation vector to 0 to 1for plotting in the bar chart
+        float minCorr = *std::min_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        float maxCorr = *std::max_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        for (int i = 0; i < _corrGeneVector.size(); ++i) {
+            _corrGeneVector[i] = (_corrGeneVector[i] - minCorr) / (maxCorr - minCorr);
+        }
+    }
+    if (_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+    {
+        qDebug() << "ERROR: Moran's I is not supported for 3D data yet";
+        return;
+    }
+
     
 
     ////////////////////

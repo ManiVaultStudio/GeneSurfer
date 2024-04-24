@@ -10,7 +10,8 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _geneSurferPlugin(dynamic_cast<GeneSurferPlugin*>(parent->parent())),
     _spatialCorrelationAction(this, "Fliter by Spatial Correlation"),
     _hdCorrelationAction(this, "Filter by HD Correlation"),
-    _diffAction(this, "Filter by diff")
+    _diffAction(this, "Filter by diff"),
+    _moranAction(this, "Filter by Moran's I")
 {
     setIcon(mv::Application::getIconFont("FontAwesome").getIcon("bullseye"));
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
@@ -19,10 +20,12 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     addAction(&_spatialCorrelationAction);
     addAction(&_hdCorrelationAction);
     addAction(&_diffAction);
+    addAction(&_moranAction);
 
     _spatialCorrelationAction.setToolTip("Spatial correlation mode");
     _hdCorrelationAction.setToolTip("HD correlation mode");
     _diffAction.setToolTip("Diff mode");
+    _moranAction.setToolTip("Moran's I mode");
 
     if (_geneSurferPlugin == nullptr)
         return;
@@ -43,6 +46,12 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
 
     connect(&_diffAction, &TriggerAction::triggered, [this, &corrFilter]() {
         corrFilter.setFilterType(corrFilter::CorrFilterType::DIFF);
+        _geneSurferPlugin->updateFilterLabel();
+        _geneSurferPlugin->updateSelection();
+        });
+
+    connect(&_moranAction, &TriggerAction::triggered, [this, &corrFilter]() {
+        corrFilter.setFilterType(corrFilter::CorrFilterType::MORAN);
         _geneSurferPlugin->updateFilterLabel();
         _geneSurferPlugin->updateSelection();
         });
@@ -94,6 +103,8 @@ void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
         corrFilter.setFilterType(corrFilter::CorrFilterType::HD);
     else if (variantMap["FilterMode"] == "Diff")
         corrFilter.setFilterType(corrFilter::CorrFilterType::DIFF);
+    else if (variantMap["FilterMode"] == "Moran")
+        corrFilter.setFilterType(corrFilter::CorrFilterType::MORAN);
     _geneSurferPlugin->updateFilterLabel();
 }
 
