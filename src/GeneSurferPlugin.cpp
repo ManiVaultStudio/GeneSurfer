@@ -933,6 +933,11 @@ void GeneSurferPlugin::updateSelection()
         qDebug() << "ERROR: Moran's I is not supported for 3D data yet";
         return;
     }
+    if (_isSingleCell && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+    {
+        qDebug() << "ERROR: Moran's I is not supported for scRNA-seq mapping yet";
+        return;
+     }
 
     
 
