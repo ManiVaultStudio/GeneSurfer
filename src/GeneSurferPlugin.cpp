@@ -887,10 +887,10 @@ void GeneSurferPlugin::updateSelection()
     
     // temporary code only for 2D data and is very slow 
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN) {
+        qDebug() << "Compute moran's I started...";
         std::vector<float> xCoordinates;
         std::vector<float> yCoordinates;
-        std::vector<float> geneExpression;
-
+        
         for (int i = 0; i < _sortedFloodIndices.size(); ++i)
         {
             int index = _sortedFloodIndices[i];
@@ -900,10 +900,13 @@ void GeneSurferPlugin::updateSelection()
         std::vector<std::vector<float>> distanceMat = _corrFilter.computeWeightMatrix(xCoordinates, yCoordinates);
 
         _corrGeneVector.clear();
+        _corrGeneVector.resize(_subsetData.cols());
 
+#pragma omp parallel for
         for (int i = 0; i < _subsetData.cols(); ++i)
         {
             auto col = _subsetData.col(i);
+            std::vector<float> geneExpression;
             geneExpression.assign(col.data(), col.data() + col.size());
             //std::vector<float> result = _corrFilter.calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
             std::vector<float> result = _corrFilter.moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
@@ -917,8 +920,14 @@ void GeneSurferPlugin::updateSelection()
             else
                 zScore = 0;
 
+            // Check if zScore is NaN   
+            if (std::isnan(zScore)) {
+                zScore = 0;
+                //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: nan";
+            }
+
             //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
-            _corrGeneVector.push_back(zScore);
+            _corrGeneVector[i] = zScore;
         }
 
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
@@ -927,11 +936,73 @@ void GeneSurferPlugin::updateSelection()
         for (int i = 0; i < _corrGeneVector.size(); ++i) {
             _corrGeneVector[i] = (_corrGeneVector[i] - minCorr) / (maxCorr - minCorr);
         }
+        qDebug() << "Compute moran's I finished...";
     }
-    if (_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
-        qDebug() << "ERROR: Moran's I is not supported for 3D data yet";
-        return;
+        qDebug() << "Compute moran's I started...";
+        std::vector<float> xCoordinates;
+        std::vector<float> yCoordinates;
+        std::vector<float> zCoordinates;
+
+        std::vector<float> zPositions;
+        _positionDataset->extractDataForDimension(zPositions, 2);
+
+        for (int i = 0; i < _sortedFloodIndices.size(); ++i)
+        {
+            int index = _sortedFloodIndices[i];
+            xCoordinates.push_back(_positions[index].x);
+            yCoordinates.push_back(_positions[index].y);
+            zCoordinates.push_back(zPositions[index]);
+        }
+        qDebug() << "coordinates subset finshed ";
+        
+        std::vector<std::vector<float>> distanceMat = _corrFilter.computeWeightMatrix(xCoordinates, yCoordinates, zCoordinates);
+        qDebug() << "distanceMat finished, size: " << distanceMat.size() << " " << distanceMat[0].size();
+
+        _corrGeneVector.clear();
+        _corrGeneVector.resize(_subsetData3D.cols());
+
+        qDebug() << "subsetData3D size: " << _subsetData3D.rows() << " rows and " << _subsetData3D.cols() << " cols";
+
+#pragma omp parallel for
+        for (int i = 0; i < _subsetData3D.cols(); ++i)
+        {
+            auto col = _subsetData3D.col(i);
+            std::vector<float> geneExpression;
+            geneExpression.assign(col.data(), col.data() + col.size());
+            //std::vector<float> result = _corrFilter.calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
+            std::vector<float> result = _corrFilter.moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
+
+            float moranI = result[0];
+            float expectedI = result[1];
+            float sd = result[2];
+            float zScore;
+            if (sd != 0)
+                zScore = (moranI - expectedI) / sd;
+            else
+                zScore = 0;
+
+            // Check if zScore is NaN   
+            if (std::isnan(zScore)) {
+                zScore = 0;
+                //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: nan";
+            }
+
+            //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
+            _corrGeneVector[i] = zScore;
+            //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
+        }
+
+        qDebug() << "_corrGeneVector size" << _corrGeneVector.size();
+
+        // normalize the correlation vector to 0 to 1for plotting in the bar chart
+        float minCorr = *std::min_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        float maxCorr = *std::max_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        for (int i = 0; i < _corrGeneVector.size(); ++i) {
+            _corrGeneVector[i] = (_corrGeneVector[i] - minCorr) / (maxCorr - minCorr);
+        }
+        qDebug() << "Compute moran's I finished...";
     }
     if (_isSingleCell && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {

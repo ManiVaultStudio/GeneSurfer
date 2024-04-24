@@ -43,6 +43,10 @@ namespace
     float euclideanDistance(float x1, float y1, float x2, float y2) {
         return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
     }
+
+    float euclideanDistance3D(float x1, float y1, float z1, float x2, float y2, float z2) {
+        return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
+    }
 }
 
 namespace corrFilter
@@ -128,47 +132,63 @@ namespace corrFilter
         return normWeightMatrix;
     }
 
+    std::vector<std::vector<float>> CorrFilter::computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates, const std::vector<float>& zCoordinates) 
+    {
+        size_t N = xCoordinates.size();
+        std::vector<std::vector<float>> weightMatrix(N, std::vector<float>(N, 0.0f));
+
+        for (size_t i = 0; i < N; i++) {
+            for (size_t j = 0; j < N; j++) {
+                if (i != j) { // Avoid self-loops
+                    float dist = euclideanDistance3D(xCoordinates[i], yCoordinates[i], zCoordinates[i], xCoordinates[j], yCoordinates[j], zCoordinates[j]);
+                    if (dist != 0) {
+                        weightMatrix[i][j] = 1.0f / dist; // Inverse distance weighting
+                    }
+                }
+            }
+        }
+
+        std::vector<std::vector<float>> normWeightMatrix = weightMatrix;
+        normalize_weight_matrix(normWeightMatrix);
+
+        return normWeightMatrix;
+    }
+
 
     std::vector<float> CorrFilter::moranTest_C(const std::vector<float>& x, std::vector<std::vector<float>>& weight)
     {
-      
-
+     
         size_t N = weight.size();
 
-        // First moment
-        float ei = -1.0f / (N - 1);
-
         // weight should be normalized
-         // weight has al been normalized in computeWeightMatrix()
-        std::vector<std::vector<float>> norm_weight = weight;
+        // weight has al been normalized in computeWeightMatrix()
+        //std::vector<std::vector<float>> norm_weight = weight;
         //normalize_weight_matrix(norm_weight);
 
-        // Calculate mean of x
+
         float x_mean = mean(x);
         std::vector<float> z(N);
         for (size_t i = 0; i < N; i++) {
             z[i] = x[i] - x_mean;
         }
 
-        // Compute Moran's I
-        float W = 0;
-        float cv = 0;
+        float W = 0.0f, cv = 0.0f;
+        float S1 = 0.0f, S2 = 0.0f;
         for (size_t i = 0; i < N; ++i) {
             for (size_t j = 0; j < N; ++j) {
-                W += norm_weight[i][j];
-                cv += norm_weight[i][j] * z[i] * z[j];
+                W += weight[i][j];
+                cv += weight[i][j] * z[i] * z[j];
+                S1 += weight[i][j] * weight[i][j];
             }
+            S2 += std::pow(std::accumulate(weight[i].begin(), weight[i].end(), 0.0f), 2);
         }
 
         float z_squares_sum = dot_product(z, z);
         float obs = (N / W) * (cv / z_squares_sum);
+        float ei = -1.0f / (N - 1);
 
-        // Variance and standard deviation calculations
-        float sum_z4 = dot_product(z, z); // This replicates sum(z^4) in a crude way
-        float v = sum_z4 / N;
-        float S1 = 0.5f; // Placeholder for sum(weight^2) calculation
-        float S2 = 0; // Placeholder for sum(sg^2) calculation
-        float S3 = sum_z4 / N / (v * v); // Placeholder for proper calculation
+        float sum_z4 = std::accumulate(z.begin(), z.end(), 0.0f, [](float acc, float zi) { return acc + std::pow(zi, 4); });
+        float S3 = sum_z4 / N / std::pow(z_squares_sum / N, 2);
 
         float Wsq = W * W;
         float Nsq = N * N;

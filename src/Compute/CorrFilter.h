@@ -57,6 +57,7 @@ namespace corrFilter
         float distanceCalculate(float x1, float y1, float x2, float y2);
         std::vector<float> calc_moran(const std::vector<float>& x, const std::vector<float>& c1, const std::vector<float>& c2); //moranfast
         std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates);
+        std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates, const std::vector<float>& zCoordinates);// overload
         std::vector<float> moranTest_C(const std::vector<float>& x, std::vector<std::vector<float>>& weight);// MERINGUE
 
         // Non-const member functions
