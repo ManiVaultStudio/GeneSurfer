@@ -42,7 +42,7 @@ ChartWidget::ChartWidget(GeneSurferPlugin* geneSurferPlugin):
     setAcceptDrops(true);
 
     // Ensure linking to the resources defined in res/chart.qrc
-    Q_INIT_RESOURCE(chart);
+    Q_INIT_RESOURCE(genesurfer_resources);
 
     // ManiVault and Qt create a "QtBridge" object on the js side which represents _comObject
     // there, we can connect the signals qt_js_* and call the slots js_qt_* from our communication object

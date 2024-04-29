@@ -96,10 +96,10 @@ set(WEB
 )
 
 set(AUX
-    res/chart.qrc
+    res/genesurfer_resources.qrc
 )
 
-qt6_add_resources(RESOURCE_FILES res/chart.qrc)
+qt6_add_resources(RESOURCE_FILES res/genesurfer_resources.qrc)
 
 
 source_group(Plugin FILES ${PLUGIN})

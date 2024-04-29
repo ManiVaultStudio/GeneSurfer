@@ -135,7 +135,7 @@ void GeneSurferPlugin::init()
 
     // Create barchart widget and set html contents of webpage 
     _chartWidget = new ChartWidget(this);
-    _chartWidget->setPage(":chart/bar_chart.html", "qrc:/chart/");
+    _chartWidget->setPage(":gene_surfer/chart/bar_chart.html", "qrc:/gene_surfer/chart/");
 
     // Add label for filtering on top of the barchart
     _filterLabel = new QLabel(_chartWidget);
