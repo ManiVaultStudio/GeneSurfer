@@ -13,7 +13,8 @@ namespace corrFilter
         SPATIAL,
         HD,
         DIFF,
-        MORAN
+        MORAN,
+        SPATIALTEST
     };
 
     class SpatialCorr

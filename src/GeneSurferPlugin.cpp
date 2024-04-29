@@ -138,7 +138,7 @@ void GeneSurferPlugin::init()
 
     // Create barchart widget and set html contents of webpage 
     _chartWidget = new ChartWidget(this);
-    _chartWidget->setPage(":chart/bar_chart.html", "qrc:/chart/");
+    _chartWidget->setPage(":gene_surfer/chart/bar_chart.html", "qrc:/gene_surfer/chart/");
 
     // Add label for filtering on top of the barchart
     _filterLabel = new QLabel(_chartWidget);
@@ -391,12 +391,59 @@ void GeneSurferPlugin::positionDatasetChanged()
     //normalizeDataEigen(_dataStore.getBaseData(), _dataStore.getBaseNormalizedData());TO DO: getBaseData() or getBaseNormalizedData()
     qDebug() << "GeneSurferPlugin::positionDatasetChanged(): finish converting dataset ... ";
 
+    // Experiment - load _corrSpatialTotal
+    std::ifstream file("D:/Python_code/ABCAtlas_computing/temp_data/ABCcorr_geneWspatialcoordinates.csv");
+    std::string line;
+
+    if (!file.is_open()) {
+        std::cerr << "Failed to open corrSpatialTotal file" << std::endl;
+        return;
+    }
+
+    int columnIndex = 5;
+    bool firstLine = true;
+
+    while (getline(file, line)) {
+        if (firstLine) {
+            firstLine = false;
+            continue;
+        }
+
+        std::stringstream lineStream(line);
+        std::string cell;
+        float value;
+        int currentColumn = 0;
+
+        while (getline(lineStream, cell, ',')) {
+            if (currentColumn == columnIndex) {
+                std::stringstream cellStream(cell);
+                if (cellStream >> value) {
+                    _corrSpatialTotal.push_back(value);
+                }
+                else {
+                    std::cerr << "Conversion error: " << cell << std::endl;
+                    return;
+                }
+                break;
+            }
+            ++currentColumn;
+        }
+    }
+    file.close();
+    qDebug() << "GeneSurferPlugin::positionDatasetChanged(): _corrSpatialTotal size: " << _corrSpatialTotal.size();
+    qDebug() << _corrSpatialTotal[0];
+    qDebug() << _corrSpatialTotal[499];
+    // end of experiment
+
     _dataStore.createDataView();
     updateSelectedDim();
 
     updateFloodFillDataset();
 
     _dataInitialized = true;
+
+    
+
 }
 
 void GeneSurferPlugin::convertDataAndUpdateChart()
@@ -1009,6 +1056,35 @@ void GeneSurferPlugin::updateSelection()
         qDebug() << "ERROR: Moran's I is not supported for scRNA-seq mapping yet";
         return;
      }
+    // -------------- Experiment Spatial test --------------
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
+        qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrTest";
+        qDebug() << "ERROR: NOT IMPLEMENTED yet";
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
+        qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorrTest";
+        std::vector<float> zPositions;
+        _positionDataset->extractDataForDimension(zPositions, 2);
+        std::vector<float> corrLocalVector;
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, corrLocalVector);
+        // (corrLocal - corrTotal)/corrLocal
+        for (int i = 0; i < corrLocalVector.size(); ++i) {
+            if (corrLocalVector[i] != 0)
+                _corrGeneVector[i] = (corrLocalVector[i]*3 - _corrSpatialTotal[i]) / corrLocalVector[i];
+            else 
+                _corrGeneVector[i] = 0;
+        }
+
+    }
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
+        qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorrTest";
+        qDebug() << "ERROR: NOT IMPLEMENTED yet";
+    }
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrTest";
+        qDebug() << "ERROR: NOT IMPLEMENTED yet";
+    }
+
 
     
 

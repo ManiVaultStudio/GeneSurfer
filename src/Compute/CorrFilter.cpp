@@ -165,7 +165,7 @@ namespace corrFilter
         //std::vector<std::vector<float>> norm_weight = weight;
         //normalize_weight_matrix(norm_weight);
 
-
+        // Calculate mean of x
         float x_mean = mean(x);
         std::vector<float> z(N);
         for (size_t i = 0; i < N; i++) {
@@ -240,6 +240,8 @@ namespace corrFilter
             return "Diff";
         case CorrFilterType::MORAN:
             return "Moran";
+        case CorrFilterType::SPATIALTEST:
+            return "SpatialTest";
         }
     }
 

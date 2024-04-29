@@ -264,6 +264,9 @@ private:
     AvgExpressionStatus                _avgExprStatus = AvgExpressionStatus::NONE;
     QString                            _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
     int                                _currentEnrichmentAPI = 0; // current enrichment API
+
+    // Experiment
+    std::vector<float>                 _corrSpatialTotal;
   
 
 public:

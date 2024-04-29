@@ -11,7 +11,8 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _spatialCorrelationAction(this, "Fliter by Spatial Correlation"),
     _hdCorrelationAction(this, "Filter by HD Correlation"),
     _diffAction(this, "Filter by diff"),
-    _moranAction(this, "Filter by Moran's I")
+    _moranAction(this, "Filter by Moran's I"),
+    _spatialCorrelationTestAction(this, "SpatialCorr LocalVSGlobal")
 {
     setIcon(mv::Application::getIconFont("FontAwesome").getIcon("bullseye"));
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
@@ -21,11 +22,13 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     addAction(&_hdCorrelationAction);
     addAction(&_diffAction);
     addAction(&_moranAction);
+    addAction(&_spatialCorrelationTestAction);
 
     _spatialCorrelationAction.setToolTip("Spatial correlation mode");
     _hdCorrelationAction.setToolTip("HD correlation mode");
     _diffAction.setToolTip("Diff mode");
     _moranAction.setToolTip("Moran's I mode");
+    _spatialCorrelationTestAction.setToolTip("SpatialCorr LocalVSGlobal");
 
     if (_geneSurferPlugin == nullptr)
         return;
@@ -52,6 +55,12 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
 
     connect(&_moranAction, &TriggerAction::triggered, [this, &corrFilter]() {
         corrFilter.setFilterType(corrFilter::CorrFilterType::MORAN);
+        _geneSurferPlugin->updateFilterLabel();
+        _geneSurferPlugin->updateSelection();
+        });
+
+    connect(&_spatialCorrelationTestAction, &TriggerAction::triggered, [this, &corrFilter]() {
+        corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALTEST);
         _geneSurferPlugin->updateFilterLabel();
         _geneSurferPlugin->updateSelection();
         });

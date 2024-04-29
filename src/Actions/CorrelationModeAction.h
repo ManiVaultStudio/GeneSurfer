@@ -48,6 +48,7 @@ public: // Action getters
     TriggerAction& getHDCorrelationAction() { return _hdCorrelationAction; }
     TriggerAction& getDiffAction() { return _diffAction; }
     TriggerAction& getMoranAction() { return _moranAction; }
+    TriggerAction& getSpatialCorrelationTestAction() { return _spatialCorrelationTestAction; }
 
 private:
     GeneSurferPlugin*   _geneSurferPlugin;     /** Pointer to the GeneSurfer plugin */
@@ -55,6 +56,7 @@ private:
     TriggerAction       _hdCorrelationAction;     /** Trigger action for activating the HD correlation mode */
     TriggerAction       _diffAction;     /** Trigger action for activating the diff mode */
     TriggerAction       _moranAction;     // experiment
+    TriggerAction       _spatialCorrelationTestAction;     // experiment
 
     //friend class mv::AbstractActionsManager;
 };
