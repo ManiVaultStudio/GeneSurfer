@@ -902,160 +902,67 @@ void GeneSurferPlugin::updateSelection()
         _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData, _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
-        qDebug() << ">>>>>Compute subset: 3D + ST + HDCorr";
+        qDebug() << ">>>>>Compute corr: 3D + ST + HDCorr";
         _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData3D, _corrGeneVector);
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
-        qDebug() << ">>>>>Compute subset: 2D + SingleCell + HDCorr";
+        qDebug() << ">>>>>Compute corr: 2D + SingleCell + HDCorr";
         std::vector<float> waveAvg;
         computeMeanWaveNumbersByCluster(waveAvg);
         _corrFilter.getHDCorrFilter().computeCorrelationVector(waveAvg, _subsetDataAvgOri, _corrGeneVector);
     }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
-        qDebug() << ">>>>>Compute subset: 3D + SingleCell + HDCorr";
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + HDCorr";
         std::vector<float> waveAvg;
         computeMeanWaveNumbersByCluster(waveAvg);
         _corrFilter.getHDCorrFilter().computeCorrelationVector(waveAvg, _subsetDataAvgOri, _corrGeneVector);
     }
     // -------------- Diff --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << ">>>>>Compute subset: 2D + ST + Diff";
+        qDebug() << ">>>>>Compute corr: 2D + ST + Diff";
         _corrFilter.getDiffFilter().computeDiff(_subsetData, _dataStore.getBaseData(), _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << ">>>>>Compute subset: 3D + ST + Diff";
+        qDebug() << ">>>>>Compute corr: 3D + ST + Diff";
         _corrFilter.getDiffFilter().computeDiff(_subsetData3D, _dataStore.getBaseData(), _corrGeneVector);
     }
     if (_isSingleCell && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << ">>>>>Compute subset: SingleCell +Diff";
+        qDebug() << ">>>>>Compute corr: SingleCell +Diff";
         _corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector);
     }
     // -------------- Experiment Moran's I --------------
     
     // temporary code only for 2D data and is very slow 
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN) {
-        qDebug() << "Compute moran's I started...";
-        std::vector<float> xCoordinates;
-        std::vector<float> yCoordinates;
-        
-        for (int i = 0; i < _sortedFloodIndices.size(); ++i)
-        {
-            int index = _sortedFloodIndices[i];
-            xCoordinates.push_back(_positions[index].x);
-            yCoordinates.push_back(_positions[index].y);
-        }
-        std::vector<std::vector<float>> distanceMat = _corrFilter.computeWeightMatrix(xCoordinates, yCoordinates);
-
-        _corrGeneVector.clear();
-        _corrGeneVector.resize(_subsetData.cols());
-
-#pragma omp parallel for
-        for (int i = 0; i < _subsetData.cols(); ++i)
-        {
-            auto col = _subsetData.col(i);
-            std::vector<float> geneExpression;
-            geneExpression.assign(col.data(), col.data() + col.size());
-            //std::vector<float> result = _corrFilter.calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
-            std::vector<float> result = _corrFilter.moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
-
-            float moranI = result[0];
-            float expectedI = result[1];
-            float sd = result[2];
-            float zScore;
-            if (sd != 0)
-                zScore = (moranI - expectedI) / sd;
-            else
-                zScore = 0;
-
-            // Check if zScore is NaN   
-            if (std::isnan(zScore)) {
-                zScore = 0;
-                //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: nan";
-            }
-
-            //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
-            _corrGeneVector[i] = zScore;
-        }
-
-        // normalize the correlation vector to 0 to 1for plotting in the bar chart
-        float minCorr = *std::min_element(_corrGeneVector.begin(), _corrGeneVector.end());
-        float maxCorr = *std::max_element(_corrGeneVector.begin(), _corrGeneVector.end());
-        for (int i = 0; i < _corrGeneVector.size(); ++i) {
-            _corrGeneVector[i] = (_corrGeneVector[i] - minCorr) / (maxCorr - minCorr);
-        }
-        qDebug() << "Compute moran's I finished...";
+        qDebug() << ">>>>>Compute corr: 2D + ST + Moran";
+        _corrFilter.computeMoranVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
-        qDebug() << "Compute moran's I started...";
-        std::vector<float> xCoordinates;
-        std::vector<float> yCoordinates;
-        std::vector<float> zCoordinates;
-
+        qDebug() << ">>>>>Compute corr: 3D + ST + Moran";
         std::vector<float> zPositions;
         _positionDataset->extractDataForDimension(zPositions, 2);
-
-        for (int i = 0; i < _sortedFloodIndices.size(); ++i)
-        {
-            int index = _sortedFloodIndices[i];
-            xCoordinates.push_back(_positions[index].x);
-            yCoordinates.push_back(_positions[index].y);
-            zCoordinates.push_back(zPositions[index]);
-        }
-        qDebug() << "coordinates subset finshed ";
-        
-        std::vector<std::vector<float>> distanceMat = _corrFilter.computeWeightMatrix(xCoordinates, yCoordinates, zCoordinates);
-        qDebug() << "distanceMat finished, size: " << distanceMat.size() << " " << distanceMat[0].size();
-
-        _corrGeneVector.clear();
-        _corrGeneVector.resize(_subsetData3D.cols());
-
-        qDebug() << "subsetData3D size: " << _subsetData3D.rows() << " rows and " << _subsetData3D.cols() << " cols";
-
-#pragma omp parallel for
-        for (int i = 0; i < _subsetData3D.cols(); ++i)
-        {
-            auto col = _subsetData3D.col(i);
-            std::vector<float> geneExpression;
-            geneExpression.assign(col.data(), col.data() + col.size());
-            //std::vector<float> result = _corrFilter.calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
-            std::vector<float> result = _corrFilter.moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
-
-            float moranI = result[0];
-            float expectedI = result[1];
-            float sd = result[2];
-            float zScore;
-            if (sd != 0)
-                zScore = (moranI - expectedI) / sd;
-            else
-                zScore = 0;
-
-            // Check if zScore is NaN   
-            if (std::isnan(zScore)) {
-                zScore = 0;
-                //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: nan";
-            }
-
-            //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
-            _corrGeneVector[i] = zScore;
-            //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
-        }
-
-        qDebug() << "_corrGeneVector size" << _corrGeneVector.size();
-
-        // normalize the correlation vector to 0 to 1for plotting in the bar chart
-        float minCorr = *std::min_element(_corrGeneVector.begin(), _corrGeneVector.end());
-        float maxCorr = *std::max_element(_corrGeneVector.begin(), _corrGeneVector.end());
-        for (int i = 0; i < _corrGeneVector.size(); ++i) {
-            _corrGeneVector[i] = (_corrGeneVector[i] - minCorr) / (maxCorr - minCorr);
-        }
-        qDebug() << "Compute moran's I finished...";
+        _corrFilter.computeMoranVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, _corrGeneVector);
     }
-    if (_isSingleCell && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
-        qDebug() << "ERROR: Moran's I is not supported for scRNA-seq mapping yet";
-        return;
+        qDebug() << ">>>>>Compute corr: 2D + SingleCell + Moran";
+        DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
+        _corrFilter.computeMoranVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
      }
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+    {
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + Moran";
+        std::vector<float> xAvg;
+        std::vector<float> yAvg;
+        std::vector<float> zAvg;
+        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
+        qDebug() << "GeneSurferPlugin::updateSelection(): xAvg size: " << xAvg.size() << "yAvg size " << yAvg.size() << "zAvg size " << zAvg.size();
+        qDebug() << "GeneSurferPlugin::updateSelection(): _subsetDataAvgOri size: " << _subsetDataAvgOri.rows() << " " << _subsetDataAvgOri.cols();
+
+        _corrFilter.computeMoranVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
+    }
+
     // -------------- Experiment Spatial test --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrTest";

@@ -201,6 +201,175 @@ namespace corrFilter
         return results;
     }
 
+    void CorrFilter::computeMoranVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, std::vector<float>& moranVector)
+    {
+        // 2D
+        qDebug() << "Compute moran's I started...";
+        std::vector<float> xCoordinates;
+        std::vector<float> yCoordinates;
+
+        for (int i = 0; i < floodIndices.size(); ++i)
+        {
+            int index = floodIndices[i];
+            xCoordinates.push_back(positions[index].x);
+            yCoordinates.push_back(positions[index].y);
+        }
+        std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xCoordinates, yCoordinates);
+        qDebug() << "Compute distance matrix finished...";
+
+        moranVector.clear();
+        moranVector.resize(dataMatrix.cols());
+
+#pragma omp parallel for
+        for (int i = 0; i < dataMatrix.cols(); ++i)
+        {
+            auto col = dataMatrix.col(i);
+            std::vector<float> geneExpression;
+            geneExpression.assign(col.data(), col.data() + col.size());
+            //std::vector<float> result = calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
+            std::vector<float> result = moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
+
+            float moranI = result[0];
+            float expectedI = result[1];
+            float sd = result[2];
+            float zScore;
+            if (sd != 0)
+                zScore = (moranI - expectedI) / sd;
+            else
+                zScore = 0;
+
+            // Check if zScore is NaN   
+            if (std::isnan(zScore)) {
+                zScore = 0;
+                //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: nan";
+            }
+
+            //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
+            moranVector[i] = zScore;
+        }
+        qDebug() << "Compute moran's I finished...";
+
+        // normalize the correlation vector to 0 to 1for plotting in the bar chart
+        float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
+        float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
+        qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
+
+        for (int i = 0; i < moranVector.size(); ++i) {
+            moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
+        }
+        qDebug() << "Normalize moran's I finished...";
+    }
+
+    void CorrFilter::computeMoranVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, const std::vector<float>& zPositions, std::vector<float>& moranVector)
+    {
+        // 3D all flood indices
+        qDebug() << "Compute moran's I started...";
+        std::vector<float> xCoordinates;
+        std::vector<float> yCoordinates;
+        std::vector<float> zCoordinates;
+
+        for (int i = 0; i < floodIndices.size(); ++i)
+        {
+            int index = floodIndices[i];
+            xCoordinates.push_back(positions[index].x);
+            yCoordinates.push_back(positions[index].y);
+            zCoordinates.push_back(zPositions[index]);
+        }
+        std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xCoordinates, yCoordinates, zCoordinates);
+        qDebug() << "Compute distance matrix finished...";
+
+        moranVector.clear();
+        moranVector.resize(dataMatrix.cols());
+
+#pragma omp parallel for
+        for (int i = 0; i < dataMatrix.cols(); ++i)
+        {
+            auto col = dataMatrix.col(i);
+            std::vector<float> geneExpression;
+            geneExpression.assign(col.data(), col.data() + col.size());
+            //std::vector<float> result = calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
+            std::vector<float> result = moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
+
+            float moranI = result[0];
+            float expectedI = result[1];
+            float sd = result[2];
+            float zScore;
+            if (sd != 0)
+                zScore = (moranI - expectedI) / sd;
+            else
+                zScore = 0;
+
+            // Check if zScore is NaN   
+            if (std::isnan(zScore)) {
+                zScore = 0;
+                //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: nan";
+            }
+
+            //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
+            moranVector[i] = zScore;
+        }
+        qDebug() << "Compute moran's I finished...";
+
+        // normalize the correlation vector to 0 to 1for plotting in the bar chart
+        float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
+        float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
+        qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
+
+        for (int i = 0; i < moranVector.size(); ++i) {
+            moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
+        }
+        qDebug() << "Normalize moran's I finished...";
+    }
+
+    void CorrFilter::computeMoranVector(const DataMatrix& dataMatrix, std::vector<float>& xPositions, std::vector<float>& yPositions, std::vector<float>& zPositions, std::vector<float>& moranVector)
+    {
+        // 3D cluster with mean position
+        qDebug() << "Compute moran's I started...";
+        std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xPositions, yPositions, zPositions);
+        qDebug() << "Compute distance matrix finished...";
+
+        moranVector.clear();
+        moranVector.resize(dataMatrix.cols());
+
+#pragma omp parallel for
+        for (int i = 0; i < dataMatrix.cols(); ++i)
+        {
+            auto col = dataMatrix.col(i);
+            std::vector<float> geneExpression;
+            geneExpression.assign(col.data(), col.data() + col.size());
+            //std::vector<float> result = calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
+            std::vector<float> result = moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
+
+            float moranI = result[0];
+            float expectedI = result[1];
+            float sd = result[2];
+            float zScore;
+            if (sd != 0)
+                zScore = (moranI - expectedI) / sd;
+            else
+                zScore = 0;
+
+            // Check if zScore is NaN   
+            if (std::isnan(zScore)) {
+                zScore = 0;
+                //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: nan";
+            }
+
+            //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
+            moranVector[i] = zScore;
+        }
+        qDebug() << "Compute moran's I finished...";
+
+        // normalize the correlation vector to 0 to 1for plotting in the bar chart
+        float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
+        float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
+        qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
+
+        for (int i = 0; i < moranVector.size(); ++i) {
+            moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
+        }
+        qDebug() << "Normalize moran's I finished...";
+    }
 
     void CorrFilter::computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const
     {
