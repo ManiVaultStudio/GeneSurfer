@@ -199,7 +199,7 @@ private:
     // Data
     mv::Dataset<Points>                _positionDataset;         // Smart pointer to points dataset for point position
     mv::Dataset<Points>                _positionSourceDataset;   // Smart pointer to source of the points dataset for point position (if any)
-    std::vector<mv::Vector2f>          _positions;               // Point positions
+    std::vector<mv::Vector2f>          _positions;               // Point positions - if 3D, _positions is the 2D projection of the 3D data
     int32_t                            _numPoints;               // Number of point positions
     std::vector<QString>               _enabledDimNames;
     bool                               _dataInitialized = false;

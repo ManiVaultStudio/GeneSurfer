@@ -321,12 +321,13 @@ namespace corrFilter
         qDebug() << "Normalize moran's I finished...";
     }
 
-    void CorrFilter::computeMoranVector(const DataMatrix& dataMatrix, std::vector<float>& xPositions, std::vector<float>& yPositions, std::vector<float>& zPositions, std::vector<float>& moranVector)
+    void CorrFilter::computeMoranVector(const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& moranVector)
     {
         // 3D cluster with mean position
         qDebug() << "Compute moran's I started...";
         std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xPositions, yPositions, zPositions);
         qDebug() << "Compute distance matrix finished...";
+        qDebug() << "distanceMat[0][0] " << distanceMat[0][0] << " distanceMat[0][1] " << distanceMat[0][1];
 
         moranVector.clear();
         moranVector.resize(dataMatrix.cols());
@@ -364,6 +365,10 @@ namespace corrFilter
         float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
         float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
         qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
+        // output the index of min and max correlation
+        int minIndex = std::distance(moranVector.begin(), std::min_element(moranVector.begin(), moranVector.end()));
+        int maxIndex = std::distance(moranVector.begin(), std::max_element(moranVector.begin(), moranVector.end()));
+        qDebug() << "minIndex: " << minIndex << " maxIndex: " << maxIndex;
 
         for (int i = 0; i < moranVector.size(); ++i) {
             moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);

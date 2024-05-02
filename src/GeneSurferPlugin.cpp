@@ -567,8 +567,6 @@ void GeneSurferPlugin::updateSelectedDim() {
         _positions[i].set(_dataStore.getProjectionView()(i, 0), _dataStore.getProjectionView()(i, 1));
     }
 
-    //qDebug() << "GeneSurferPlugin::updateSelectedDim(): positions size: " << positions.size();
-
     updateViewData(_positions);
 }
 
@@ -959,6 +957,8 @@ void GeneSurferPlugin::updateSelection()
         computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
         qDebug() << "GeneSurferPlugin::updateSelection(): xAvg size: " << xAvg.size() << "yAvg size " << yAvg.size() << "zAvg size " << zAvg.size();
         qDebug() << "GeneSurferPlugin::updateSelection(): _subsetDataAvgOri size: " << _subsetDataAvgOri.rows() << " " << _subsetDataAvgOri.cols();
+        qDebug() << "xAvg[0] " << xAvg[0] << "yAvg[0] " << yAvg[0] << "zAvg[0] " << zAvg[0];
+        qDebug() << "_subsetDataAvgOri(0, 0) " << _subsetDataAvgOri(0, 0);
 
         _corrFilter.computeMoranVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
     }
@@ -1064,21 +1064,49 @@ void GeneSurferPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg,
     std::unordered_map<QString, float> clusterYSums;
     std::unordered_map<QString, float> clusterZSums;
 
+    // May 2
+    std::vector<float> xPositions;
+    _positionDataset->extractDataForDimension(xPositions, 0);
+    std::vector<float> yPositions;
+    _positionDataset->extractDataForDimension(yPositions, 1);
+
     std::vector<float> zPositions;
     _positionDataset->extractDataForDimension(zPositions, 2);
 
+    qDebug() << "computeMeanCoordinatesByCluster(): _sortedFloodIndices.size(): " << _sortedFloodIndices.size();
+    qDebug() << "_sortedFloodIndices[0]" << _sortedFloodIndices[0];
+    qDebug() << "_sortedFloodIndices[_sortedFloodIndices.size()-1] " << _sortedFloodIndices[_sortedFloodIndices.size() - 1];
+
+    qDebug() << "_positions.size(): " << _positions.size();
+    qDebug() << "xPositions.size(): " << xPositions.size();
+    qDebug() << "yPositions.size(): " << yPositions.size();
+    qDebug() << "zPositions.size(): " << zPositions.size();
+
+
     for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
         int ptIndex = _sortedFloodIndices[index];
+
+        if (ptIndex >= zPositions.size())
+           qDebug() << ">>>>ERROR! ptIndex " << ptIndex << " >= zPositions.size() " << zPositions.size();
+
         QString label = _cellLabels[ptIndex];
 
-        clusterXSums[label] += _positions[ptIndex].x;
-        clusterYSums[label] += _positions[ptIndex].y;
+        //clusterXSums[label] += _positions[ptIndex].x;// _positions[ptIndex] is ONLY the 2D position!!!!
+        //clusterYSums[label] += _positions[ptIndex].y;
+        // May 2
+        clusterXSums[label] += xPositions[ptIndex];
+        clusterYSums[label] += yPositions[ptIndex];
         clusterZSums[label] += zPositions[ptIndex];
     }
 
     xAvg.clear();
     yAvg.clear();
     zAvg.clear();
+
+    qDebug() << "computeMeanCoordinatesByCluster(): _clustersToKeep.size(): " << _clustersToKeep.size();
+    qDebug() << "_clustersToKeep[0]" << _clustersToKeep[0];
+    qDebug() << "_clustersToKeep[_clustersToKeep.size()-1] " << _clustersToKeep[_clustersToKeep.size() - 1];
+    qDebug() << "_countsMap.size(): " << _countsMap.size();
 
     for (int i = 0; i < _clustersToKeep.size(); ++i) {
         QString label = _clustersToKeep[i];
