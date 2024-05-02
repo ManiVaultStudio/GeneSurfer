@@ -95,15 +95,15 @@ namespace corrFilter
         }
     }
 
-    void SpatialCorr::computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, const std::vector<float>& zPositions, std::vector<float>& corrVector) const
+    void SpatialCorr::computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& corrVector) const
     {   // 3D all flood indices
         Eigen::VectorXf xVector(floodIndices.size());
         Eigen::VectorXf yVector(floodIndices.size());
         Eigen::VectorXf zVector(floodIndices.size());
         for (int i = 0; i < floodIndices.size(); ++i) {
             int index = floodIndices[i];
-            xVector[i] = positions[index].x;
-            yVector[i] = positions[index].y;
+            xVector[i] = xPositions[index];
+            yVector[i] = yPositions[index];
             zVector[i] = zPositions[index];
         }
 
