@@ -1089,14 +1089,6 @@ void GeneSurferPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg,
     _positionDataset->extractDataForDimension(zPositions, 0);
 
     qDebug() << "computeMeanCoordinatesByCluster(): _sortedFloodIndices.size(): " << _sortedFloodIndices.size();
-    qDebug() << "_sortedFloodIndices[0]" << _sortedFloodIndices[0];
-    qDebug() << "_sortedFloodIndices[_sortedFloodIndices.size()-1] " << _sortedFloodIndices[_sortedFloodIndices.size() - 1];
-
-    qDebug() << "_positions.size(): " << _positions.size();
-    qDebug() << "xPositions.size(): " << xPositions.size();
-    qDebug() << "yPositions.size(): " << yPositions.size();
-    qDebug() << "zPositions.size(): " << zPositions.size();
-
 
     for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
         int ptIndex = _sortedFloodIndices[index];
