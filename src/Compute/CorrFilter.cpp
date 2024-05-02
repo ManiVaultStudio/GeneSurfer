@@ -260,7 +260,7 @@ namespace corrFilter
         qDebug() << "Normalize moran's I finished...";
     }
 
-    void CorrFilter::computeMoranVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, const std::vector<float>& zPositions, std::vector<float>& moranVector)
+    void CorrFilter::computeMoranVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& moranVector)
     {
         // 3D all flood indices
         qDebug() << "Compute moran's I started...";
@@ -271,8 +271,14 @@ namespace corrFilter
         for (int i = 0; i < floodIndices.size(); ++i)
         {
             int index = floodIndices[i];
-            xCoordinates.push_back(positions[index].x);
-            yCoordinates.push_back(positions[index].y);
+            if (index >= xPositions.size())
+            {
+                qDebug() << "ERROR CorrFilter::computeMoranVector: index: " << index << " >= xPositions.size(): " << xPositions.size();
+                return;
+            }
+
+            xCoordinates.push_back(xPositions[index]);
+            yCoordinates.push_back(yPositions[index]);
             zCoordinates.push_back(zPositions[index]);
         }
         std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xCoordinates, yCoordinates, zCoordinates);
@@ -459,15 +465,20 @@ namespace corrFilter
         }
     }
 
-    void SpatialCorr::computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, const std::vector<float>& zPositions, std::vector<float>& corrVector) const
+    void SpatialCorr::computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& corrVector) const
     {   // 3D all flood indices
         Eigen::VectorXf xVector(floodIndices.size());
         Eigen::VectorXf yVector(floodIndices.size());
         Eigen::VectorXf zVector(floodIndices.size());
         for (int i = 0; i < floodIndices.size(); ++i) {
             int index = floodIndices[i];
-            xVector[i] = positions[index].x;
-            yVector[i] = positions[index].y;
+            if (index >= xPositions.size())
+            {
+                qDebug() << "ERROR CorrFilter::computeMoranVector: index: " << index << " >= xPositions.size(): " << xPositions.size();
+                return;
+            }
+            xVector[i] = xPositions[index];
+            yVector[i] = yPositions[index];
             zVector[i] = zPositions[index];
         }
 

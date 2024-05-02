@@ -869,9 +869,14 @@ void GeneSurferPlugin::updateSelection()
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
         qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorr";
+
+        std::vector<float> xPositions;
+        _positionDataset->extractDataForDimension(xPositions, 2);
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
         std::vector<float> zPositions;
-        _positionDataset->extractDataForDimension(zPositions, 2);
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, _corrGeneVector);
+        _positionDataset->extractDataForDimension(zPositions, 0);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, _corrGeneVector);
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
         qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorr";
@@ -883,9 +888,13 @@ void GeneSurferPlugin::updateSelection()
 
         // option 1: compute with all flood cells 
         /*DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
+        std::vector<float> xPositions;
+        _positionDataset->extractDataForDimension(xPositions, 2);
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
         std::vector<float> zPositions;
-        _positionDataset->extractDataForDimension(zPositions, 2);
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, zPositions, _corrGeneVector);*/
+        _positionDataset->extractDataForDimension(zPositions, 0);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, xPositions, yPositions, zPositions, _corrGeneVector);*/
 
         // option 2: compute with clusters + mean coordinates
         std::vector<float> xAvg;
@@ -938,9 +947,13 @@ void GeneSurferPlugin::updateSelection()
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
         qDebug() << ">>>>>Compute corr: 3D + ST + Moran";
+        std::vector<float> xPositions;
+        _positionDataset->extractDataForDimension(xPositions, 2);
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
         std::vector<float> zPositions;
-        _positionDataset->extractDataForDimension(zPositions, 2);
-        _corrFilter.computeMoranVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, _corrGeneVector);
+        _positionDataset->extractDataForDimension(zPositions, 0);
+        _corrFilter.computeMoranVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, _corrGeneVector);
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
@@ -970,10 +983,14 @@ void GeneSurferPlugin::updateSelection()
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
         qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorrTest";
+        std::vector<float> xPositions;
+        _positionDataset->extractDataForDimension(xPositions, 2);
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
         std::vector<float> zPositions;
-        _positionDataset->extractDataForDimension(zPositions, 2);
+        _positionDataset->extractDataForDimension(zPositions, 0);
         std::vector<float> corrLocalVector;
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, _positions, zPositions, corrLocalVector);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, corrLocalVector);
         // (corrLocal - corrTotal)/corrLocal
         for (int i = 0; i < corrLocalVector.size(); ++i) {
             if (corrLocalVector[i] != 0)
@@ -1064,14 +1081,12 @@ void GeneSurferPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg,
     std::unordered_map<QString, float> clusterYSums;
     std::unordered_map<QString, float> clusterZSums;
 
-    // May 2
     std::vector<float> xPositions;
-    _positionDataset->extractDataForDimension(xPositions, 0);
+    _positionDataset->extractDataForDimension(xPositions, 2);
     std::vector<float> yPositions;
     _positionDataset->extractDataForDimension(yPositions, 1);
-
     std::vector<float> zPositions;
-    _positionDataset->extractDataForDimension(zPositions, 2);
+    _positionDataset->extractDataForDimension(zPositions, 0);
 
     qDebug() << "computeMeanCoordinatesByCluster(): _sortedFloodIndices.size(): " << _sortedFloodIndices.size();
     qDebug() << "_sortedFloodIndices[0]" << _sortedFloodIndices[0];
@@ -1091,9 +1106,6 @@ void GeneSurferPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg,
 
         QString label = _cellLabels[ptIndex];
 
-        //clusterXSums[label] += _positions[ptIndex].x;// _positions[ptIndex] is ONLY the 2D position!!!!
-        //clusterYSums[label] += _positions[ptIndex].y;
-        // May 2
         clusterXSums[label] += xPositions[ptIndex];
         clusterYSums[label] += yPositions[ptIndex];
         clusterZSums[label] += zPositions[ptIndex];
