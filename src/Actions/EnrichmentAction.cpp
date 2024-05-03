@@ -21,7 +21,7 @@ EnrichmentAction::EnrichmentAction(QObject* parent, const QString& title) :
 
     connect(&_enrichmentAPIPickerAction, &OptionAction::currentTextChanged, this, [this, geneSurferPlugin]{
         qDebug() << "Enrichment API changed to: " << _enrichmentAPIPickerAction.getCurrentText();
-        geneSurferPlugin->setEnrichmentAPI();
+        geneSurferPlugin->updateEnrichmentAPI();
         });
 }
 

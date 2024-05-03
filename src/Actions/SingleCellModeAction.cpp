@@ -27,6 +27,15 @@ void SingleCellModeAction::initialize(GeneSurferPlugin* geneSurferPlugin)
 {
     connect(&_singleCellOptionAction, &ToggleAction::toggled, geneSurferPlugin, &GeneSurferPlugin::updateSingleCellOption);
 
+    // set gProfiler as enrichment API if single cell mode is disabled
+    connect(&_singleCellOptionAction, &ToggleAction::toggled, this, [this, geneSurferPlugin] ()
+        {         
+            if (!_singleCellOptionAction.isChecked())
+            {
+                geneSurferPlugin->setEnrichmentAPI(1);// set gProfiler as enrichment API
+            }
+        });
+
     connect(&_labelDatasetPickerAction, &DatasetPickerAction::datasetPicked, geneSurferPlugin, &GeneSurferPlugin::setLabelDataset);
 
     _singleCellOptionAction.setEnabled(false);

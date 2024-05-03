@@ -292,7 +292,9 @@ public:
 public: 
     void setAvgExpressionStatus(AvgExpressionStatus status) { _avgExprStatus = status; }
 
-    void setEnrichmentAPI();
+    void updateEnrichmentAPI();
+
+    void setEnrichmentAPI(int api);
 
 public: 
     /** Get reference to the scatter plot widget */

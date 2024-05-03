@@ -744,7 +744,7 @@ void GeneSurferPlugin::setLabelDataset() {
 
 }
 
-void GeneSurferPlugin::setEnrichmentAPI()
+void GeneSurferPlugin::updateEnrichmentAPI()
 {
     const QString currentAPI = _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().getCurrentText();
     qDebug() << "Enrichment API changed to: " << currentAPI;
@@ -754,11 +754,16 @@ void GeneSurferPlugin::setEnrichmentAPI()
     
     if (_dimNameToClusterLabel.size() == 0)
         {
-        qDebug() << "GeneSurferPlugin::setEnrichmentAPI(): _dimNameToClusterLabel is empty";
+        qDebug() << "GeneSurferPlugin::updateEnrichmentAPI(): _dimNameToClusterLabel is empty";
         return;
     }
 
     getFuntionalEnrichment();
+}
+
+void GeneSurferPlugin::setEnrichmentAPI(int api)
+{
+    _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().setCurrentIndex(api);
 }
 
 void GeneSurferPlugin::updateSelection()
