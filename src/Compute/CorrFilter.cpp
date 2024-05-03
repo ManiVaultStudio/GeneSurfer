@@ -21,24 +21,26 @@ namespace
     }
 
     void normalizeWeightMatrix(std::vector<std::vector<float>>& weight) {
-        size_t N = weight.size();
-        for (size_t i = 0; i < N; i++) {
+        int N = weight.size();
+//#pragma omp parallel for
+        for (int i = 0; i < N; i++) {
             float row_sum = std::accumulate(weight[i].begin(), weight[i].end(), 0.0f);
             if (row_sum != 0) {
-                for (size_t j = 0; j < N; j++) {
+                for (int j = 0; j < N; j++) {
                     weight[i][j] /= row_sum;
                 }
             }
         }
     }
 
-    float euclideanDistance(float x1, float y1, float x2, float y2) {
+    // TODO: remove
+    /*float euclideanDistance(float x1, float y1, float x2, float y2) {
         return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
     }
 
     float euclideanDistance3D(float x1, float y1, float z1, float x2, float y2, float z2) {
         return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
-    }
+    }*/
 }
 
 namespace corrFilter
@@ -48,10 +50,11 @@ namespace corrFilter
         size_t N = xCoordinates.size();
         std::vector<std::vector<float>> weightMatrix(N, std::vector<float>(N, 0.0f));
 
-        for (size_t i = 0; i < N; i++) {
-            for (size_t j = 0; j < N; j++) {
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
                 if (i != j) { // Avoid self-loops
-                    float dist = euclideanDistance(xCoordinates[i], yCoordinates[i], xCoordinates[j], yCoordinates[j]);
+                    //float dist = euclideanDistance(xCoordinates[i], yCoordinates[i], xCoordinates[j], yCoordinates[j]);
+                    float dist = sqrt((xCoordinates[i] - xCoordinates[j]) * (xCoordinates[i] - xCoordinates[j]) + (yCoordinates[i] - yCoordinates[j]) * (yCoordinates[i] - yCoordinates[j]));
                     if (dist != 0) {
                         weightMatrix[i][j] = 1.0f / dist; // Inverse distance weighting
                     }
@@ -70,10 +73,12 @@ namespace corrFilter
         size_t N = xCoordinates.size();
         std::vector<std::vector<float>> weightMatrix(N, std::vector<float>(N, 0.0f));
 
-        for (size_t i = 0; i < N; i++) {
-            for (size_t j = 0; j < N; j++) {
+//#pragma omp parallel for
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
                 if (i != j) { // Avoid self-loops
-                    float dist = euclideanDistance3D(xCoordinates[i], yCoordinates[i], zCoordinates[i], xCoordinates[j], yCoordinates[j], zCoordinates[j]);
+                    //float dist = euclideanDistance3D(xCoordinates[i], yCoordinates[i], zCoordinates[i], xCoordinates[j], yCoordinates[j], zCoordinates[j]);
+                    float dist = sqrt((xCoordinates[i] - xCoordinates[j]) * (xCoordinates[i] - xCoordinates[j]) + (yCoordinates[i] - yCoordinates[j]) * (yCoordinates[i] - yCoordinates[j]) + (zCoordinates[i] - zCoordinates[j]) * (zCoordinates[i] - zCoordinates[j]));
                     if (dist != 0) {
                         weightMatrix[i][j] = 1.0f / dist; // Inverse distance weighting
                     }
@@ -134,13 +139,16 @@ namespace corrFilter
         std::vector<float> z(N); // vector z = x - xMean
         std::transform(x.begin(), x.end(), z.begin(), [xMean](float xi) { return xi - xMean; });
 
-        float cv = 0.0f;
-     
+        //auto start1 = std::chrono::high_resolution_clock::now();
+        float cv = 0.0f;  
         for (size_t i = 0; i < N; ++i) {        
             for (size_t j = 0; j < N; ++j) {
                 cv += weight[i][j] * z[i] * z[j];
             }
         }
+        //auto end1 = std::chrono::high_resolution_clock::now();
+        //std::chrono::duration<double> elapsed1 = end1 - start1;
+        //qDebug() << "Elapsed time for cv: " << elapsed1.count();
 
         float Wsq = W * W;  
         float ei = -1.0f / (N - 1); // Expected value of Moran's I
@@ -177,7 +185,6 @@ namespace corrFilter
         // compute weight-related parameters 
         float W, S1, S2, S4, S5;
         moranParameters(distanceMat, W, S1, S2, S4, S5);
-
 
         moranVector.clear();
         moranVector.resize(dataMatrix.cols());
@@ -226,6 +233,8 @@ namespace corrFilter
     {
          //3D all flood indices
         qDebug() << "Compute moran's I started...";
+
+        auto start1 = std::chrono::high_resolution_clock::now();
         std::vector<float> xCoordinates;
         std::vector<float> yCoordinates;
         std::vector<float> zCoordinates;
@@ -244,12 +253,20 @@ namespace corrFilter
             zCoordinates.push_back(zPositions[index]);
         }
         std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xCoordinates, yCoordinates, zCoordinates);
+        auto end1 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed1 = end1 - start1;
+        qDebug() << "Elapsed time for computeWeightMatrix: " << elapsed1.count();
         qDebug() << "Compute distance matrix finished...";
 
         // compute weight-related parameters 
+        auto start2 = std::chrono::high_resolution_clock::now();
         float W, S1, S2, S4, S5;
         moranParameters(distanceMat, W, S1, S2, S4, S5);
+        auto end2 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed2 = end2 - start2;
+        qDebug() << "Elapsed time for moranParameters: " << elapsed2.count();
 
+        auto start3 = std::chrono::high_resolution_clock::now();
         moranVector.clear();
         moranVector.resize(dataMatrix.cols());
 
@@ -279,9 +296,15 @@ namespace corrFilter
             //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
             moranVector[i] = zScore;
         }
+        auto end3 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed3 = end3 - start3;
+        qDebug() << "Elapsed time for computeMoranVector: " << elapsed3.count();
+
         qDebug() << "Compute moran's I finished...";
 
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
+        auto start4 = std::chrono::high_resolution_clock::now();
+
         float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
         float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
         qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
@@ -289,6 +312,10 @@ namespace corrFilter
         for (int i = 0; i < moranVector.size(); ++i) {
             moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
         }
+        auto end4 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed4 = end4 - start4;
+        qDebug() << "Elapsed time for normalize: " << elapsed4.count();
+
         qDebug() << "Normalize moran's I finished...";
     }
 
