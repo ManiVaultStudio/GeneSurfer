@@ -6,8 +6,39 @@ EnrichmentAnalysis::EnrichmentAnalysis(QObject* parent)
 {
 }
 
-void EnrichmentAnalysis::lookupSymbolsToppGene(const QStringList& symbols) {
+void EnrichmentAnalysis::enrichmentToppGene(const QStringList& symbols, const QStringList& backgroundSymbols)
+{
+    _currentSymbols = symbols;
+    _currentBackgroundSymbols = backgroundSymbols;
 
+    qDebug() << "currentSymbols size" << _currentSymbols.size() << "currentBackgroundSymbols size" << _currentBackgroundSymbols.size();
+    qDebug() << "backgroundEntrezIds size" << _backgroundEntrezIds.size();
+
+    if (backgroundSymbols.isEmpty()) {
+        qDebug() << "EnrichmentAnalysis: Background symbols are empty - direct go lookupSymbolsToppGene(symbols)";
+        lookupSymbolsToppGene(symbols);
+    }
+    else
+    { 
+        if (_backgroundInitialized) 
+        {
+            qDebug() << "EnrichmentAnalysis: Background Entrez IDs are already retrieved - direct go lookupSymbolsToppGene(symbols)";
+            lookupSymbolsToppGene(symbols);
+        }
+        else 
+        {
+            // lookup background symbols first        
+            qDebug() << "EnrichmentAnalysis: Background Entrez IDs are not yet retrieved - go lookupSymbolsToppGeneBackground first";
+            lookupSymbolsToppGeneBackground(backgroundSymbols);
+            _backgroundInitialized = true;
+            // lookupSymbolsToppGene(_currentSymbols) is called after the background Ids are retrieved
+        }
+    }
+    
+}
+
+void EnrichmentAnalysis::lookupSymbolsToppGene(const QStringList& symbols)
+{
     QUrl url("https://toppgene.cchmc.org/API/lookup");
     QJsonObject json;
     QJsonArray jsonSymbols;
@@ -25,7 +56,6 @@ void EnrichmentAnalysis::lookupSymbolsToppGene(const QStringList& symbols) {
 
     QNetworkReply* reply = networkManager->post(request, jsonData);
     connect(reply, &QNetworkReply::finished, this, &EnrichmentAnalysis::handleLookupReplyToppGene);
-
 }
 
 void EnrichmentAnalysis::handleLookupReplyToppGene() {
@@ -45,7 +75,14 @@ void EnrichmentAnalysis::handleLookupReplyToppGene() {
             entrezIds.append(geneObject["Entrez"].toInt());
         }
 
-        postGeneToppGene(entrezIds);
+        if (_currentBackgroundSymbols.isEmpty())
+        {
+            postGeneToppGene(entrezIds, QJsonArray());
+        }
+        else
+        { 
+            postGeneToppGene(entrezIds, _backgroundEntrezIds);
+        }
     }
     else {
         qDebug() << "ToppGene lookup reply error:" << reply->errorString();
@@ -53,11 +90,66 @@ void EnrichmentAnalysis::handleLookupReplyToppGene() {
     reply->deleteLater();
 }
 
-void EnrichmentAnalysis::postGeneToppGene(const QJsonArray& entrezIds)
+void EnrichmentAnalysis::lookupSymbolsToppGeneBackground(const QStringList& backgroundSymbols)
+{
+    QUrl url("https://toppgene.cchmc.org/API/lookup");
+    QJsonObject json;
+    QJsonArray jsonSymbols;
+
+    for (const QString& symbol : backgroundSymbols) {
+        jsonSymbols.append(symbol);
+    }
+
+    json["Symbols"] = jsonSymbols;
+    QJsonDocument document(json);
+    QByteArray jsonData = document.toJson();
+
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QNetworkReply* reply = networkManager->post(request, jsonData);
+    connect(reply, &QNetworkReply::finished, this, &EnrichmentAnalysis::handleLookupReplyToppGeneBackground);
+}
+
+void EnrichmentAnalysis::handleLookupReplyToppGeneBackground() {
+
+    QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
+
+    if (reply && reply->error() == QNetworkReply::NoError) {
+        QByteArray responseData = reply->readAll();
+
+        QJsonDocument jsonResponse = QJsonDocument::fromJson(responseData);
+        QJsonObject jsonObject = jsonResponse.object();
+        QJsonArray genesArray = jsonObject["Genes"].toArray();
+
+        _backgroundEntrezIds = QJsonArray();// Clear the previous IDs
+        for (const QJsonValue& value : genesArray) {
+            QJsonObject geneObject = value.toObject();
+            _backgroundEntrezIds.append(geneObject["Entrez"].toInt());
+        }
+        qDebug() << "EnrichmentAnalysis: Background Entrez IDs are updated size" << _backgroundEntrezIds.size();
+        lookupSymbolsToppGene(_currentSymbols);
+    }
+    else {
+        qDebug() << "ToppGene lookup reply error:" << reply->errorString();
+    }
+    reply->deleteLater();
+}
+
+void EnrichmentAnalysis::postGeneToppGene(const QJsonArray& entrezIds, const QJsonArray& backgroundEntrezIds)
 {
     QUrl url("https://toppgene.cchmc.org/API/enrich");
     QJsonObject json;
     json["Genes"] = entrezIds;
+
+    if (!backgroundEntrezIds.isEmpty()) {
+        qDebug() << "EnrichmentAnalysis::postGeneToppGene Background is not empty" << backgroundEntrezIds.size();
+        json["Background"] = backgroundEntrezIds;
+
+    };
+
+    qDebug() << "Raw entrezIds JSON:" << QJsonDocument(entrezIds).toJson();
+    qDebug() << "Raw backgroundEntrezIds JSON:" << QJsonDocument(backgroundEntrezIds).toJson();
 
     // Specify the feature, correction, p-value cutoff, and the number of top terms to return
     QJsonArray categories;

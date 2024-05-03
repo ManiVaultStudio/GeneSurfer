@@ -2178,8 +2178,20 @@ void GeneSurferPlugin::getFuntionalEnrichment()
     if (!geneNamesInCluster.isEmpty()) {
 
         if (_currentEnrichmentAPI == 0) {
-        // ToppGene
-        _client->lookupSymbolsToppGene(geneNamesInCluster);
+            // ToppGene
+            QStringList backgroundGeneNames;
+            if (_isSingleCell != true) {
+                for (const auto& name : _enabledDimNames) {
+                    backgroundGeneNames.append(name);
+                }
+                qDebug() << "getFuntionalEnrichment(): ST mode, with background";                
+            }
+            else {
+                // in single cell mode, background is empty
+                qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
+            }   
+
+            _client->enrichmentToppGene(geneNamesInCluster, backgroundGeneNames);
         }
 
         if (_currentEnrichmentAPI == 1) {
@@ -2198,8 +2210,6 @@ void GeneSurferPlugin::getFuntionalEnrichment()
             qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
             _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames);
         }
-
-        //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);
     }
 
     // output the gene names
