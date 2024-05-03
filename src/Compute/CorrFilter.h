@@ -54,9 +54,6 @@ namespace corrFilter
         QString getCorrFilterTypeAsString() const;
 
         // experiment moran's I
-        std::vector<float> normalize(const std::vector<float>& x);
-        //foat distanceCalculate(float x1, float y1, float x2, float y2);
-        //std::vector<float> calc_moran(const std::vector<float>& x, const std::vector<float>& c1, const std::vector<float>& c2); //moranfast
         std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates);
         std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates, const std::vector<float>& zCoordinates);// overload
         void moranParameters(const std::vector<std::vector<float>>& weight, float& W, float& S1, float& S2, float& S4, float& S5);
