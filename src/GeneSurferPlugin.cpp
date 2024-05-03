@@ -2502,6 +2502,27 @@ void GeneSurferPlugin::updateClick() {
                 dimV.assign(dimValue.data(), dimValue.data() + dimValue.size());
             }
 
+            // May 2 - check the scalar values within selection
+            std::vector<float> dimVSelection;
+            for (int i = 0; i < _sortedFloodIndices.size(); i++) {
+                dimVSelection.push_back(dimV[_sortedFloodIndices[i]]);
+            }
+            qDebug() << "dimVSelection max: " << *std::max_element(dimVSelection.begin(), dimVSelection.end());
+            qDebug() << "dimVSelection min: " << *std::min_element(dimVSelection.begin(), dimVSelection.end());
+            qDebug() << "dimVSelection mean: " << std::accumulate(dimVSelection.begin(), dimVSelection.end(), 0.0) / dimVSelection.size();
+            // compare to the original dimV
+            qDebug() << "dimV max: " << *std::max_element(dimV.begin(), dimV.end());
+            qDebug() << "dimV min: " << *std::min_element(dimV.begin(), dimV.end());
+            qDebug() << "dimV mean: " << std::accumulate(dimV.begin(), dimV.end(), 0.0) / dimV.size();
+            // temporarily only show the selection in VolumeViewer and normalize within selection
+           /* std::vector<float> dimVTEST(dimV.size(), 0.0f);
+            for (int i = 0; i < _sortedFloodIndices.size(); i++) {
+                dimVTEST[_sortedFloodIndices[i]] = dimV[_sortedFloodIndices[i]];
+            }
+            dimV = dimVTEST;*/
+            // end of May 2
+            
+
             normalizeVector(dimV);
             updateClusterScalarOutput(dimV);
         }

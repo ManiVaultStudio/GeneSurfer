@@ -55,11 +55,11 @@ namespace corrFilter
 
         // experiment moran's I
         std::vector<float> normalize(const std::vector<float>& x);
-        float distanceCalculate(float x1, float y1, float x2, float y2);
-        std::vector<float> calc_moran(const std::vector<float>& x, const std::vector<float>& c1, const std::vector<float>& c2); //moranfast
+        //foat distanceCalculate(float x1, float y1, float x2, float y2);
+        //std::vector<float> calc_moran(const std::vector<float>& x, const std::vector<float>& c1, const std::vector<float>& c2); //moranfast
         std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates);
         std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates, const std::vector<float>& zCoordinates);// overload
-        std::vector<float> moranTest_C(const std::vector<float>& x, std::vector<std::vector<float>>& weight);// MERINGUE
+        std::vector<float> moranTest_C(const std::vector<float>& x, std::vector<std::vector<float>>& weight);
         // 2D
         void computeMoranVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, std::vector<float>& moranVector);
         // 3D all flood indices

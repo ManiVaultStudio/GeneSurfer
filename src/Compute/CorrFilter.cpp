@@ -20,15 +20,16 @@ namespace
         return std::accumulate(v.begin(), v.end(), 0.0) / v.size();
     }
 
-    float dot_product(const std::vector<float>& a, const std::vector<float>& b) {
+    // TODO: remove
+    /*float dot_product(const std::vector<float>& a, const std::vector<float>& b) {
         float sum = 0.0;
         for (size_t i = 0; i < a.size(); ++i) {
             sum += a[i] * b[i];
         }
         return sum;
-    }
+    }*/
 
-    void normalize_weight_matrix(std::vector<std::vector<float>>& weight) {
+    void normalizeWeightMatrix(std::vector<std::vector<float>>& weight) {
         size_t N = weight.size();
         for (size_t i = 0; i < N; i++) {
             float row_sum = std::accumulate(weight[i].begin(), weight[i].end(), 0.0f);
@@ -66,52 +67,55 @@ namespace corrFilter
     }
 
 
-    float CorrFilter::distanceCalculate(float x1, float y1, float x2, float y2) {
-        float x = x1 - x2;
-        float y = y1 - y2;
-        float dist = sqrt(pow(x, 2) + pow(y, 2)); // Euclidean distance
+    //float CorrFilter::distanceCalculate(float x1, float y1, float x2, float y2) 
+    //{ // TODO: remove
+    //    float x = x1 - x2;
+    //    float y = y1 - y2;
+    //    float dist = sqrt(pow(x, 2) + pow(y, 2)); // Euclidean distance
 
-        if (dist > 0) {
-            dist = 1 / dist;
-        }
+    //    if (dist > 0) {
+    //        dist = 1 / dist;
+    //    }
 
-        return dist;
-    }
+    //    return dist;
+    //}
 
-    std::vector<float> CorrFilter::calc_moran(const std::vector<float>& x, const std::vector<float>& c1, const std::vector<float>& c2) {
-        std::vector<float> x_norm = normalize(x);
-        int N = x.size();
-        float denom = 0;
-        for (float val : x_norm) denom += val * val;
+    //std::vector<float> CorrFilter::calc_moran(const std::vector<float>& x, const std::vector<float>& c1, const std::vector<float>& c2) 
+    //{ // TODO: remove
+    //    std::vector<float> x_norm = normalize(x);
+    //    int N = x.size();
+    //    float denom = 0;
+    //    for (float val : x_norm) denom += val * val;
 
-        float W = 0, num = 0, S1 = 0, S2 = 0;
+    //    float W = 0, num = 0, S1 = 0, S2 = 0;
 
-        for (int i = 0; i < N; ++i) {
-            float S2_a = 0;
-            for (int j = 0; j < N; ++j) {
-                float w_ij = distanceCalculate(c1[i], c2[i], c1[j], c2[j]);
-                W += w_ij;
-                num += w_ij * x_norm[i] * x_norm[j];
-                S1 += pow(2 * w_ij, 2);
-                S2_a += w_ij;
-            }
-            S2 += pow(2 * S2_a, 2);
-        }
+    //    for (int i = 0; i < N; ++i) {
+    //        float S2_a = 0;
+    //        for (int j = 0; j < N; ++j) {
+    //            float w_ij = distanceCalculate(c1[i], c2[i], c1[j], c2[j]);
+    //            W += w_ij;
+    //            num += w_ij * x_norm[i] * x_norm[j];
+    //            S1 += pow(2 * w_ij, 2);
+    //            S2_a += w_ij;
+    //        }
+    //        S2 += pow(2 * S2_a, 2);
+    //    }
 
-        S1 /= 2;
-        float ei = -(1.0 / (N - 1));
-        float k = 0;
-        for (float val : x_norm) k += pow(val, 4);
-        k /= N;
-        k /= pow(denom / N, 2);
+    //    S1 /= 2;
+    //    float ei = -(1.0 / (N - 1));
+    //    float k = 0;
+    //    for (float val : x_norm) k += pow(val, 4);
+    //    k /= N;
+    //    k /= pow(denom / N, 2);
 
-        float sd = sqrt((N * ((pow(N, 2) - 3 * N + 3) * S1 - N * S2 + 3 * W * W) - k * (N * (N - 1) * S1 - 2 * N * S2 + 6 * W * W)) / ((N - 1) * (N - 2) * (N - 3) * W * W) - pow(ei, 2));
-        float I = (N / W) * (num / denom);
+    //    float sd = sqrt((N * ((pow(N, 2) - 3 * N + 3) * S1 - N * S2 + 3 * W * W) - k * (N * (N - 1) * S1 - 2 * N * S2 + 6 * W * W)) / ((N - 1) * (N - 2) * (N - 3) * W * W) - pow(ei, 2));
+    //    float I = (N / W) * (num / denom);
 
-        return { I, ei, sd };
-    }
+    //    return { I, ei, sd };
+    //}
 
-    std::vector<std::vector<float>> CorrFilter::computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates) {
+    std::vector<std::vector<float>> CorrFilter::computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates) 
+    { // 2D
         size_t N = xCoordinates.size();
         std::vector<std::vector<float>> weightMatrix(N, std::vector<float>(N, 0.0f));
 
@@ -127,13 +131,13 @@ namespace corrFilter
         }
 
         std::vector<std::vector<float>> normWeightMatrix = weightMatrix;
-        normalize_weight_matrix(normWeightMatrix);
+        normalizeWeightMatrix(normWeightMatrix);
 
         return normWeightMatrix;
     }
 
     std::vector<std::vector<float>> CorrFilter::computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates, const std::vector<float>& zCoordinates) 
-    {
+    { // 3D
         size_t N = xCoordinates.size();
         std::vector<std::vector<float>> weightMatrix(N, std::vector<float>(N, 0.0f));
 
@@ -149,7 +153,7 @@ namespace corrFilter
         }
 
         std::vector<std::vector<float>> normWeightMatrix = weightMatrix;
-        normalize_weight_matrix(normWeightMatrix);
+        normalizeWeightMatrix(normWeightMatrix);
 
         return normWeightMatrix;
     }
@@ -158,44 +162,59 @@ namespace corrFilter
     std::vector<float> CorrFilter::moranTest_C(const std::vector<float>& x, std::vector<std::vector<float>>& weight)
     {
      
-        size_t N = weight.size();
+        size_t N = weight.size();// number of spatial units indexed by i and j
 
         // weight should be normalized
         // weight has al been normalized in computeWeightMatrix()
-        //std::vector<std::vector<float>> norm_weight = weight;
-        //normalize_weight_matrix(norm_weight);
+        //std::vector<std::vector<float>> normWeight = weight;
+        //normalizeWeightMatrix(normWeight);
 
         // Calculate mean of x
-        float x_mean = mean(x);
+        float xMean = mean(x);
         std::vector<float> z(N);
         for (size_t i = 0; i < N; i++) {
-            z[i] = x[i] - x_mean;
-        }
+            z[i] = x[i] - xMean;
+        } // TODO: maybe do not need in loop
 
-        float W = 0.0f, cv = 0.0f;
-        float S1 = 0.0f, S2 = 0.0f;
+        float W = 0.0f; // sum of weights
+        float cv = 0.0f;
+        float S1 = 0.0f;
+        float S2 = 0.0f;
+
         for (size_t i = 0; i < N; ++i) {
+            float rs = 0.0f;
+            float cs = 0.0f;
+
             for (size_t j = 0; j < N; ++j) {
-                W += weight[i][j];
+                W += weight[i][j]; // TODO: do not need in loop
                 cv += weight[i][j] * z[i] * z[j];
-                S1 += weight[i][j] * weight[i][j];
+
+                // for S1
+                float S1Temp = weight[i][j] + weight[j][i]; 
+                S1 += S1Temp * S1Temp;
+
+                // for S2
+                rs += weight[i][j];
+                cs += weight[j][i];
             }
-            S2 += std::pow(std::accumulate(weight[i].begin(), weight[i].end(), 0.0f), 2);
+            S2 += std::pow((rs + cs), 2); // or S2 += (rs + cs) * (rs + cs);
         }
 
-        float z_squares_sum = dot_product(z, z);
-        float obs = (N / W) * (cv / z_squares_sum);
-        float ei = -1.0f / (N - 1);
+        S1 = S1 / 2;
 
-        float sum_z4 = std::accumulate(z.begin(), z.end(), 0.0f, [](float acc, float zi) { return acc + std::pow(zi, 4); });
-        float S3 = sum_z4 / N / std::pow(z_squares_sum / N, 2);
+        float sumz2 = std::accumulate(z.begin(), z.end(), 0.0f, [](float acc, float x) { return acc + x * x; }); // sum of z^2
+        float obs = (N / W) * (cv / sumz2); // Moran's I
+        float ei = -1.0f / (N - 1); // Expected value of Moran's I
+
+        float sumz4 = std::accumulate(z.begin(), z.end(), 0.0f, [](float acc, float x) { return acc + std::pow(x, 4); });// sum of z^4
+        float S3 = sumz4 / N / std::pow(sumz2 / N, 2);
 
         float Wsq = W * W;
         float Nsq = N * N;
         float S4 = (Nsq - 3 * N + 3) * S1 - N * S2 + 3 * Wsq;
         float S5 = (Nsq - N) * S1 - 2 * N * S2 + 6 * Wsq;
-        float ei2 = (N * S4 - S3 * S5) / ((N - 1) * (N - 2) * (N - 3) * Wsq);
-        float sd = sqrt(ei2 - (ei * ei));
+        float varI = ((N * S4 - S3 * S5) / ((N - 1) * (N - 2) * (N - 3) * Wsq)) - ei * ei; // Variance of Moran's I
+        float sd = sqrt(varI);
 
         std::vector<float> results = { obs, ei, sd };// Moran's I, Expected, SD
         return results;
