@@ -59,7 +59,8 @@ namespace corrFilter
         //std::vector<float> calc_moran(const std::vector<float>& x, const std::vector<float>& c1, const std::vector<float>& c2); //moranfast
         std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates);
         std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates, const std::vector<float>& zCoordinates);// overload
-        std::vector<float> moranTest_C(const std::vector<float>& x, std::vector<std::vector<float>>& weight);
+        void moranParameters(const std::vector<std::vector<float>>& weight, float& W, float& S1, float& S2, float& S4, float& S5);
+        std::vector<float> moranTest_C(const std::vector<float>& x, std::vector<std::vector<float>>& weight, const float W, const float S1, const float S2, const float S4, const float S5);
         // 2D
         void computeMoranVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, std::vector<float>& moranVector);
         // 3D all flood indices

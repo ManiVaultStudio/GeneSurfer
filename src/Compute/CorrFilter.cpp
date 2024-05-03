@@ -158,10 +158,41 @@ namespace corrFilter
         return normWeightMatrix;
     }
 
-
-    std::vector<float> CorrFilter::moranTest_C(const std::vector<float>& x, std::vector<std::vector<float>>& weight)
+    void CorrFilter::moranParameters(const std::vector<std::vector<float>>& weight, float& W, float& S1, float& S2, float& S4, float& S5)
     {
-     
+        size_t N = weight.size();// number of spatial units indexed by i and j
+
+        W = 0.0f; // sum of weights
+        S1 = 0.0f;
+        S2 = 0.0f;
+
+        for (size_t i = 0; i < N; ++i) {
+            float rs = 0.0f;
+            float cs = 0.0f;
+
+            for (size_t j = 0; j < N; ++j) {
+                W += weight[i][j];
+
+                // for S1
+                float S1Temp = weight[i][j] + weight[j][i];
+                S1 += S1Temp * S1Temp;
+
+                // for S2
+                rs += weight[i][j];
+                cs += weight[j][i];
+            }
+            S2 += std::pow((rs + cs), 2); // or S2 += (rs + cs) * (rs + cs);
+        }
+        S1 = S1 / 2;
+        float Wsq = W * W;
+        float Nsq = N * N;
+        S4 = (Nsq - 3 * N + 3) * S1 - N * S2 + 3 * Wsq;
+        S5 = (Nsq - N) * S1 - 2 * N * S2 + 6 * Wsq;
+    }
+
+    std::vector<float> CorrFilter::moranTest_C(const std::vector<float>& x, std::vector<std::vector<float>>& weight, const float W, const float S1, const float S2, const float S4, const float S5)
+    {
+        
         size_t N = weight.size();// number of spatial units indexed by i and j
 
         // weight should be normalized
@@ -171,52 +202,30 @@ namespace corrFilter
 
         // Calculate mean of x
         float xMean = mean(x);
-        std::vector<float> z(N);
-        for (size_t i = 0; i < N; i++) {
-            z[i] = x[i] - xMean;
-        } // TODO: maybe do not need in loop
+        std::vector<float> z(N); // vector z = x - xMean
+        std::transform(x.begin(), x.end(), z.begin(), [xMean](float xi) { return xi - xMean; });
 
-        float W = 0.0f; // sum of weights
         float cv = 0.0f;
-        float S1 = 0.0f;
-        float S2 = 0.0f;
-
-        for (size_t i = 0; i < N; ++i) {
-            float rs = 0.0f;
-            float cs = 0.0f;
-
+     
+        for (size_t i = 0; i < N; ++i) {        
             for (size_t j = 0; j < N; ++j) {
-                W += weight[i][j]; // TODO: do not need in loop
                 cv += weight[i][j] * z[i] * z[j];
-
-                // for S1
-                float S1Temp = weight[i][j] + weight[j][i]; 
-                S1 += S1Temp * S1Temp;
-
-                // for S2
-                rs += weight[i][j];
-                cs += weight[j][i];
             }
-            S2 += std::pow((rs + cs), 2); // or S2 += (rs + cs) * (rs + cs);
         }
 
-        S1 = S1 / 2;
-
+        float Wsq = W * W;  
+        float ei = -1.0f / (N - 1); // Expected value of Moran's I
+   
         float sumz2 = std::accumulate(z.begin(), z.end(), 0.0f, [](float acc, float x) { return acc + x * x; }); // sum of z^2
         float obs = (N / W) * (cv / sumz2); // Moran's I
-        float ei = -1.0f / (N - 1); // Expected value of Moran's I
-
+       
         float sumz4 = std::accumulate(z.begin(), z.end(), 0.0f, [](float acc, float x) { return acc + std::pow(x, 4); });// sum of z^4
         float S3 = sumz4 / N / std::pow(sumz2 / N, 2);
+      
+        float varI = ((N * S4 - S3 * S5) / ((N - 1) * (N - 2) * (N - 3) * Wsq)) - ei * ei; // Variance of Moran's I // TODO: check N > 3
+        float sd = sqrt(varI); // Standard deviation of Moran's I
 
-        float Wsq = W * W;
-        float Nsq = N * N;
-        float S4 = (Nsq - 3 * N + 3) * S1 - N * S2 + 3 * Wsq;
-        float S5 = (Nsq - N) * S1 - 2 * N * S2 + 6 * Wsq;
-        float varI = ((N * S4 - S3 * S5) / ((N - 1) * (N - 2) * (N - 3) * Wsq)) - ei * ei; // Variance of Moran's I
-        float sd = sqrt(varI);
-
-        std::vector<float> results = { obs, ei, sd };// Moran's I, Expected, SD
+        std::vector<float> results = { obs, ei, sd };// Moran's I, Expected I, SD
         return results;
     }
 
@@ -236,6 +245,11 @@ namespace corrFilter
         std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xCoordinates, yCoordinates);
         qDebug() << "Compute distance matrix finished...";
 
+        // compute weight-related parameters 
+        float W, S1, S2, S4, S5;
+        moranParameters(distanceMat, W, S1, S2, S4, S5);
+
+
         moranVector.clear();
         moranVector.resize(dataMatrix.cols());
 
@@ -245,8 +259,9 @@ namespace corrFilter
             auto col = dataMatrix.col(i);
             std::vector<float> geneExpression;
             geneExpression.assign(col.data(), col.data() + col.size());
-            //std::vector<float> result = calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
-            std::vector<float> result = moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
+            
+            //std::vector<float> result = moranTest_C(geneExpression, distanceMat);// 
+            std::vector<float> result = moranTest_C(geneExpression, distanceMat, W, S1, S2, S4, S5);
 
             float moranI = result[0];
             float expectedI = result[1];
@@ -281,7 +296,7 @@ namespace corrFilter
 
     void CorrFilter::computeMoranVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& moranVector)
     {
-        // 3D all flood indices
+         //3D all flood indices
         qDebug() << "Compute moran's I started...";
         std::vector<float> xCoordinates;
         std::vector<float> yCoordinates;
@@ -303,6 +318,10 @@ namespace corrFilter
         std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xCoordinates, yCoordinates, zCoordinates);
         qDebug() << "Compute distance matrix finished...";
 
+        // compute weight-related parameters 
+        float W, S1, S2, S4, S5;
+        moranParameters(distanceMat, W, S1, S2, S4, S5);
+
         moranVector.clear();
         moranVector.resize(dataMatrix.cols());
 
@@ -312,8 +331,7 @@ namespace corrFilter
             auto col = dataMatrix.col(i);
             std::vector<float> geneExpression;
             geneExpression.assign(col.data(), col.data() + col.size());
-            //std::vector<float> result = calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
-            std::vector<float> result = moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
+            std::vector<float> result = moranTest_C(geneExpression, distanceMat, W, S1, S2, S4, S5);
 
             float moranI = result[0];
             float expectedI = result[1];
@@ -354,6 +372,10 @@ namespace corrFilter
         qDebug() << "Compute distance matrix finished...";
         qDebug() << "distanceMat[0][0] " << distanceMat[0][0] << " distanceMat[0][1] " << distanceMat[0][1];
 
+        // compute weight-related parameters 
+        float W, S1, S2, S4, S5;
+        moranParameters(distanceMat, W, S1, S2, S4, S5);
+
         moranVector.clear();
         moranVector.resize(dataMatrix.cols());
 
@@ -363,8 +385,7 @@ namespace corrFilter
             auto col = dataMatrix.col(i);
             std::vector<float> geneExpression;
             geneExpression.assign(col.data(), col.data() + col.size());
-            //std::vector<float> result = calc_moran(geneExpression, xCoordinates, yCoordinates);// experiment moran's I with moranfast
-            std::vector<float> result = moranTest_C(geneExpression, distanceMat);// experiment moran's I with MERINGUE
+            std::vector<float> result = moranTest_C(geneExpression, distanceMat, W, S1, S2, S4, S5);
 
             float moranI = result[0];
             float expectedI = result[1];
