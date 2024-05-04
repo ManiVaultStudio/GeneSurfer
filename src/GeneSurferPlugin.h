@@ -264,11 +264,12 @@ private:
     bool                               _loadingFromProject = false;
     AvgExpressionStatus                _avgExprStatus = AvgExpressionStatus::NONE;
     QString                            _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
-    int                                _currentEnrichmentAPI = 0; // current enrichment API
+    QString                            _currentEnrichmentAPI = "ToppGene"; // current enrichment API
 
     // Experiment
     std::vector<float>                 _corrSpatialTotalST;
     std::vector<float>                 _corrSpatialTotalSC;
+    
   
 
 public:
@@ -298,7 +299,11 @@ public:
 public: 
     void setAvgExpressionStatus(AvgExpressionStatus status) { _avgExprStatus = status; }
 
-    void setEnrichmentAPI();
+    void updateEnrichmentAPI();
+
+    void setEnrichmentAPI(QString apiName);
+
+    void setEnrichmentAPIOptions(QStringList options);
 
 public: 
     /** Get reference to the scatter plot widget */
