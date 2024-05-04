@@ -32,7 +32,11 @@ void SingleCellModeAction::initialize(GeneSurferPlugin* geneSurferPlugin)
         {         
             if (!_singleCellOptionAction.isChecked())
             {
-                geneSurferPlugin->setEnrichmentAPI(1);// set gProfiler as enrichment API
+                geneSurferPlugin->setEnrichmentAPIOptions(QStringList({ "gProfiler" }));
+                geneSurferPlugin->setEnrichmentAPI("gProfiler");
+            } else             {
+                geneSurferPlugin->setEnrichmentAPIOptions(QStringList({ "ToppGene", "gProfiler"}));
+                geneSurferPlugin->setEnrichmentAPI("ToppGene");
             }
         });
 

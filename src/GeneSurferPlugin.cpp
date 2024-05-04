@@ -746,10 +746,7 @@ void GeneSurferPlugin::setLabelDataset() {
 
 void GeneSurferPlugin::updateEnrichmentAPI()
 {
-    const QString currentAPI = _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().getCurrentText();
-    qDebug() << "Enrichment API changed to: " << currentAPI;
-
-    _currentEnrichmentAPI = _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().getCurrentIndex();
+    _currentEnrichmentAPI = _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().getCurrentText();
     qDebug() << "Enrichment API changed to: " << _currentEnrichmentAPI;
     
     if (_dimNameToClusterLabel.size() == 0)
@@ -761,9 +758,14 @@ void GeneSurferPlugin::updateEnrichmentAPI()
     getFuntionalEnrichment();
 }
 
-void GeneSurferPlugin::setEnrichmentAPI(int api)
+void GeneSurferPlugin::setEnrichmentAPI(QString apiName)
 {
-    _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().setCurrentIndex(api);
+    _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().setCurrentText(apiName);
+}
+
+void GeneSurferPlugin::setEnrichmentAPIOptions(QStringList options)
+{
+    _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().setOptions(options);
 }
 
 void GeneSurferPlugin::updateSelection()
@@ -2182,12 +2184,12 @@ void GeneSurferPlugin::getFuntionalEnrichment()
 
     if (!geneNamesInCluster.isEmpty()) {
 
-        if (_currentEnrichmentAPI == 0) {
+        if (_currentEnrichmentAPI == "ToppGene") {
         // ToppGene
         _client->lookupSymbolsToppGene(geneNamesInCluster);
         }
 
-        if (_currentEnrichmentAPI == 1) {
+        if (_currentEnrichmentAPI == "gProfiler") {
             // gProfiler
             QStringList backgroundGeneNames;
             if (_isSingleCell != true) {
@@ -2291,14 +2293,14 @@ void GeneSurferPlugin::onTableClicked(int row, int column) {
         
         QString searchGeneSymbol;
 
-        if (_currentEnrichmentAPI == 0) {      
+        if (_currentEnrichmentAPI == "ToppGene") {
         // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all capitals -not needed for gProfiler
         searchGeneSymbol = symbol.toLower();
         searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
         }
 
         // gProfiler
-        if (_currentEnrichmentAPI == 1) {
+        if (_currentEnrichmentAPI == "gProfiler") {
             searchGeneSymbol = symbol; // TO DO: check if the gene symbols are already in the correct format
         }
 
