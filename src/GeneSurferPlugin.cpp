@@ -392,43 +392,37 @@ void GeneSurferPlugin::positionDatasetChanged()
     qDebug() << "GeneSurferPlugin::positionDatasetChanged(): finish converting dataset ... ";
 
     // Experiment - load _corrSpatialTotal
-    std::ifstream file("D:/Python_code/ABCAtlas_computing/temp_data/ABCcorr_geneWspatialcoordinates.csv");
-    std::string line;
-
-    if (!file.is_open()) {
-        std::cerr << "Failed to open corrSpatialTotal file" << std::endl;
+    int columnIndex = 5;  // 
+    bool firstLine = true;
+    QFile file(":/gene_surfer/ABCcorr_geneWspatialcoordinates_ST.csv/");
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "Failed to open corrSpatialTotal file";
         return;
     }
 
-    int columnIndex = 5;
-    bool firstLine = true;
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString line = in.readLine();
 
-    while (getline(file, line)) {
+        // Skip the first line (header)
         if (firstLine) {
             firstLine = false;
             continue;
         }
 
-        std::stringstream lineStream(line);
-        std::string cell;
-        float value;
-        int currentColumn = 0;
-
-        while (getline(lineStream, cell, ',')) {
-            if (currentColumn == columnIndex) {
-                std::stringstream cellStream(cell);
-                if (cellStream >> value) {
-                    _corrSpatialTotal.push_back(value);
-                }
-                else {
-                    std::cerr << "Conversion error: " << cell << std::endl;
-                    return;
-                }
-                break;
+        QStringList cells = line.split(',');
+        if (cells.size() > columnIndex) {
+            bool ok;
+            float value = cells[columnIndex].toFloat(&ok);
+            if (ok) {
+                _corrSpatialTotal.push_back(value);
             }
-            ++currentColumn;
+            else {
+                qDebug() << "Conversion error:" << cells[columnIndex];
+            }
         }
     }
+
     file.close();
     qDebug() << "GeneSurferPlugin::positionDatasetChanged(): _corrSpatialTotal size: " << _corrSpatialTotal.size();
     qDebug() << _corrSpatialTotal[0];
@@ -441,8 +435,6 @@ void GeneSurferPlugin::positionDatasetChanged()
     updateFloodFillDataset();
 
     _dataInitialized = true;
-
-    
 
 }
 
@@ -2515,7 +2507,7 @@ void GeneSurferPlugin::updateClick() {
             qDebug() << "dimV min: " << *std::min_element(dimV.begin(), dimV.end());
             qDebug() << "dimV mean: " << std::accumulate(dimV.begin(), dimV.end(), 0.0) / dimV.size();
             // temporarily only show the selection in VolumeViewer and normalize within selection
-           /* std::vector<float> dimVTEST(dimV.size(), 0.0f);
+            /*std::vector<float> dimVTEST(dimV.size(), 0.0f);
             for (int i = 0; i < _sortedFloodIndices.size(); i++) {
                 dimVTEST[_sortedFloodIndices[i]] = dimV[_sortedFloodIndices[i]];
             }

@@ -7,4 +7,7 @@
         <file>js_libs/d3.v3.min.js</file>
         <file>js_libs/qwebchannel.tools.js</file>
    </qresource>
+   <qresource prefix="gene_surfer">
+        <file>ABCcorr_geneWspatialcoordinates_ST.csv</file>
+    </qresource>
 </RCC>
