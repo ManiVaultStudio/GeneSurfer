@@ -264,6 +264,7 @@ void GeneSurferPlugin::init()
                     {
                         _sliceDataset = candidateDataset;
                         updateSlice(0);// TODO: hard code 0?? March29
+                        loadGlobalCorr(); // TODO: temp code for loading global correlation
                     });
             }
             else {
@@ -305,28 +306,24 @@ void GeneSurferPlugin::init()
             return;
         }
         qDebug() << ">>>>>GeneSurferPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
+        qDebug() << "Before computeSubset" << "_sliceDataset.isValid = " << _sliceDataset.isValid();
 
-        // test to output the first n selected indices
-        /*int testSize;
-        if (selection->indices.size() > 500)
-            testSize = 500;
-        else 
-            testSize = selection->indices.size();
-
-        for (int i = 0; i < testSize; i++) {
-            std::cout << selection->indices[i] << ", ";
-        }
-        std::cout << std::endl;*/
-
-        if (!_sliceDataset.isValid()) {
+        if (!_sliceDataset.isValid()) 
+        {
+            qDebug() << "Before computeSubset 2D";
             _computeSubset.updateSelectedData(_positionDataset, selection, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
         }
-        else {
-            _computeSubset.updateSelectedData(_positionDataset, selection, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices);
+        else 
+        {
+            qDebug() << "Before computeSubset 3D";
+            _computeSubset.updateSelectedData(_positionDataset, selection, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices); 
+            // TODO check if _onSliceFloodIndices is needed
+            qDebug() << "_sortedFloodIndices.size = " << _sortedFloodIndices.size();
+            qDebug() << "_onSliceFloodIndices.size = " << _onSliceFloodIndices.size();
         }
 
         updateSelection();
-        });
+     });
 
     _client = new EnrichmentAnalysis(this);
     connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &GeneSurferPlugin::updateEnrichmentTable);
@@ -343,6 +340,54 @@ void GeneSurferPlugin::loadData(const mv::Datasets& datasets)
 
     // Load the first dataset
     _positionDataset = datasets.first();
+}
+
+void GeneSurferPlugin::loadGlobalCorr()
+{
+    // temp code for loading global correlation
+    // Experiment - load _corrSpatialTotal
+    
+    // ST data
+    int columnIndex = 5;  // 
+    bool firstLine = true;
+    QFile file(":/gene_surfer/ABCcorr_geneWspatialcoordinates_ST.csv/");
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "Failed to open corrSpatialTotal file";
+        return;
+    }
+
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+
+        // Skip the first line (header)
+        if (firstLine) {
+            firstLine = false;
+            continue;
+        }
+
+        QStringList cells = line.split(',');
+        if (cells.size() > columnIndex) {
+            bool ok;
+            float value = cells[columnIndex].toFloat(&ok);
+            if (ok) {
+                _corrSpatialTotal.push_back(value);
+            }
+            else {
+                qDebug() << "Conversion error:" << cells[columnIndex];
+            }
+        }
+    }
+
+    file.close();
+    qDebug() << "GeneSurferPlugin::loadGlobalCorr(): _corrSpatialTotal size: " << _corrSpatialTotal.size();
+    qDebug() << _corrSpatialTotal[0];
+    qDebug() << _corrSpatialTotal[499];
+
+
+    // SC data
+    // TODO
+
 }
 
 void GeneSurferPlugin::positionDatasetChanged()
@@ -390,44 +435,6 @@ void GeneSurferPlugin::positionDatasetChanged()
     standardizeData(_dataStore.getBaseData(), _dataStore.getVariances()); // getBaseData() is standardized here TO DO: temporarily disabled
     //normalizeDataEigen(_dataStore.getBaseData(), _dataStore.getBaseNormalizedData());TO DO: getBaseData() or getBaseNormalizedData()
     qDebug() << "GeneSurferPlugin::positionDatasetChanged(): finish converting dataset ... ";
-
-    // Experiment - load _corrSpatialTotal
-    int columnIndex = 5;  // 
-    bool firstLine = true;
-    QFile file(":/gene_surfer/ABCcorr_geneWspatialcoordinates_ST.csv/");
-    if (!file.open(QIODevice::ReadOnly)) {
-        qDebug() << "Failed to open corrSpatialTotal file";
-        return;
-    }
-
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        QString line = in.readLine();
-
-        // Skip the first line (header)
-        if (firstLine) {
-            firstLine = false;
-            continue;
-        }
-
-        QStringList cells = line.split(',');
-        if (cells.size() > columnIndex) {
-            bool ok;
-            float value = cells[columnIndex].toFloat(&ok);
-            if (ok) {
-                _corrSpatialTotal.push_back(value);
-            }
-            else {
-                qDebug() << "Conversion error:" << cells[columnIndex];
-            }
-        }
-    }
-
-    file.close();
-    qDebug() << "GeneSurferPlugin::positionDatasetChanged(): _corrSpatialTotal size: " << _corrSpatialTotal.size();
-    qDebug() << _corrSpatialTotal[0];
-    qDebug() << _corrSpatialTotal[499];
-    // end of experiment
 
     _dataStore.createDataView();
     updateSelectedDim();
@@ -830,9 +837,14 @@ void GeneSurferPlugin::updateSelection()
     if (!_isSingleCell && _sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 3D + ST";
         //subset data only contains the onSliceFloodIndice
-        _computeSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData);
+        qDebug() << "GeneSurferPlugin::updateSelection(): _onSliceFloodIndices size: " << _onSliceFloodIndices.size();
+        _computeSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData); //TODO: check if needed
+        qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData size: " << _subsetData.rows() << " " << _subsetData.cols();
         //subset data contains all floodfill indices     
+        qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
         _computeSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
+        qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
+
     }
     if (_isSingleCell && !_sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 2D + SingleCell";
@@ -971,6 +983,8 @@ void GeneSurferPlugin::updateSelection()
     // -------------- Experiment Spatial test --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrTest";
+        //_corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
+
         qDebug() << "ERROR: NOT IMPLEMENTED yet";
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
@@ -983,6 +997,13 @@ void GeneSurferPlugin::updateSelection()
         _positionDataset->extractDataForDimension(zPositions, 0);
         std::vector<float> corrLocalVector;
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, corrLocalVector);
+
+        qDebug() << "corrLocalVector size " << corrLocalVector.size();
+        qDebug() << "_corrGeneVector size " << _corrGeneVector.size();
+        qDebug() << "_corrSpatialTotal size " << _corrSpatialTotal.size();
+
+        _corrGeneVector.clear();
+        _corrGeneVector.resize(_corrSpatialTotal.size(), 0);
         // (corrLocal - corrTotal)/corrLocal
         for (int i = 0; i < corrLocalVector.size(); ++i) {
             if (corrLocalVector[i] != 0)
@@ -2607,6 +2628,8 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
         qDebug() << "GeneSurferPlugin::fromVariantMap() 4 ";
         _currentSliceIndex = variantMap["CurrentSliceIdx"].toInt();
         updateSlice(_currentSliceIndex);
+
+        loadGlobalCorr(); // TO DO: check if this is necessary
     }
 
     qDebug() << "GeneSurferPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;

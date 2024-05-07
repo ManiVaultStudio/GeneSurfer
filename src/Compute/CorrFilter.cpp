@@ -379,6 +379,10 @@ namespace corrFilter
 
     void CorrFilter::computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const
     {
+        qDebug() << "Compute pairwise correlation started...";
+        qDebug() << "dimNames.size(): " << dimNames.size() << " dimIndices.size(): " << dimIndices.size();
+        qDebug() << "dataMatrix.rows(): " << dataMatrix.rows() << " dataMatrix.cols(): " << dataMatrix.cols();
+
         // TO DO: dimNames not needed
         std::vector<Eigen::VectorXf> centeredVectors(dimNames.size());// precompute mean 
         std::vector<float> norms(dimNames.size());
@@ -392,6 +396,8 @@ namespace corrFilter
             norms[i] = centered.squaredNorm();
         }
 
+        qDebug() << "Compute centeredVectors and norms finished...";
+
         #pragma omp parallel for
         for (int col1 = 0; col1 < dimNames.size(); ++col1) {
             for (int col2 = col1; col2 < dimNames.size(); ++col2) {
@@ -402,6 +408,7 @@ namespace corrFilter
                 corrMatrix(col2, col1) = correlation;
             }
         }
+        qDebug() << "Compute pairwise correlation finished...";
     }
 
     QString CorrFilter::getCorrFilterTypeAsString() const
@@ -462,6 +469,7 @@ namespace corrFilter
 
     void SpatialCorr::computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& corrVector) const
     {   // 3D all flood indices
+        qDebug() << "Compute spatial correlation started...";
         Eigen::VectorXf xVector(floodIndices.size());
         Eigen::VectorXf yVector(floodIndices.size());
         Eigen::VectorXf zVector(floodIndices.size());
@@ -469,13 +477,14 @@ namespace corrFilter
             int index = floodIndices[i];
             if (index >= xPositions.size())
             {
-                qDebug() << "ERROR CorrFilter::computeMoranVector: index: " << index << " >= xPositions.size(): " << xPositions.size();
+                qDebug() << "ERROR CorrFilter::computeCorrelationVector: index: " << index << " >= xPositions.size(): " << xPositions.size();
                 return;
             }
             xVector[i] = xPositions[index];
             yVector[i] = yPositions[index];
             zVector[i] = zPositions[index];
         }
+        qDebug() << "xVector, yVector, zVector size" << xVector.size() << yVector.size() << zVector.size();
 
         // Precompute means and norms for xVector, yVector, zVector
         float meanX = xVector.mean(), meanY = yVector.mean(), meanZ = zVector.mean();
@@ -483,6 +492,8 @@ namespace corrFilter
         Eigen::VectorXf centeredY = yVector - Eigen::VectorXf::Constant(yVector.size(), meanY);
         Eigen::VectorXf centeredZ = zVector - Eigen::VectorXf::Constant(zVector.size(), meanZ);
         float normX = centeredX.squaredNorm(), normY = centeredY.squaredNorm(), normZ = centeredZ.squaredNorm();
+
+        qDebug() << "Compute centeredVectors and norms finished...";
 
         std::vector<float> correlationsX(dataMatrix.cols());
         std::vector<float> correlationsY(dataMatrix.cols());
@@ -511,6 +522,7 @@ namespace corrFilter
             correlationsZ[i] = correlationZ;
             corrVector[i] = (std::abs(correlationX) + std::abs(correlationY) + std::abs(correlationZ))/3;
         }
+        qDebug() << "corrVector size " << corrVector.size();
     }
 
     void SpatialCorr::computeCorrelationVector(const DataMatrix& dataMatrix, std::vector<float>& xPositions, std::vector<float>& yPositions, std::vector<float>& zPositions, std::vector<float>& corrVector) const
