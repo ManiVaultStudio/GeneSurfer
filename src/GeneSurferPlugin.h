@@ -267,7 +267,8 @@ private:
     int                                _currentEnrichmentAPI = 0; // current enrichment API
 
     // Experiment
-    std::vector<float>                 _corrSpatialTotal;
+    std::vector<float>                 _corrSpatialTotalST;
+    std::vector<float>                 _corrSpatialTotalSC;
   
 
 public:

@@ -9,5 +9,6 @@
    </qresource>
    <qresource prefix="gene_surfer">
         <file>ABCcorr_geneWspatialcoordinates_ST.csv</file>
+		<file>ABCcorr_geneWspatialcoordinates_SCAvg.csv</file>
     </qresource>
 </RCC>

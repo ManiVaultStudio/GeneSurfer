@@ -348,45 +348,75 @@ void GeneSurferPlugin::loadGlobalCorr()
     // Experiment - load _corrSpatialTotal
     
     // ST data
-    int columnIndex = 5;  // 
-    bool firstLine = true;
-    QFile file(":/gene_surfer/ABCcorr_geneWspatialcoordinates_ST.csv/");
-    if (!file.open(QIODevice::ReadOnly)) {
-        qDebug() << "Failed to open corrSpatialTotal file";
+    int columnIndexST = 5;  // 
+    bool firstLineST = true;
+    QFile fileST(":/gene_surfer/ABCcorr_geneWspatialcoordinates_ST.csv/");
+    if (!fileST.open(QIODevice::ReadOnly)) {
+        qDebug() << "Failed to open corrSpatialTotalST file";
         return;
     }
 
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        QString line = in.readLine();
+    QTextStream inST(&fileST);
+    while (!inST.atEnd()) {
+        QString line = inST.readLine();
 
         // Skip the first line (header)
-        if (firstLine) {
-            firstLine = false;
+        if (firstLineST) {
+            firstLineST = false;
             continue;
         }
 
         QStringList cells = line.split(',');
-        if (cells.size() > columnIndex) {
+        if (cells.size() > columnIndexST) {
             bool ok;
-            float value = cells[columnIndex].toFloat(&ok);
+            float value = cells[columnIndexST].toFloat(&ok);
             if (ok) {
-                _corrSpatialTotal.push_back(value);
+                _corrSpatialTotalST.push_back(value);
             }
             else {
-                qDebug() << "Conversion error:" << cells[columnIndex];
+                qDebug() << "Conversion error:" << cells[columnIndexST];
             }
         }
     }
 
-    file.close();
-    qDebug() << "GeneSurferPlugin::loadGlobalCorr(): _corrSpatialTotal size: " << _corrSpatialTotal.size();
-    qDebug() << _corrSpatialTotal[0];
-    qDebug() << _corrSpatialTotal[499];
-
+    fileST.close();
+    qDebug() << "GeneSurferPlugin::loadGlobalCorr(): _corrSpatialTotalST size: " << _corrSpatialTotalST.size();
 
     // SC data
-    // TODO
+    int columnIndexSC = 5;
+    bool firstLineSC = true;
+    QFile fileSC(":/gene_surfer/ABCcorr_geneWspatialcoordinates_SCAvg.csv/");
+    if (!fileSC.open(QIODevice::ReadOnly)) {
+        qDebug() << "Failed to open corrSpatialTotalSC file";
+        return;
+    }
+
+    QTextStream inSC(&fileSC);
+    while (!inSC.atEnd()) {
+        QString line = inSC.readLine();
+
+        // Skip the first line (header)
+        if (firstLineSC) {
+            firstLineSC = false;
+            continue;
+        }
+
+        QStringList cells = line.split(',');
+        if (cells.size() > columnIndexSC) {
+            bool ok;
+            float value = cells[columnIndexSC].toFloat(&ok);
+            if (ok) {
+                _corrSpatialTotalSC.push_back(value);
+            }
+            else {
+                qDebug() << "Conversion error:" << cells[columnIndexSC];
+            }
+        }
+    }
+
+    fileSC.close();
+    qDebug() << "GeneSurferPlugin::loadGlobalCorr(): _corrSpatialTotalSC size: " << _corrSpatialTotalSC.size();
+    qDebug() << "_corrSpatialTotalSC[0]" << _corrSpatialTotalSC[0] << "[499]" << _corrSpatialTotalSC[499];
 
 }
 
@@ -983,9 +1013,8 @@ void GeneSurferPlugin::updateSelection()
     // -------------- Experiment Spatial test --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrTest";
-        //_corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
-
         qDebug() << "ERROR: NOT IMPLEMENTED yet";
+        return;
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
         qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorrTest";
@@ -1000,26 +1029,61 @@ void GeneSurferPlugin::updateSelection()
 
         qDebug() << "corrLocalVector size " << corrLocalVector.size();
         qDebug() << "_corrGeneVector size " << _corrGeneVector.size();
-        qDebug() << "_corrSpatialTotal size " << _corrSpatialTotal.size();
+        qDebug() << "_corrSpatialTotalST size " << _corrSpatialTotalST.size();
 
         _corrGeneVector.clear();
-        _corrGeneVector.resize(_corrSpatialTotal.size(), 0);
+        _corrGeneVector.resize(_corrSpatialTotalST.size(), 0);
         // (corrLocal - corrTotal)/corrLocal
         for (int i = 0; i < corrLocalVector.size(); ++i) {
             if (corrLocalVector[i] != 0)
-                _corrGeneVector[i] = (corrLocalVector[i]*3 - _corrSpatialTotal[i]) / corrLocalVector[i];
+                _corrGeneVector[i] = (corrLocalVector[i]*3 - _corrSpatialTotalST[i]) / (corrLocalVector[i] * 3);
             else 
                 _corrGeneVector[i] = 0;
+        }
+
+        // normalize the values to [0, 1] range
+        float minVal = *std::min_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        float maxVal = *std::max_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        for (int i = 0; i < _corrGeneVector.size(); ++i) {
+            _corrGeneVector[i] = (_corrGeneVector[i] - minVal) / (maxVal - minVal);
         }
 
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
         qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorrTest";
         qDebug() << "ERROR: NOT IMPLEMENTED yet";
+        return;
     }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
         qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrTest";
-        qDebug() << "ERROR: NOT IMPLEMENTED yet";
+        std::vector<float> xAvg;
+        std::vector<float> yAvg;
+        std::vector<float> zAvg;
+        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
+        std::vector<float> corrLocalVector;
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, corrLocalVector);
+        qDebug() << "corrLocalVector size " << corrLocalVector.size();
+        qDebug() << "_corrGeneVector size " << _corrGeneVector.size();
+        qDebug() << "_corrSpatialTotalSC size " << _corrSpatialTotalSC.size();
+
+        _corrGeneVector.clear();
+        _corrGeneVector.resize(_corrSpatialTotalSC.size(), 0);
+        // (corrLocal - corrTotal)/corrLocal
+        for (int i = 0; i < corrLocalVector.size(); ++i) {
+            if (corrLocalVector[i] != 0)
+                _corrGeneVector[i] = (corrLocalVector[i] * 3 - _corrSpatialTotalSC[i]) / (corrLocalVector[i] * 3);
+                //_corrGeneVector[i] = (corrLocalVector[i] * 3 - _corrSpatialTotalSC[i]);
+            else
+                _corrGeneVector[i] = 0;
+        }
+
+        // normalize the values to [0, 1] range
+        float minVal = *std::min_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        float maxVal = *std::max_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        qDebug() << "Before norm of _corrGeneVector: minVal: " << minVal << " maxVal: " << maxVal;
+        for (int i = 0; i < _corrGeneVector.size(); ++i) {
+            _corrGeneVector[i] = (_corrGeneVector[i] - minVal) / (maxVal - minVal);
+        }
     }
 
 
