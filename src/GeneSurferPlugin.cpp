@@ -374,7 +374,7 @@ void GeneSurferPlugin::loadGlobalCorr()
                 _corrSpatialTotalST.push_back(value);
             }
             else {
-                qDebug() << "Conversion error:" << cells[columnIndexST];
+                qDebug() << "Conversion error ST:" << value << "from line:" << line << "columIndexST" << columnIndexST;
             }
         }
     }
@@ -409,14 +409,13 @@ void GeneSurferPlugin::loadGlobalCorr()
                 _corrSpatialTotalSC.push_back(value);
             }
             else {
-                qDebug() << "Conversion error:" << cells[columnIndexSC];
+                qDebug() << "Conversion error SC:" << cells[columnIndexSC];
             }
         }
     }
 
     fileSC.close();
     qDebug() << "GeneSurferPlugin::loadGlobalCorr(): _corrSpatialTotalSC size: " << _corrSpatialTotalSC.size();
-    qDebug() << "_corrSpatialTotalSC[0]" << _corrSpatialTotalSC[0] << "[499]" << _corrSpatialTotalSC[499];
 
 }
 
