@@ -988,6 +988,34 @@ void GeneSurferPlugin::updateSelection()
         std::vector<float> zPositions;
         _positionDataset->extractDataForDimension(zPositions, 0);
         _corrFilter.computeMoranVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, _corrGeneVector);
+
+        // experiment May 8: check how many genes diff<0 in the first _numFilteredGenes
+        std::vector<float> diffVector;
+        Eigen::VectorXf meanA = _subsetData3D.colwise().mean();
+        Eigen::VectorXf meanB = _dataStore.getBaseData().colwise().mean();
+        Eigen::VectorXf contrast = meanA - meanB;
+        diffVector.assign(contrast.data(), contrast.data() + contrast.size());
+        // get the diff values for gens with the highest correlation in _corrGeneVector
+        std::vector<std::tuple<float, float, QString>> combined(_corrGeneVector.size());
+        for (size_t i = 0; i < _corrGeneVector.size(); ++i) {
+            combined[i] = std::make_tuple(std::abs(_corrGeneVector[i]), diffVector[i], _enabledDimNames[i]);
+        }
+        // Partially sort based on correlation values (descending order)
+        std::nth_element(combined.begin(), combined.begin() + _numGenesThreshold, combined.end(),
+            [](const auto& left, const auto& right) {
+                return std::get<0>(left) > std::get<0>(right); // Sort by correlation value
+            });
+        combined.resize(_numGenesThreshold);
+        QStringList negativeDiffGenes;
+        for (const auto& [corr, diff, name] : combined) {
+            if (diff < 0) {
+                negativeDiffGenes << name;
+            }
+        }
+        QString negativeDiffGenesStr = negativeDiffGenes.join(" ");
+        qDebug() << "Number of genes with negative diff values:" << negativeDiffGenes.size();
+        qDebug() << "Genes with negative diff values:" << negativeDiffGenesStr; 
+        // end of experiment May 8
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
@@ -1008,6 +1036,34 @@ void GeneSurferPlugin::updateSelection()
         qDebug() << "_subsetDataAvgOri(0, 0) " << _subsetDataAvgOri(0, 0);
 
         _corrFilter.computeMoranVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
+
+        // experiment May 8: check how many genes diff<0 in the first _numFilteredGenes
+        std::vector<float> diffVector;
+        Eigen::VectorXf meanA = _subsetData3D.colwise().mean();
+        Eigen::VectorXf meanB = _dataStore.getBaseData().colwise().mean();
+        Eigen::VectorXf contrast = meanA - meanB;
+        diffVector.assign(contrast.data(), contrast.data() + contrast.size());
+        // get the diff values for gens with the highest correlation in _corrGeneVector - way 2
+        std::vector<std::tuple<float, float, QString>> combined(_corrGeneVector.size());
+        for (size_t i = 0; i < _corrGeneVector.size(); ++i) {
+            combined[i] = std::make_tuple(std::abs(_corrGeneVector[i]), diffVector[i], _enabledDimNames[i]);
+        }
+        // Partially sort based on correlation values (descending order)
+        std::nth_element(combined.begin(), combined.begin() + _numGenesThreshold, combined.end(),
+            [](const auto& left, const auto& right) {
+                return std::get<0>(left) > std::get<0>(right); // Sort by correlation value
+            });
+        combined.resize(_numGenesThreshold);
+        QStringList negativeDiffGenes;
+        for (const auto& [corr, diff, name] : combined) {
+            if (diff < 0) {
+                negativeDiffGenes << name;
+            }
+        }
+        QString negativeDiffGenesStr = negativeDiffGenes.join(" ");
+        qDebug() << "Number of genes with negative diff values:" << negativeDiffGenes.size();
+        qDebug() << "Genes with negative diff values:" << negativeDiffGenesStr;
+        // end of experiment May 8
     }
 
     // -------------- Experiment Spatial test --------------
