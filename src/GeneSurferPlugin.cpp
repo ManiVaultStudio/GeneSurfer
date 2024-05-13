@@ -1039,7 +1039,7 @@ void GeneSurferPlugin::updateSelection()
         // experiment May 8: check how many genes diff<0 in the first _numFilteredGenes
         std::vector<float> diffVector;
         Eigen::VectorXf meanA = _subsetData3D.colwise().mean();
-        Eigen::VectorXf meanB = _dataStore.getBaseData().colwise().mean();
+        Eigen::VectorXf meanB = _avgExpr.colwise().mean();
         Eigen::VectorXf contrast = meanA - meanB;
         diffVector.assign(contrast.data(), contrast.data() + contrast.size());
         // get the diff values for gens with the highest correlation in _corrGeneVector - way 2
