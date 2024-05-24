@@ -1149,8 +1149,55 @@ void GeneSurferPlugin::updateSelection()
             _corrGeneVector[i] = (_corrGeneVector[i] - minVal) / (maxVal - minVal);
         }
     }
+    // -------------- Experiment Spatial z --------------
+    if (!_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
+        qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrZ";
+        qDebug() << "ERROR: no z axis in 2D dataset";
+        return;
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
+        qDebug() << ">>>>>Compute corr: 3D + ST + SpatialZ";
+        std::vector<float> zPositions;
+        _positionDataset->extractDataForDimension(zPositions, 0);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData3D, zPositions, _corrGeneVector);
+    }
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrZ";
+        std::vector<float> xAvg;
+        std::vector<float> yAvg;
+        std::vector<float> zAvg;
+        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _corrGeneVector);
+    }
+    // -------------- Experiment Spatial y --------------
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
+        qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrY";
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData, yPositions, _corrGeneVector);
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
+        qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorrY";
 
-
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData3D, yPositions, _corrGeneVector);
+    }
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
+        qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorrY";
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
+        DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, populatedSubsetAvg, yPositions, _corrGeneVector);
+    }
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrY";
+        std::vector<float> xAvg;
+        std::vector<float> yAvg;
+        std::vector<float> zAvg;
+        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _corrGeneVector);
+    }
     
 
     ////////////////////

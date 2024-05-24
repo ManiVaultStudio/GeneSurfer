@@ -29,9 +29,10 @@ namespace corrFilter
         // 3D cluster with mean position
         void computeCorrelationVector(const DataMatrix& dataMatrix, std::vector<float>& xPositions, std::vector<float>& yPositions, std::vector<float>& zPositions, std::vector<float>& corrVector) const;
         
-        // 3D all flood indices + one dimension
+        // 2D + 3D all flood indices + one dimension
         void computeCorrelationVectorOneDimension(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& positionsOneDimension, std::vector<float>& corrVector) const;
-        
+        // 3D cluster with mean position + one dimension
+        void computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, std::vector<float>& corrVector) const;
     
     };
 
