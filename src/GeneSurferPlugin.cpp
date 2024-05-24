@@ -1096,10 +1096,10 @@ void GeneSurferPlugin::updateSelection()
 
         _corrGeneVector.clear();
         _corrGeneVector.resize(_corrSpatialTotalST.size(), 0);
-        // (corrLocal - corrTotal)/corrLocal
         for (int i = 0; i < corrLocalVector.size(); ++i) {
             if (corrLocalVector[i] != 0)
-                _corrGeneVector[i] = (corrLocalVector[i]*3 - _corrSpatialTotalST[i]) / (corrLocalVector[i] * 3);
+                //_corrGeneVector[i] = (corrLocalVector[i]*3 - _corrSpatialTotalST[i]) / (corrLocalVector[i] * 3);// (corrLocal - corrTotal)/corrLocal
+                _corrGeneVector[i] = corrLocalVector[i] * 3 / (corrLocalVector[i] + _corrSpatialTotalST[i]);// corrLocal/(corrLocal+corrTotal)
             else 
                 _corrGeneVector[i] = 0;
         }
@@ -1135,8 +1135,8 @@ void GeneSurferPlugin::updateSelection()
         // (corrLocal - corrTotal)/corrLocal
         for (int i = 0; i < corrLocalVector.size(); ++i) {
             if (corrLocalVector[i] != 0)
-                _corrGeneVector[i] = (corrLocalVector[i] * 3 - _corrSpatialTotalSC[i]) / (corrLocalVector[i] * 3);
-                //_corrGeneVector[i] = (corrLocalVector[i] * 3 - _corrSpatialTotalSC[i]);
+                //_corrGeneVector[i] = (corrLocalVector[i] * 3 - _corrSpatialTotalSC[i]) / (corrLocalVector[i] * 3); // (corrLocal - corrTotal)/corrLocal
+                _corrGeneVector[i] = corrLocalVector[i] * 3 / (corrLocalVector[i] + _corrSpatialTotalST[i]);// corrLocal/(corrLocal+corrTotal)
             else
                 _corrGeneVector[i] = 0;
         }
