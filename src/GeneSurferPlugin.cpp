@@ -1111,6 +1111,7 @@ void GeneSurferPlugin::updateSelection()
     }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
         qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrTest";
+
         std::vector<float> xAvg;
         std::vector<float> yAvg;
         std::vector<float> zAvg;

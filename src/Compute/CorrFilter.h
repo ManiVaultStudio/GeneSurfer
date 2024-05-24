@@ -10,7 +10,9 @@ namespace corrFilter
 {
     enum class CorrFilterType
     {
-        SPATIAL,
+        SPATIAL,// x+y+z
+        SPATIALZ,//z
+        SPATIALY,//y
         HD,
         DIFF,
         MORAN,
@@ -26,6 +28,11 @@ namespace corrFilter
         void computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& corrVector) const;
         // 3D cluster with mean position
         void computeCorrelationVector(const DataMatrix& dataMatrix, std::vector<float>& xPositions, std::vector<float>& yPositions, std::vector<float>& zPositions, std::vector<float>& corrVector) const;
+        
+        // 3D all flood indices + one dimension
+        void computeCorrelationVectorOneDimension(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& positionsOneDimension, std::vector<float>& corrVector) const;
+        
+    
     };
 
     class HDCorr

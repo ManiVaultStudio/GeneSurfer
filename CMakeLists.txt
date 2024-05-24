@@ -6,7 +6,7 @@ PROJECT(${GENESURFER})
 # -----------------------------------------------------------------------------
 # Library versions for Artifactory sourced binaries
 # -----------------------------------------------------------------------------
-set(HDILib_VERSION 1.2.6)
+set(HDILib_VERSION 1.2.7)
 
 if(NOT USE_ARTIFACTORY_LIBS)
     set(USE_ARTIFACTORY_LIBS TRUE CACHE BOOL "Use the prebuilt libraries from artifactory")

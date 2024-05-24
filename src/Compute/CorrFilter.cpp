@@ -424,6 +424,10 @@ namespace corrFilter
             return "Moran";
         case CorrFilterType::SPATIALTEST:
             return "SpatialTest";
+        case CorrFilterType::SPATIALZ:
+            return "Spatial Z";
+        case CorrFilterType::SPATIALY:
+            return "Spatial Y";
         }
     }
 
@@ -565,6 +569,46 @@ namespace corrFilter
             correlationsZ[i] = correlationZ;
             corrVector[i] = (std::abs(correlationX) + std::abs(correlationY) + std::abs(correlationZ))/3;
         }
+    }
+
+    void SpatialCorr::computeCorrelationVectorOneDimension(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& positionsOneDimension, std::vector<float>& corrVector) const
+    {
+        // 3D all flood indices
+        qDebug() << "Compute spatial correlation started...";
+        Eigen::VectorXf vector(floodIndices.size());
+        for (int i = 0; i < floodIndices.size(); ++i) {
+            int index = floodIndices[i];
+            if (index >= positionsOneDimension.size())
+            {
+                qDebug() << "ERROR CorrFilter::computeCorrelationVector: index: " << index << " >= positionsOneDimension.size(): " << positionsOneDimension.size();
+                return;
+            }
+            vector[i] = positionsOneDimension[index];
+        }
+        qDebug() << "vector size" << vector.size();
+
+        // Precompute means and norms for xVector, yVector, zVector
+        float mean = vector.mean();
+        Eigen::VectorXf centered = vector - Eigen::VectorXf::Constant(vector.size(), mean);
+        float norm = centered.squaredNorm();
+        qDebug() << "Compute centeredVectors and norms finished...";
+
+        std::vector<float> correlations(dataMatrix.cols());
+
+        corrVector.clear();
+        corrVector.resize(dataMatrix.cols());
+
+#pragma omp parallel for
+        for (int i = 0; i < dataMatrix.cols(); ++i) {
+            Eigen::VectorXf column = dataMatrix.col(i);
+            float meanColumn = column.mean();
+            Eigen::VectorXf centeredColumn = column - Eigen::VectorXf::Constant(column.size(), meanColumn);
+            float normColumn = centeredColumn.squaredNorm();
+            float correlation = centeredColumn.dot(centered) / std::sqrt(normColumn * norm);
+            if (std::isnan(correlation)) { correlation = 0.0f; }
+            corrVector[i] = correlation;
+        }
+        qDebug() << "corrVector size " << corrVector.size();
     }
 
     void HDCorr::computeCorrelationVector(const std::vector<float>& waveNumbers, const DataMatrix& dataMatrix, std::vector<float>& corrVector) const

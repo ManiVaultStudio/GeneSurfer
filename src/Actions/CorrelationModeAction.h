@@ -57,6 +57,8 @@ private:
     TriggerAction       _diffAction;     /** Trigger action for activating the diff mode */
     TriggerAction       _moranAction;     // experiment
     TriggerAction       _spatialCorrelationTestAction;     // experiment
+    TriggerAction       _spatialCorrelationZAction;     // experiment
+    TriggerAction       _spatialCorrelationYAction;     // experiment
 
     //friend class mv::AbstractActionsManager;
 };

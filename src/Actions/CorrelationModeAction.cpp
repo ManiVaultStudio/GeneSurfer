@@ -12,7 +12,9 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _hdCorrelationAction(this, "Filter by HD Correlation"),
     _diffAction(this, "Filter by diff"),
     _moranAction(this, "Filter by Moran's I"),
-    _spatialCorrelationTestAction(this, "SpatialCorr LocalVSGlobal")
+    _spatialCorrelationTestAction(this, "SpatialCorr LocalVSGlobal"),
+    _spatialCorrelationZAction(this, "Filter by Spatial Correlation Z"),
+    _spatialCorrelationYAction(this, "Filter by Spatial Correlation Y")
 {
     setIcon(mv::Application::getIconFont("FontAwesome").getIcon("bullseye"));
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
@@ -23,12 +25,16 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     addAction(&_diffAction);
     addAction(&_moranAction);
     addAction(&_spatialCorrelationTestAction);
+    addAction(&_spatialCorrelationZAction);
+    addAction(&_spatialCorrelationYAction);
 
     _spatialCorrelationAction.setToolTip("Spatial correlation mode");
     _hdCorrelationAction.setToolTip("HD correlation mode");
     _diffAction.setToolTip("Diff mode");
     _moranAction.setToolTip("Moran's I mode");
     _spatialCorrelationTestAction.setToolTip("SpatialCorr LocalVSGlobal");
+    _spatialCorrelationZAction.setToolTip("Spatial correlation mode Z");
+    _spatialCorrelationYAction.setToolTip("Spatial correlation mode Y");
 
     if (_geneSurferPlugin == nullptr)
         return;
@@ -61,6 +67,18 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
 
     connect(&_spatialCorrelationTestAction, &TriggerAction::triggered, [this, &corrFilter]() {
         corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALTEST);
+        _geneSurferPlugin->updateFilterLabel();
+        _geneSurferPlugin->updateSelection();
+        });
+
+    connect(&_spatialCorrelationZAction, &TriggerAction::triggered, [this, &corrFilter]() {
+        corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALZ);
+        _geneSurferPlugin->updateFilterLabel();
+        _geneSurferPlugin->updateSelection();
+        });
+
+    connect(&_spatialCorrelationYAction, &TriggerAction::triggered, [this, &corrFilter]() {
+        corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALY);
         _geneSurferPlugin->updateFilterLabel();
         _geneSurferPlugin->updateSelection();
         });
