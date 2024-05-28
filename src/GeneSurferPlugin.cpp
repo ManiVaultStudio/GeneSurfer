@@ -894,6 +894,29 @@ void GeneSurferPlugin::updateSelection()
         qDebug() << ">>>>>Compute subset: 3D + SingleCell";
         countLabelDistribution();
         _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
+        
+        //_countsSubset.resize(_clustersToKeep.size());
+        //for (int i = 0; i < _clustersToKeep.size(); ++i) {
+        //    const QString& clusterName = _clustersToKeep[i];
+        //    _countsSubset[i] = static_cast<float>(_countsMap[clusterName]);
+        //    //_sqrtCounts[i] = std::sqrt(static_cast<float>(_countsMap[clusterName])); // sqrt
+        //}
+        //output _sqrtCounts for checking using std::cout
+       /* std::cout << "sqrtCounts: ";
+        for (int i = 0; i < _sqrtCounts.size(); ++i) {
+            std::cout << _clustersToKeep[i].toStdString() << " " << _countsMap[_clustersToKeep[i]] << " " << _sqrtCounts[i] << " ";
+        }*/
+        /*qDebug() << "counts[0] and counts[1] " << counts[0] << " " << counts[1];
+        std::cout << "First 3 elements of the first row Before multiplication:" << std::endl;
+        std::cout << _subsetDataAvgOri.block<1, 3>(0, 0) << std::endl;
+        std::cout << "First 3 elements of the second row Before multiplication:" << std::endl;
+        std::cout << _subsetDataAvgOri.block<1, 3>(1, 0) << std::endl;*/
+        //_subsetDataAvgOri = _subsetDataAvgOri.array().colwise() * _sqrtCounts.array();
+        /*std::cout << "First 3 elements of the first row after multiplication:" << std::endl;
+        std::cout << _subsetDataAvgOri.block<1, 3>(0, 0) << std::endl;
+        std::cout << "First 3 elements of the second row after multiplication:" << std::endl;
+        std::cout << _subsetDataAvgOri.block<1, 3>(1, 0) << std::endl;*/
+
         _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
         _subsetData3D = _subsetDataAvgOri;
     }
@@ -976,7 +999,12 @@ void GeneSurferPlugin::updateSelection()
     }
     if (_isSingleCell && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
         qDebug() << ">>>>>Compute corr: SingleCell +Diff";
+        // add weighting for number of cells in each cluster May 28
+        /*Eigen::MatrixXf weightedSubsetData = _subsetDataAvgOri.array().colwise() * _countsSubset.array();
+        Eigen::MatrixXf weightedAvgExpr = _avgExpr.array().colwise() * _countsAll.array();
+        _corrFilter.getDiffFilter().computeDiff(weightedSubsetData, weightedAvgExpr, _corrGeneVector);*/
         _corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector);
+        
     }
     // -------------- Experiment Moran's I --------------
     
@@ -1761,11 +1789,22 @@ void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
 
 void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
     qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): start... ";
+    std::ifstream file;
 
-    /*load file of avg expr - file from Michael */
-    //std::ifstream file("precomputed_stats_ABC_revision_230821_alias_identifier.csv"); // in this file column:gene identifier, row:cluster alias
-    std::ifstream file("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
-    //std::ifstream file("avg_MERFISH_aliasgenesymbol_august.csv");// august data, self computed from MERFISH data
+    // temporary code to load avg expression from file TO DO: generalize to select file from GUI
+    qDebug() << "Test get gui name" << _positionDataset->getGuiName();
+    qDebug() << "Test get gui name" << _positionSourceDataset->getGuiName();
+    if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
+        qDebug() << "Load avg expression for SEAAD dataset";
+        file.open("SEAAD_average_expression_supertype.csv"); // in this file column:gene symbol, row:supertype
+    }
+    else {
+        qDebug() << "Load avg expression for ABC Atlas";
+        /*load file of avg expr - file from Michael */
+        //std::ifstream file("precomputed_stats_ABC_revision_230821_alias_identifier.csv"); // in this file column:gene identifier, row:cluster alias
+        file.open("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
+        //std::ifstream file("avg_MERFISH_aliasgenesymbol_august.csv");// august data, self computed from MERFISH data
+    }
 
     if (!file.is_open()) {
         qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas Error: Could not open the avg expr file.";
@@ -1879,12 +1918,22 @@ void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
 void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
     // this is loading label from ST dataset!!!
     // Different from loading from singlecell datset!!!
+    QString labelDatasetName;
+    if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
+        qDebug() << "Load labels for SEAAD dataset";
+        labelDatasetName = "Supertype";
+    }
+    else {
+        qDebug() << "Load labels for ABC Atlas";
+        labelDatasetName = "cluster_alias";
+    }
+
 
     Dataset<Clusters> labelDataset;
     for (const auto& data : mv::data().getAllDatasets())
     {
         //qDebug() << data->getGuiName();
-        if (data->getGuiName() == "cluster_alias") {
+        if (data->getGuiName() == labelDatasetName) {
             labelDataset = data;
         }
     }
@@ -1893,10 +1942,12 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
 
     qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): labelClusters size: " << labelClusters.size();
 
+    // add weighting for each cluster of whole data May28
+    //_countsAll.resize(labelClusters.size());
+
     // precompute the cell-label array
     _cellLabels.clear();
     _cellLabels.resize(_numPoints);
-
 
     for (int i = 0; i < labelClusters.size(); ++i) {
         QString clusterName = labelClusters[i].getName();
@@ -1905,10 +1956,12 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
             int ptIndex = ptIndices[j];
             _cellLabels[ptIndex] = clusterName;
         }
+       // _countsAll[i] = ptIndices.size();// add weighting for each cluster of whole data May28
     }
 
     qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): _cellLabels size: " << _cellLabels.size();
     qDebug() << "_cellLabels[0]" << _cellLabels[0];
+    //qDebug() << "_countsAll size: " << _countsAll.size() << " _countsAll[0]: " << _countsAll[0];
 }
 
 void GeneSurferPlugin::countLabelDistribution() 
@@ -2130,7 +2183,15 @@ void GeneSurferPlugin::clusterGenes()
     } 
     else {
         qDebug() << "computePairwiseCorrelationVector: 3D dataset";
-        _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGene);
+        if (!_isSingleCell) {
+           _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGene);
+        }
+        else {
+            // add weighting May 28
+            // not implemented yet
+            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGene);
+        }
+            
     }
 
     auto end2 = std::chrono::high_resolution_clock::now();
@@ -2597,7 +2658,7 @@ void GeneSurferPlugin::onTableClicked(int row, int column) {
 
     QStringList geneSymbolList = geneSymbols.split(",");
 
-    // match the gene symbols with the gene names in the cluster - gene symbols returned from topGene are all capitals
+    // match the gene symbols with the gene names in the cluster - gene symbols returned from toppGene are all capitals
     QVariantList geneNamesForHighlighting;
     for (const QString& symbol : geneSymbolList) {
         

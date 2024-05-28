@@ -220,6 +220,7 @@ void EnrichmentAnalysis::postGeneGprofiler(const QStringList& query, const QStri
 
     QJsonObject json;
     json["organism"] = "mmusculus"; // TO DO: hard-coded for mouse dataset
+    //json["organism"] = "hsapiens"; // TO DO: hard-coded for human dataset
     json["sources"] = QJsonArray({ "GO" }); // Gene Ontology categories
     json["query"] = QJsonArray::fromStringList(query);
     json["significance_threshold_method"] = "bonferroni";

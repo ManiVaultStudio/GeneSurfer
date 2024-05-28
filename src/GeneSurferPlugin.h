@@ -257,6 +257,8 @@ private:
     std::vector<QString>               _cellLabels;              // Labels for each point
     std::unordered_map<QString, int>   _countsMap;               // Count distribution of labels WITHIN floodfill
     std::vector<QString>               _clustersToKeep;          // clusters to keep for avg expression - same order as subset row - cluster alias name 
+    Eigen::VectorXf                    _countsSubset;            // counts for each label within the subset - same order as subset row
+    Eigen::VectorXf                    _countsAll;               // counts for each label within the entire dataset - same order as avgExpr row
 
     // Flags
     bool                               _isSingleCell = false;    // whether to use avg expression from single cell data
