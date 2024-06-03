@@ -847,6 +847,27 @@ void GeneSurferPlugin::setEnrichmentAPIOptions(QStringList options)
     _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().setOptions(options);
 }
 
+void GeneSurferPlugin::updateEnrichmentSpecies()
+{
+    QString selectedSpecies = _settingsAction.getEnrichmentAction().getSpeciesPickerAction().getCurrentText();
+
+    if (selectedSpecies == "Mus musculus")
+    {
+        _currentEnrichmentSpecies = "mmusculus";
+        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+        getFuntionalEnrichment();
+
+    }
+    else if (selectedSpecies == "Homo sapiens")
+    {
+        _currentEnrichmentSpecies = "hsapiens";
+        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+        getFuntionalEnrichment();
+    }
+    else
+        qDebug() << "ERROR: no valid species selected for enrichment analysis";
+}
+
 void GeneSurferPlugin::updateSelection()
 {
     // clear table content
@@ -2574,7 +2595,7 @@ void GeneSurferPlugin::getFuntionalEnrichment()
                 qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
             }
             qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
-            _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames);
+            _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames, _currentEnrichmentSpecies);
         }
 
         //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);

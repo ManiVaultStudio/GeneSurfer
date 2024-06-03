@@ -243,6 +243,7 @@ private:
     // Enrichment Analysis
     EnrichmentAnalysis*                _client;                  // Enrichment analysis client 
     QVariantList                       _enrichmentResult;        // Cached enrichment analysis result, in case the user clicks on one cell
+    QString                            _currentEnrichmentSpecies = "mmusculus"; // current enrichment species
 
     // Single cell data
     mv::Dataset<Points>                _avgExprDataset;          // Point dataset for average expression of each cluster
@@ -306,6 +307,8 @@ public:
     void setEnrichmentAPI(QString apiName);
 
     void setEnrichmentAPIOptions(QStringList options);
+
+    void updateEnrichmentSpecies();
 
 public: 
     /** Get reference to the scatter plot widget */

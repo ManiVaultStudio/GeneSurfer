@@ -43,9 +43,11 @@ public: // Serialization
 public: // Action getters
 
     OptionAction& getEnrichmentAPIPickerAction() { return _enrichmentAPIPickerAction; }
+    OptionAction& getSpeciesPickerAction() { return _speciesPickerAction; }
 
 private:
     OptionAction   _enrichmentAPIPickerAction;    /** Enrichment API picker action */
+    OptionAction   _speciesPickerAction;          /** Species picker action */
 };
 
 Q_DECLARE_METATYPE(EnrichmentAction)

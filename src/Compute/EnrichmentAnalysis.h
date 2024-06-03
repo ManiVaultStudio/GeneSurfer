@@ -20,7 +20,7 @@ public:
     void postGeneToppGene(const QJsonArray& entrezIds);
 
     // gProfiler
-    void postGeneGprofiler(const QStringList& query, const QStringList& background); // const QStringList& query, const QStringList& background – gprofiler
+    void postGeneGprofiler(const QStringList& query, const QStringList& background, const QString& species); // const QStringList& query, const QStringList& background – gprofiler
 
 signals:
     void enrichmentDataReady(const QVariantList& outputList);
