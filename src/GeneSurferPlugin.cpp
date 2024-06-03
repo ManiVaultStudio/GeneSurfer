@@ -2685,10 +2685,19 @@ void GeneSurferPlugin::onTableClicked(int row, int column) {
         
         QString searchGeneSymbol;
 
+        // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all upper case
         if (_currentEnrichmentAPI == "ToppGene") {
-        // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all capitals -not needed for gProfiler
-        searchGeneSymbol = symbol.toLower();
-        searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
+
+            // first check if the gene symbol is already in the same format as the data
+            if (_enabledDimNames[0][1].isUpper()) // check if the second letter is uppercase
+            {
+                searchGeneSymbol = symbol;
+            }
+            else
+            {
+                searchGeneSymbol = symbol.toLower(); // convert to lower case
+                searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
+            }
         }
 
         // gProfiler
