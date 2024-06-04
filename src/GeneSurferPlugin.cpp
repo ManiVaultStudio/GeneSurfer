@@ -916,12 +916,15 @@ void GeneSurferPlugin::updateSelection()
         countLabelDistribution();
         _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
         
-        //_countsSubset.resize(_clustersToKeep.size());
-        //for (int i = 0; i < _clustersToKeep.size(); ++i) {
-        //    const QString& clusterName = _clustersToKeep[i];
-        //    _countsSubset[i] = static_cast<float>(_countsMap[clusterName]);
-        //    //_sqrtCounts[i] = std::sqrt(static_cast<float>(_countsMap[clusterName])); // sqrt
-        //}
+        // add weighting
+        qDebug() << "GeneSurferPlugin::updateSelection(): _countsMap size: " << _countsMap.size();
+        qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
+        _countsSubset.resize(_clustersToKeep.size());
+        for (int i = 0; i < _clustersToKeep.size(); ++i) {
+            const QString& clusterName = _clustersToKeep[i];
+            _countsSubset[i] = static_cast<float>(_countsMap[clusterName]); // number of pt in each cluster WITHIN the selection
+            //_sqrtCounts[i] = std::sqrt(static_cast<float>(_countsMap[clusterName])); // sqrt
+        }
         //output _sqrtCounts for checking using std::cout
        /* std::cout << "sqrtCounts: ";
         for (int i = 0; i < _sqrtCounts.size(); ++i) {
@@ -1020,12 +1023,22 @@ void GeneSurferPlugin::updateSelection()
     }
     if (_isSingleCell && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
         qDebug() << ">>>>>Compute corr: SingleCell +Diff";
-        // add weighting for number of cells in each cluster May 28
-        /*Eigen::MatrixXf weightedSubsetData = _subsetDataAvgOri.array().colwise() * _countsSubset.array();
-        Eigen::MatrixXf weightedAvgExpr = _avgExpr.array().colwise() * _countsAll.array();
-        _corrFilter.getDiffFilter().computeDiff(weightedSubsetData, weightedAvgExpr, _corrGeneVector);*/
-        _corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector);
+        //_corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector); //without weighting
         
+        // add weighting for number of cells in each cluster
+        Eigen::VectorXf ratioCountsSubset = _countsSubset / _sortedFloodIndices.size() * _subsetDataAvgOri.rows();
+        Eigen::VectorXf ratioCountsAll = _countsAll / _numPoints * _avgExpr.rows();
+
+        qDebug() << "_countsSubset size: " << _countsSubset.size() << "_countsSubset[0]: " << _countsSubset[0] << "_sortedFloodIndices.size()" << _sortedFloodIndices.size() <<"_subsetDataAvgOri.rows()" << _subsetDataAvgOri.rows();
+        qDebug() << "ratioCountsSubset[0]: " << ratioCountsSubset[0];
+        qDebug() << "max element in _countsSubset: " << *std::max_element(_countsSubset.begin(), _countsSubset.end());
+        qDebug() << "_countsAll size: " << _countsAll.size() << "_countsAll[0]: " << _countsAll[0];
+        qDebug() << "ratioCountsAll[0]: " << ratioCountsAll[0];
+        qDebug() << "max element in _countsAll: " << *std::max_element(_countsAll.begin(), _countsAll.end());
+
+        Eigen::MatrixXf weightedSubsetData = _subsetDataAvgOri.array().colwise() * ratioCountsSubset.array();
+        Eigen::MatrixXf weightedAvgExpr = _avgExpr.array().colwise() * ratioCountsAll.array();
+        _corrFilter.getDiffFilter().computeDiff(weightedSubsetData, weightedAvgExpr, _corrGeneVector);    
     }
     // -------------- Experiment Moran's I --------------
     
@@ -1963,8 +1976,8 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
 
     qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): labelClusters size: " << labelClusters.size();
 
-    // add weighting for each cluster of whole data May28
-    //_countsAll.resize(labelClusters.size());
+    // add weighting for each cluster of whole data
+    _countsAll.resize(labelClusters.size());
 
     // precompute the cell-label array
     _cellLabels.clear();
@@ -1977,7 +1990,8 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
             int ptIndex = ptIndices[j];
             _cellLabels[ptIndex] = clusterName;
         }
-       // _countsAll[i] = ptIndices.size();// add weighting for each cluster of whole data May28
+       // add weighting for each cluster of whole data
+       _countsAll[i] = ptIndices.size();// number of pt in each cluster
     }
 
     qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): _cellLabels size: " << _cellLabels.size();
