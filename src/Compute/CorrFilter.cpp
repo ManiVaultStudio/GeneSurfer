@@ -638,6 +638,55 @@ namespace corrFilter
         }
     }
 
+    void SpatialCorr::computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, const Eigen::VectorXf& weights, std::vector<float>& corrVector) const
+    {
+        // test with weighting
+        // 3D cluster with mean position
+         
+        // check if the size of weights is the same as positionsOneDimension
+        if (weights.size() != positionsOneDimension.size())
+        {
+            qDebug() << "ERROR CorrFilter::computeCorrelationVectorOneDimension: weights.size(): " << weights.size() << " != positionsOneDimension.size(): " << positionsOneDimension.size();
+            return;
+        }
+      
+        Eigen::VectorXf vector = Eigen::Map<Eigen::VectorXf>(positionsOneDimension.data(), positionsOneDimension.size());
+
+        // Compute weighted mean for vector
+        float weightedMean = (weights.array() * vector.array()).sum() / weights.sum();
+
+        // Compute weighted centered vector and norm
+        Eigen::VectorXf centered = vector.array() - weightedMean;
+        Eigen::VectorXf weightedCentered = centered.array() * weights.array().sqrt();
+        float norm = weightedCentered.squaredNorm();
+
+        std::vector<float> correlations(dataMatrix.cols());
+
+        corrVector.clear();
+        corrVector.resize(dataMatrix.cols());
+
+#pragma omp parallel for
+        for (int i = 0; i < dataMatrix.cols(); ++i) {
+            Eigen::VectorXf column = dataMatrix.col(i);
+
+            // Compute weighted mean of the column
+            float meanColumn = (weights.array() * column.array()).sum() / weights.sum();
+
+            // Compute weighted centered column and norm
+            Eigen::VectorXf centeredColumn = column.array() - meanColumn;
+            Eigen::VectorXf weightedCenteredColumn = centeredColumn.array() * weights.array().sqrt();
+            float normColumn = weightedCenteredColumn.squaredNorm();
+
+            // Compute the weighted dot product
+            float weightedDotProduct = (weightedCenteredColumn.array() * weightedCentered.array()).sum();
+
+            float correlation = weightedDotProduct / std::sqrt(normColumn * norm);
+
+            if (std::isnan(correlation)) { correlation = 0.0f; }
+            corrVector[i] = correlation;
+        }
+    }
+
     void HDCorr::computeCorrelationVector(const std::vector<float>& waveNumbers, const DataMatrix& dataMatrix, std::vector<float>& corrVector) const
     {   // scRNA-seq
         Eigen::VectorXf eigenWaveNumbers(waveNumbers.size());

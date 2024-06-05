@@ -1229,7 +1229,8 @@ void GeneSurferPlugin::updateSelection()
         std::vector<float> yAvg;
         std::vector<float> zAvg;
         computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _corrGeneVector);
+        //_corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _corrGeneVector);// without weighting
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _countsSubset, _corrGeneVector);// with weighting
     }
     // -------------- Experiment Spatial y --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
@@ -1250,7 +1251,7 @@ void GeneSurferPlugin::updateSelection()
         std::vector<float> yPositions;
         _positionDataset->extractDataForDimension(yPositions, 1);
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, populatedSubsetAvg, yPositions, _corrGeneVector);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, populatedSubsetAvg, yPositions, _corrGeneVector);// TODO: without weighting
     }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
         qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrY";
@@ -1258,7 +1259,8 @@ void GeneSurferPlugin::updateSelection()
         std::vector<float> yAvg;
         std::vector<float> zAvg;
         computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _corrGeneVector);
+        // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _corrGeneVector);// without weighting
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _countsSubset, _corrGeneVector);// with weighting
     }
     
 
