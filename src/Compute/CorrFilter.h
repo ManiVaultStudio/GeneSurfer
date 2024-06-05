@@ -34,7 +34,7 @@ namespace corrFilter
         // 3D cluster with mean position + one dimension
         void computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, std::vector<float>& corrVector) const;
         
-        // TEST 3D cluster with mean position + one dimension +weighting
+        // TEST 3D cluster with mean position + one dimension + weighting
         void computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, const Eigen::VectorXf& weights, std::vector<float>& corrVector) const;
     
     };
@@ -61,6 +61,9 @@ namespace corrFilter
         void setFilterType(CorrFilterType type) { _type = type; }
 
         void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const;
+        // for 3D cluster with mean position + weighting
+        void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, const Eigen::VectorXf& weights, DataMatrix& corrMatrix) const;
+
 
         QString getCorrFilterTypeAsString() const;
 

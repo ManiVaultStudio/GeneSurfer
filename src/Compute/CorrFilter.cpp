@@ -378,7 +378,7 @@ namespace corrFilter
     }
 
     void CorrFilter::computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const
-    {
+    {   // without weighting
         qDebug() << "Compute pairwise correlation started...";
         qDebug() << "dimNames.size(): " << dimNames.size() << " dimIndices.size(): " << dimIndices.size();
         qDebug() << "dataMatrix.rows(): " << dataMatrix.rows() << " dataMatrix.cols(): " << dataMatrix.cols();
@@ -409,6 +409,54 @@ namespace corrFilter
             }
         }
         qDebug() << "Compute pairwise correlation finished...";
+    }
+
+    void CorrFilter::computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, const Eigen::VectorXf& weights, DataMatrix& corrMatrix) const
+    {   // with weighting
+        qDebug() << "Compute pairwise correlation started...with weighting...";
+        qDebug() << "dimNames.size(): " << dimNames.size() << " dimIndices.size(): " << dimIndices.size();
+        qDebug() << "dataMatrix.rows(): " << dataMatrix.rows() << " dataMatrix.cols(): " << dataMatrix.cols();
+
+        // check if the size of weights is the same as dataMatrix.rows()
+        if (weights.size() != dataMatrix.rows())
+        {
+            qDebug() << "ERROR CorrFilter::computeCorrelationVectorOneDimension: weights.size(): " << weights.size() << " != dataMatrix.rows(): " << dataMatrix.rows();
+            return;
+        }
+
+        // Precompute weighted centered vectors and norms
+        std::vector<Eigen::VectorXf> centeredVectors(dimNames.size());
+        std::vector<float> norms(dimNames.size());
+
+        for (int i = 0; i < dimNames.size(); ++i) {
+            int index = dimIndices[i];
+
+            // Compute weighted mean of the column
+            float weightedMean = (weights.array() * dataMatrix.col(index).array()).sum() / weights.sum();
+
+            // Compute weighted centered vector
+            Eigen::VectorXf centered = dataMatrix.col(index).array() - weightedMean;
+            Eigen::VectorXf weightedCentered = centered.array() * weights.array().sqrt();
+            centeredVectors[i] = weightedCentered;
+            norms[i] = weightedCentered.squaredNorm();
+        }
+
+        qDebug() << "Compute centeredVectors and norms finished...";
+
+#pragma omp parallel for
+        for (int col1 = 0; col1 < dimNames.size(); ++col1) {
+            for (int col2 = col1; col2 < dimNames.size(); ++col2) {
+                float weightedDotProduct = (centeredVectors[col1].array() * centeredVectors[col2].array()).sum();
+                float correlation = weightedDotProduct / std::sqrt(norms[col1] * norms[col2]);
+                if (std::isnan(correlation)) { correlation = 0.0f; } // Handle NaN in correlation computation
+
+                corrMatrix(col1, col2) = correlation;
+                corrMatrix(col2, col1) = correlation;
+            }
+        }
+
+        qDebug() << "Compute pairwise correlation finished...";
+    
     }
 
     QString CorrFilter::getCorrFilterTypeAsString() const

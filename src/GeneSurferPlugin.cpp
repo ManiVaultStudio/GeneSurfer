@@ -910,6 +910,15 @@ void GeneSurferPlugin::updateSelection()
         _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
         _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
         _subsetData = _subsetDataAvgOri;
+
+        // add weighting
+        qDebug() << "GeneSurferPlugin::updateSelection(): _countsMap size: " << _countsMap.size();
+        qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
+        _countsSubset.resize(_clustersToKeep.size());
+        for (int i = 0; i < _clustersToKeep.size(); ++i) {
+            const QString& clusterName = _clustersToKeep[i];
+            _countsSubset[i] = static_cast<float>(_countsMap[clusterName]); // number of pt in each cluster WITHIN the selection
+        }
     }
     if (_isSingleCell && _sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 3D + SingleCell";
@@ -923,7 +932,6 @@ void GeneSurferPlugin::updateSelection()
         for (int i = 0; i < _clustersToKeep.size(); ++i) {
             const QString& clusterName = _clustersToKeep[i];
             _countsSubset[i] = static_cast<float>(_countsMap[clusterName]); // number of pt in each cluster WITHIN the selection
-            //_sqrtCounts[i] = std::sqrt(static_cast<float>(_countsMap[clusterName])); // sqrt
         }
         //output _sqrtCounts for checking using std::cout
        /* std::cout << "sqrtCounts: ";
@@ -950,7 +958,7 @@ void GeneSurferPlugin::updateSelection()
     // Compute correlation for filtering genes //
     /////////////////////////////////////////////
     
-    //-------------- Spatial Correlation --------------
+    //-------------- Spatial Correlation -------------- // TODO: add weighting for SC
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorr";
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
@@ -1040,7 +1048,7 @@ void GeneSurferPlugin::updateSelection()
         Eigen::MatrixXf weightedAvgExpr = _avgExpr.array().colwise() * ratioCountsAll.array();
         _corrFilter.getDiffFilter().computeDiff(weightedSubsetData, weightedAvgExpr, _corrGeneVector);    
     }
-    // -------------- Experiment Moran's I --------------
+    // -------------- Experiment Moran's I -------------- // TO DO: add weighting for SC
     
     // temporary code only for 2D data and is very slow 
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN) {
@@ -1135,7 +1143,7 @@ void GeneSurferPlugin::updateSelection()
         // end of experiment May 8
     }
 
-    // -------------- Experiment Spatial test --------------
+    // -------------- Experiment Spatial test -------------- // TO DO: to remove
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrTest";
         qDebug() << "ERROR: NOT IMPLEMENTED yet";
@@ -1251,7 +1259,7 @@ void GeneSurferPlugin::updateSelection()
         std::vector<float> yPositions;
         _positionDataset->extractDataForDimension(yPositions, 1);
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, populatedSubsetAvg, yPositions, _corrGeneVector);// TODO: without weighting
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, populatedSubsetAvg, yPositions, _corrGeneVector);// no need for weighting
     }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
         qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrY";
@@ -2216,17 +2224,22 @@ void GeneSurferPlugin::clusterGenes()
 
     if (!_sliceDataset.isValid()) {
         qDebug() << "computePairwiseCorrelationVector: 2D dataset";
-        _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData, corrFilteredGene);// TO DO: dimNames not needed in this function
+        if (!_isSingleCell) {
+            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData, corrFilteredGene);// TO DO: dimNames not needed in this function
+        }
+        else {
+            // add weighting 
+            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData, _countsSubset, corrFilteredGene);// SC: with weighting
+        }
     } 
     else {
         qDebug() << "computePairwiseCorrelationVector: 3D dataset";
         if (!_isSingleCell) {
-           _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGene);
+           _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGene);// ST: without weighting
         }
         else {
-            // add weighting May 28
-            // not implemented yet
-            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGene);
+            // add weighting 
+            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, _countsSubset, corrFilteredGene);// SC: with weighting
         }
             
     }
