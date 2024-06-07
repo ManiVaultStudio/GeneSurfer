@@ -566,7 +566,14 @@ void GeneSurferPlugin::updateFloodFillDataset()
         qDebug() << "Warning: No floodFillDataset named allFloodNodesIndices found!";
         return;
     }
+
     qDebug() << "GeneSurferPlugin::updateFloodFillDataset: dataSets size: " << _floodFillDataset->getNumPoints();
+
+    if (_floodFillDataset->getNumPoints() == 0)
+    {
+        qDebug() << "Warning: No data in floodFillDataset named allFloodNodesIndices!";
+        return;
+    }
      
     if (!_sliceDataset.isValid()) {
         _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
