@@ -1044,6 +1044,11 @@ void GeneSurferPlugin::updateSelection()
         qDebug() << "ratioCountsAll[0]: " << ratioCountsAll[0];
         qDebug() << "max element in _countsAll: " << *std::max_element(_countsAll.begin(), _countsAll.end());
 
+        qDebug() << "_subsetDataAvgOri size: " << _subsetDataAvgOri.rows() << " " << _subsetDataAvgOri.cols();
+        qDebug() << "ratioCountsSubset size" << ratioCountsSubset.size();
+        qDebug() << "_avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();
+        qDebug() << "ratioCountsAll size" << ratioCountsAll.size();
+
         Eigen::MatrixXf weightedSubsetData = _subsetDataAvgOri.array().colwise() * ratioCountsSubset.array();
         Eigen::MatrixXf weightedAvgExpr = _avgExpr.array().colwise() * ratioCountsAll.array();
         _corrFilter.getDiffFilter().computeDiff(weightedSubsetData, weightedAvgExpr, _corrGeneVector);    
@@ -1972,7 +1977,6 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
         labelDatasetName = "cluster_alias";
     }
 
-
     Dataset<Clusters> labelDataset;
     for (const auto& data : mv::data().getAllDatasets())
     {
@@ -1986,27 +1990,61 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
 
     qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): labelClusters size: " << labelClusters.size();
 
-    // add weighting for each cluster of whole data
-    _countsAll.resize(labelClusters.size());
+    // add weighting for each cluster of whole data - 1
+    //_countsAll.resize(labelClusters.size()); // number of annotation types in ST
+
+    //// precompute the cell-label array
+    //_cellLabels.clear();
+    //_cellLabels.resize(_numPoints);
+
+    //for (int i = 0; i < labelClusters.size(); ++i) {
+    //    QString clusterName = labelClusters[i].getName();
+    //    const auto& ptIndices = labelClusters[i].getIndices();
+    //    for (int j = 0; j < ptIndices.size(); ++j) {
+    //        int ptIndex = ptIndices[j];
+    //        _cellLabels[ptIndex] = clusterName;
+    //    }
+    //   // add weighting for each cluster of whole data
+    //   _countsAll[i] = ptIndices.size();// number of pt in each cluster
+    //}
+
+    // TEST add weighting for each cluster of whole data - 2
+    _countsAll.resize(_clusterNamesAvgExpr.size()); // number of clusters in SC
 
     // precompute the cell-label array
     _cellLabels.clear();
     _cellLabels.resize(_numPoints);
 
-    for (int i = 0; i < labelClusters.size(); ++i) {
-        QString clusterName = labelClusters[i].getName();
-        const auto& ptIndices = labelClusters[i].getIndices();
-        for (int j = 0; j < ptIndices.size(); ++j) {
-            int ptIndex = ptIndices[j];
-            _cellLabels[ptIndex] = clusterName;
+    //for (int i = 0; i < labelClusters.size(); ++i) {
+    for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
+        QString clusterName = _clusterNamesAvgExpr[i];
+        bool found = false;
+
+        //search for the cluster name in labelClusters
+        for (const auto& cluster : labelClusters) {
+            if (cluster.getName() == clusterName) {
+                const auto& ptIndices = cluster.getIndices();
+                for (int j = 0; j < ptIndices.size(); ++j) {
+                    int ptIndex = ptIndices[j];
+                    _cellLabels[ptIndex] = clusterName;
+                }
+                // add weighting for each cluster of whole data
+                _countsAll[i] = ptIndices.size(); // number of pt in each cluster
+                found = true;
+                break;
+            }
         }
-       // add weighting for each cluster of whole data
-       _countsAll[i] = ptIndices.size();// number of pt in each cluster
+
+        if (!found) {
+            // If the cluster is not found in labelClusters
+            qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): cluster in SC" << clusterName << " not found in ST";
+            _countsAll[i] = 0;
+        }
     }
 
     qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): _cellLabels size: " << _cellLabels.size();
     qDebug() << "_cellLabels[0]" << _cellLabels[0];
-    //qDebug() << "_countsAll size: " << _countsAll.size() << " _countsAll[0]: " << _countsAll[0];
+    qDebug() << "_countsAll size: " << _countsAll.size() << " _countsAll[0]: " << _countsAll[0] << " _countsAll[1]: " << _countsAll[1];
 }
 
 void GeneSurferPlugin::countLabelDistribution() 
