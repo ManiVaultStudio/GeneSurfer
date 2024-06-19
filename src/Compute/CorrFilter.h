@@ -10,8 +10,8 @@ namespace corrFilter
 {
     enum class CorrFilterType
     {
-        SPATIALZ,//z
-        SPATIALY,//y
+        SPATIALZ,//anterior-posterior in ABC Atlas
+        SPATIALY,//dorsal-ventral in ABC Atlas
         DIFF,
         MORAN
     };
@@ -24,7 +24,7 @@ namespace corrFilter
         // 3D cluster with mean position + one dimension
         void computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, std::vector<float>& corrVector) const;
         
-        // TEST 3D cluster with mean position + one dimension + weighting
+        // 3D cluster with mean position + one dimension + weighting for singlecell
         void computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, const Eigen::VectorXf& weights, std::vector<float>& corrVector) const;
     
     };
@@ -35,18 +35,9 @@ namespace corrFilter
         void computeDiff(const DataMatrix& selectionDataMatrix, const DataMatrix& allDataMatrix, std::vector<float>& diffVector);
     };
 
-    class CorrFilter
+    class Moran
     {
-
     public:
-        void setFilterType(CorrFilterType type) { _type = type; }
-
-        void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const;
-        // for 3D cluster with mean position + weighting
-        void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, const Eigen::VectorXf& weights, DataMatrix& corrMatrix) const;
-
-        QString getCorrFilterTypeAsString() const;
-
         // experiment moran's I
         std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates);
         std::vector<std::vector<float>> computeWeightMatrix(const std::vector<float>& xCoordinates, const std::vector<float>& yCoordinates, const std::vector<float>& zCoordinates);// overload
@@ -58,19 +49,34 @@ namespace corrFilter
         void computeMoranVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& moranVector);
         // 3D cluster with mean position
         void computeMoranVector(const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& moranVector);
+    };
+
+    class CorrFilter
+    {
+
+    public:
+        void setFilterType(CorrFilterType type) { _type = type; }
+        QString getCorrFilterTypeAsString() const;
+
+        void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const;
+        // for 3D cluster with mean position + weighting
+        void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, const Eigen::VectorXf& weights, DataMatrix& corrMatrix) const;
 
         // Non-const member functions
         SpatialCorr&         getSpatialCorrFilter()  { return _spatialCorr; }
         Diff&         getDiffFilter()       { return _diff; }
+        Moran&        getMoranFilter()      { return _moran; }
 
         // Const member functions
         CorrFilterType                 getFilterType()         const { return _type; }      
         const SpatialCorr&   getSpatialCorrFilter()  const { return _spatialCorr; }
         const Diff&   getDiffFilter()       const { return _diff; }
+        const Moran&  getMoranFilter()      const { return _moran; }
 
     private:
-        CorrFilterType        _type{CorrFilterType::DIFF};
+        CorrFilterType       _type{CorrFilterType::DIFF};
         SpatialCorr          _spatialCorr;
-        Diff          _diff;
+        Diff                 _diff;
+        Moran                _moran;
     };
 }

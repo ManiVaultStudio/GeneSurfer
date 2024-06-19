@@ -930,7 +930,7 @@ void GeneSurferPlugin::updateSelection()
     // temporary code only for 2D data and is very slow 
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN) {
         qDebug() << ">>>>>Compute corr: 2D + ST + Moran";
-        _corrFilter.computeMoranVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
+        _corrFilter.getMoranFilter().computeMoranVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
@@ -941,7 +941,7 @@ void GeneSurferPlugin::updateSelection()
         _positionDataset->extractDataForDimension(yPositions, 1);
         std::vector<float> zPositions;
         _positionDataset->extractDataForDimension(zPositions, 0);
-        _corrFilter.computeMoranVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, _corrGeneVector);
+        _corrFilter.getMoranFilter().computeMoranVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, _corrGeneVector);
 
         // experiment May 8: check how many genes diff<0 in the first _numFilteredGenes
         std::vector<float> diffVector;
@@ -975,7 +975,7 @@ void GeneSurferPlugin::updateSelection()
     {
         qDebug() << ">>>>>Compute corr: 2D + SingleCell + Moran";
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
-        _corrFilter.computeMoranVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
+        _corrFilter.getMoranFilter().computeMoranVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
      }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
@@ -989,7 +989,7 @@ void GeneSurferPlugin::updateSelection()
         qDebug() << "xAvg[0] " << xAvg[0] << "yAvg[0] " << yAvg[0] << "zAvg[0] " << zAvg[0];
         qDebug() << "_subsetDataAvgOri(0, 0) " << _subsetDataAvgOri(0, 0);
 
-        _corrFilter.computeMoranVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
+        _corrFilter.getMoranFilter().computeMoranVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
 
         // experiment May 8: check how many genes diff<0 in the first _numFilteredGenes
         std::vector<float> diffVector;
@@ -1020,7 +1020,7 @@ void GeneSurferPlugin::updateSelection()
         // end of experiment May 8
     }
 
-    // -------------- Experiment Spatial z --------------
+    // -------------- Spatial z --------------
     if (!_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrZ";
         qDebug() << "ERROR: no z axis in 2D dataset";
@@ -1041,7 +1041,7 @@ void GeneSurferPlugin::updateSelection()
         //_corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _corrGeneVector);// without weighting
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _countsSubset, _corrGeneVector);// with weighting
     }
-    // -------------- Experiment Spatial y --------------
+    // -------------- Spatial y --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrY";
         std::vector<float> yPositions;

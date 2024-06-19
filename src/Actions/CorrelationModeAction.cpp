@@ -101,6 +101,10 @@ void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
         corrFilter.setFilterType(corrFilter::CorrFilterType::DIFF);
     else if (variantMap["FilterMode"] == "Moran")
         corrFilter.setFilterType(corrFilter::CorrFilterType::MORAN);
+    else if (variantMap["FilterMode"] == "Spatial Correlation Z")
+        corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALZ);
+    else if (variantMap["FilterMode"] == "Spatial Correlation Y")
+        corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALY);
     _geneSurferPlugin->updateFilterLabel();
 }
 
