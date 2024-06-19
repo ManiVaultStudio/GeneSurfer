@@ -12,7 +12,6 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _hdCorrelationAction(this, "Filter by HD Correlation"),
     _diffAction(this, "Filter by diff"),
     _moranAction(this, "Filter by Moran's I"),
-    _spatialCorrelationTestAction(this, "SpatialCorr LocalVSGlobal"),
     _spatialCorrelationZAction(this, "Filter by Spatial Correlation Z"),
     _spatialCorrelationYAction(this, "Filter by Spatial Correlation Y")
 {
@@ -24,7 +23,6 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     addAction(&_hdCorrelationAction);
     addAction(&_diffAction);
     addAction(&_moranAction);
-    addAction(&_spatialCorrelationTestAction);
     addAction(&_spatialCorrelationZAction);
     addAction(&_spatialCorrelationYAction);
 
@@ -32,7 +30,6 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _hdCorrelationAction.setToolTip("HD correlation mode");
     _diffAction.setToolTip("Diff mode");
     _moranAction.setToolTip("Moran's I mode");
-    _spatialCorrelationTestAction.setToolTip("SpatialCorr LocalVSGlobal");
     _spatialCorrelationZAction.setToolTip("Spatial correlation mode Z");
     _spatialCorrelationYAction.setToolTip("Spatial correlation mode Y");
 
@@ -61,12 +58,6 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
 
     connect(&_moranAction, &TriggerAction::triggered, [this, &corrFilter]() {
         corrFilter.setFilterType(corrFilter::CorrFilterType::MORAN);
-        _geneSurferPlugin->updateFilterLabel();
-        _geneSurferPlugin->updateSelection();
-        });
-
-    connect(&_spatialCorrelationTestAction, &TriggerAction::triggered, [this, &corrFilter]() {
-        corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALTEST);
         _geneSurferPlugin->updateFilterLabel();
         _geneSurferPlugin->updateSelection();
         });

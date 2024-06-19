@@ -187,8 +187,6 @@ private:
     /** compute the mean floodfill wave numbers by each annotation label in the floodfill*/
     void computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg);
 
-    void loadGlobalCorr(); // experiment for spatial test mode
-
 private:
 
     DataStorage                        _dataStore;
@@ -268,12 +266,6 @@ private:
     AvgExpressionStatus                _avgExprStatus = AvgExpressionStatus::NONE;
     QString                            _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
     QString                            _currentEnrichmentAPI = "ToppGene"; // current enrichment API
-
-    // Experiment
-    std::vector<float>                 _corrSpatialTotalST;
-    std::vector<float>                 _corrSpatialTotalSC;
-    
-  
 
 public:
     bool isDataInitialized() { return _dataInitialized; }

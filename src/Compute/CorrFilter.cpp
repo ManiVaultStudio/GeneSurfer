@@ -470,8 +470,6 @@ namespace corrFilter
             return "Diff";
         case CorrFilterType::MORAN:
             return "Moran";
-        case CorrFilterType::SPATIALTEST:
-            return "SpatialTest";
         case CorrFilterType::SPATIALZ:
             return "Spatial Z";
         case CorrFilterType::SPATIALY:
