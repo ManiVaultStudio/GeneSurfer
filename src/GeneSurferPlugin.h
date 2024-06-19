@@ -5,7 +5,6 @@
 #include "compute/DataStore.h"
 #include "compute/DataMatrix.h"
 #include "Compute/EnrichmentAnalysis.h"
-#include "Compute/fastcluster.h"
 #include "Compute/CorrFilter.h"
 #include "Compute/DataSubset.h"
 
@@ -21,6 +20,7 @@
 #include <widgets/DropWidget.h>
 
 #include <Eigen/Dense>
+#include <fastcluster.h>
 
 #include <QWidget>
 #include <QNetworkReply>

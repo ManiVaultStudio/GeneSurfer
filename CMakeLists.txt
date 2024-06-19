@@ -48,10 +48,6 @@ set(PLUGIN
 )
 
 set(Compute
-    src/Compute/fastcluster.cpp
-    src/Compute/fastcluster.h
-    src/Compute/fastcluster_dm.h
-    src/Compute/fastcluster_R_dm.h
     src/Compute/DataMatrix.cpp
     src/Compute/DataMatrix.h
     src/Compute/DataStore.cpp
@@ -112,6 +108,8 @@ source_group(Aux FILES ${AUX})
 add_library(${GENESURFER} SHARED ${PLUGIN} ${Compute} ${Actions} ${AUX} ${WEB} ${RESOURCE_FILES})
 set_target_properties(${GENESURFER} PROPERTIES CXX_STANDARD 17)
 
+# Include the fastcluster source file
+target_sources(GeneSurfer PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/hclust/fastcluster.cpp)
 
 set(LIBRARY_INSTALL_DIR ${PROJECT_BINARY_DIR})
 include(InstallArtifactoryPackage)
@@ -144,6 +142,7 @@ endif()
 # Include mv headers, including system data plugins
 target_include_directories(${GENESURFER} PRIVATE "${MV_INSTALL_DIR}/$<CONFIGURATION>/include/")
 target_include_directories(${GENESURFER} SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/Eigen/include)
+target_include_directories(${GENESURFER} SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/hclust)
 
 # Request C++17
 #target_compile_features(${GENESURFER} PRIVATE cxx_std_17)
