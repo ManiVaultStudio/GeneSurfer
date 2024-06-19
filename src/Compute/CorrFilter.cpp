@@ -807,6 +807,13 @@ namespace corrFilter
         //Eigen::VectorXf meanB = allDataMatrix.colwise().mean();
         //Eigen::VectorXf contrast = meanA - meanB;
 
+        qDebug() << "<<<<< contrast size: " << contrast.size() << " contrast min: " << contrast.minCoeff() << " contrast max: " << contrast.maxCoeff();
+        qDebug() << "contrast[0] " << contrast[0] << " contrast[1] " << contrast[1] << " contrast[2] " << contrast[2];
+        qDebug() << "meanA size: " << meanA.size() << " meanA min: " << meanA.minCoeff() << " meanA max: " << meanA.maxCoeff();
+        qDebug() << "meanA[0] " << meanA[0] << " meanA[1] " << meanA[1] << " meanA[2] " << meanA[2];
+        qDebug() << "meanB size: " << meanB.size() << " meanB min: " << meanB.minCoeff() << " meanB max: " << meanB.maxCoeff();
+        qDebug() << "meanB[0] " << meanB[0] << " meanB[1] " << meanB[1] << " meanB[2] " << meanB[2];
+
         // Norm to range [0, 1] for plotting in the bar chart
         float minContrast = contrast.minCoeff();
         float maxContrast = contrast.maxCoeff();

@@ -940,6 +940,9 @@ void GeneSurferPlugin::updateSelection()
             const QString& clusterName = _clustersToKeep[i];
             _countsSubset[i] = static_cast<float>(_countsMap[clusterName]); // number of pt in each cluster WITHIN the selection
         }
+        /*qDebug() << "GeneSurferPlugin::updateSelection(): _countsSubset size: " << _countsSubset.size();
+        qDebug() << "_clustersToKeep[0] " << _clustersToKeep[0] << "_countsSubset[0]" << _countsSubset[0];*/
+
         //output _sqrtCounts for checking using std::cout
        /* std::cout << "sqrtCounts: ";
         for (int i = 0; i < _sqrtCounts.size(); ++i) {
@@ -1042,6 +1045,7 @@ void GeneSurferPlugin::updateSelection()
         
         // add weighting for number of cells in each cluster
         Eigen::VectorXf ratioCountsSubset = _countsSubset / _sortedFloodIndices.size() * _subsetDataAvgOri.rows();
+        //Eigen::VectorXf ratioCountsSubset = (_countsSubset / float(_sortedFloodIndices.size())) * float(_subsetDataAvgOri.rows())
         Eigen::VectorXf ratioCountsAll = _countsAll / _numPoints * _avgExpr.rows();
 
         qDebug() << "_countsSubset size: " << _countsSubset.size() << "_countsSubset[0]: " << _countsSubset[0] << "_sortedFloodIndices.size()" << _sortedFloodIndices.size() <<"_subsetDataAvgOri.rows()" << _subsetDataAvgOri.rows();
@@ -2022,7 +2026,7 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
     _cellLabels.clear();
     _cellLabels.resize(_numPoints);
 
-    //for (int i = 0; i < labelClusters.size(); ++i) {
+
     for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
         QString clusterName = _clusterNamesAvgExpr[i];
         bool found = false;
@@ -2051,7 +2055,6 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
 
     qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): _cellLabels size: " << _cellLabels.size();
     qDebug() << "_cellLabels[0]" << _cellLabels[0];
-    qDebug() << "_countsAll size: " << _countsAll.size() << " _countsAll[0]: " << _countsAll[0] << " _countsAll[1]: " << _countsAll[1];
 }
 
 void GeneSurferPlugin::countLabelDistribution() 
@@ -2284,7 +2287,36 @@ void GeneSurferPlugin::clusterGenes()
         }
         else {
             // add weighting 
+            qDebug() << "computePairwiseCorrelationVector: 3D dataset singlecell";
+            qDebug() << "computePairwiseCorrelationVector: _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
+            qDebug() << "computePairwiseCorrelationVector: _countsSubset size: " << _countsSubset.size() << "_countsSubset[0] " << _countsSubset[0];
+            qDebug() << "computePairwiseCorrelationVector: filteredDimNames size: " << filteredDimNames.size() << " filteredDimIndices size: " << filteredDimIndices.size();
+
             _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, _countsSubset, corrFilteredGene);// SC: with weighting
+
+            // output the element in the first row and first column of corrFilteredGene
+            qDebug() << "GeneSurferPlugin::clusterGenes(): corrFilteredGene(0,0): " << corrFilteredGene(0, 0);
+            qDebug() << "GeneSurferPlugin::clusterGenes(): corrFilteredGene(1,0): " << corrFilteredGene(1, 0);
+            qDebug() << " Mean of corrFilteredGene.row(0) : " << corrFilteredGene.row(0).mean();
+
+            // test without weighting
+            Eigen::MatrixXf corrFilteredGeneTEST(filteredDimNames.size(), filteredDimNames.size());
+            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGeneTEST);
+
+            // compare the two correlation matrices
+            /*std::cout << "Mean of corrFilteredGene: " << corrFilteredGene.mean() << std::endl;
+            std::cout << "Mean of corrFilteredGeneTEST: " << corrFilteredGeneTEST.mean() << std::endl;
+
+            std::cout << "Norm of corrFilteredGene: " << corrFilteredGene.norm() << std::endl;
+            std::cout << "Norm of corrFilteredGeneTEST: " << corrFilteredGeneTEST.norm() << std::endl;*/
+
+            /*Eigen::MatrixXf diffMatrix = corrFilteredGene - corrFilteredGeneTEST;
+            std::cout << "Norm of Difference Matrix: " << diffMatrix.norm() << std::endl;
+            std::cout << "Max difference in matrices: " << diffMatrix.cwiseAbs().maxCoeff() << std::endl;
+
+            std::cout << "Correlation Matrix with Weighting: \n" << corrFilteredGene << std::endl;
+            std::cout << "Correlation Matrix without Weighting: \n" << corrFilteredGeneTEST << std::endl;
+            std::cout << "Difference Matrix: \n" << diffMatrix << std::endl;*/
         }
             
     }
