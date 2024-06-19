@@ -10,7 +10,6 @@ namespace corrFilter
 {
     enum class CorrFilterType
     {
-        SPATIAL,// x+y+z
         SPATIALZ,//z
         SPATIALY,//y
         DIFF,
@@ -19,14 +18,7 @@ namespace corrFilter
 
     class SpatialCorr
     {
-    public:
-        // 2D
-        void computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<mv::Vector2f>& positions, std::vector<float>& corrVector) const;
-        // 3D all flood indices
-        void computeCorrelationVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& corrVector) const;
-        // 3D cluster with mean position
-        void computeCorrelationVector(const DataMatrix& dataMatrix, std::vector<float>& xPositions, std::vector<float>& yPositions, std::vector<float>& zPositions, std::vector<float>& corrVector) const;
-        
+    public:       
         // 2D + 3D all flood indices + one dimension
         void computeCorrelationVectorOneDimension(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& positionsOneDimension, std::vector<float>& corrVector) const;
         // 3D cluster with mean position + one dimension
@@ -53,7 +45,6 @@ namespace corrFilter
         // for 3D cluster with mean position + weighting
         void computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, const Eigen::VectorXf& weights, DataMatrix& corrMatrix) const;
 
-
         QString getCorrFilterTypeAsString() const;
 
         // experiment moran's I
@@ -78,7 +69,7 @@ namespace corrFilter
         const Diff&   getDiffFilter()       const { return _diff; }
 
     private:
-        CorrFilterType        _type{CorrFilterType::SPATIAL};
+        CorrFilterType        _type{CorrFilterType::DIFF};
         SpatialCorr          _spatialCorr;
         Diff          _diff;
     };

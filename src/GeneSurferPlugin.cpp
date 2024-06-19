@@ -891,49 +891,6 @@ void GeneSurferPlugin::updateSelection()
     // Compute correlation for filtering genes //
     /////////////////////////////////////////////
     
-    // DELETE SpatialCorrSum
-    ////-------------- Spatial Correlation -------------- // TODO: add weighting for SC
-    //if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
-    //    qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorr";
-    //    _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
-    //}
-    //if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
-    //    qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorr";
-
-    //    std::vector<float> xPositions;
-    //    _positionDataset->extractDataForDimension(xPositions, 2);
-    //    std::vector<float> yPositions;
-    //    _positionDataset->extractDataForDimension(yPositions, 1);
-    //    std::vector<float> zPositions;
-    //    _positionDataset->extractDataForDimension(zPositions, 0);
-    //    _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, _corrGeneVector);
-    //}
-    //if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
-    //    qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorr";
-    //    DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
-    //    _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
-    //}
-    //if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
-    //    qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorr";
-
-    //    // option 1: compute with all flood cells 
-    //    /*DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
-    //    std::vector<float> xPositions;
-    //    _positionDataset->extractDataForDimension(xPositions, 2);
-    //    std::vector<float> yPositions;
-    //    _positionDataset->extractDataForDimension(yPositions, 1);
-    //    std::vector<float> zPositions;
-    //    _positionDataset->extractDataForDimension(zPositions, 0);
-    //    _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, populatedSubsetAvg, xPositions, yPositions, zPositions, _corrGeneVector);*/
-
-    //    // option 2: compute with clusters + mean coordinates
-    //    std::vector<float> xAvg;
-    //    std::vector<float> yAvg;
-    //    std::vector<float> zAvg;
-    //    computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
-    //    _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
-    //}
-    
     // -------------- Diff --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
         qDebug() << ">>>>>Compute corr: 2D + ST + Diff";
