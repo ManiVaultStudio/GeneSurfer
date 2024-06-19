@@ -91,7 +91,6 @@ set(Actions
 set(WEB
     res/chart/bar_chart.html
     res/chart/bar_chart.tools.js
-    res/js_libs/d3.v3.min.js
     res/js_libs/qwebchannel.tools.js
 )
 
