@@ -933,27 +933,7 @@ void GeneSurferPlugin::updateSelection()
     //    computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
     //    _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
     //}
-    // -------------- HD Correlation --------------
-    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {   
-        qDebug() << ">>>>>Compute corr: 2D + ST + HDCorr";
-        _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData, _corrGeneVector);
-    }
-    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
-        qDebug() << ">>>>>Compute corr: 3D + ST + HDCorr";
-        _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData3D, _corrGeneVector);
-    }
-    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
-        qDebug() << ">>>>>Compute corr: 2D + SingleCell + HDCorr";
-        std::vector<float> waveAvg;
-        computeMeanWaveNumbersByCluster(waveAvg);
-        _corrFilter.getHDCorrFilter().computeCorrelationVector(waveAvg, _subsetDataAvgOri, _corrGeneVector);
-    }
-    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
-        qDebug() << ">>>>>Compute corr: 3D + SingleCell + HDCorr";
-        std::vector<float> waveAvg;
-        computeMeanWaveNumbersByCluster(waveAvg);
-        _corrFilter.getHDCorrFilter().computeCorrelationVector(waveAvg, _subsetDataAvgOri, _corrGeneVector);
-    }
+    
     // -------------- Diff --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
         qDebug() << ">>>>>Compute corr: 2D + ST + Diff";

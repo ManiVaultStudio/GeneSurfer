@@ -464,8 +464,6 @@ namespace corrFilter
         switch (_type) {
         case CorrFilterType::SPATIAL:
             return "Spatial";
-        case CorrFilterType::HD:
-            return "HD";
         case CorrFilterType::DIFF:
             return "Diff";
         case CorrFilterType::MORAN:
@@ -732,44 +730,6 @@ namespace corrFilter
 
             if (std::isnan(correlation)) { correlation = 0.0f; }
             corrVector[i] = correlation;
-        }
-    }
-
-    void HDCorr::computeCorrelationVector(const std::vector<float>& waveNumbers, const DataMatrix& dataMatrix, std::vector<float>& corrVector) const
-    {   // scRNA-seq
-        Eigen::VectorXf eigenWaveNumbers(waveNumbers.size());
-        std::copy(waveNumbers.begin(), waveNumbers.end(), eigenWaveNumbers.data());
-
-        Eigen::VectorXf centeredWaveNumbers = eigenWaveNumbers - Eigen::VectorXf::Constant(eigenWaveNumbers.size(), eigenWaveNumbers.mean());
-        float waveNumbersNorm = centeredWaveNumbers.squaredNorm();
-
-        corrVector.clear();
-        corrVector.resize(dataMatrix.cols());
-#pragma omp parallel for
-        for (int col = 0; col < dataMatrix.cols(); ++col) {
-            Eigen::VectorXf centered = dataMatrix.col(col) - Eigen::VectorXf::Constant(dataMatrix.col(col).size(), dataMatrix.col(col).mean());
-            float correlation = centered.dot(centeredWaveNumbers) / std::sqrt(centered.squaredNorm() * waveNumbersNorm);
-            if (std::isnan(correlation)) { correlation = 0.0f; }
-            corrVector[col] = correlation;
-        }
-    }
-
-    void HDCorr::computeCorrelationVector(const std::vector<int>& waveNumbers, const DataMatrix& dataMatrix, std::vector<float>& corrVector) const
-    {   // ST
-        Eigen::VectorXf eigenWaveNumbers(waveNumbers.size());
-        std::copy(waveNumbers.begin(), waveNumbers.end(), eigenWaveNumbers.data());
-
-        Eigen::VectorXf centeredWaveNumbers = eigenWaveNumbers - Eigen::VectorXf::Constant(eigenWaveNumbers.size(), eigenWaveNumbers.mean());
-        float waveNumbersNorm = centeredWaveNumbers.squaredNorm();
-
-        corrVector.clear();
-        corrVector.resize(dataMatrix.cols());
-#pragma omp parallel for
-        for (int col = 0; col < dataMatrix.cols(); ++col) {
-            Eigen::VectorXf centered = dataMatrix.col(col) - Eigen::VectorXf::Constant(dataMatrix.col(col).size(), dataMatrix.col(col).mean());
-            float correlation = centered.dot(centeredWaveNumbers) / std::sqrt(centered.squaredNorm() * waveNumbersNorm);
-            if (std::isnan(correlation)) { correlation = 0.0f; }
-            corrVector[col] = correlation;
         }
     }
 

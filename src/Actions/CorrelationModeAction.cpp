@@ -9,7 +9,6 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     VerticalGroupAction(parent, title),
     _geneSurferPlugin(dynamic_cast<GeneSurferPlugin*>(parent->parent())),
     _spatialCorrelationAction(this, "Fliter by Spatial Correlation"),
-    _hdCorrelationAction(this, "Filter by HD Correlation"),
     _diffAction(this, "Filter by diff"),
     _moranAction(this, "Filter by Moran's I"),
     _spatialCorrelationZAction(this, "Filter by Spatial Correlation Z"),
@@ -20,14 +19,12 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     setLabelSizingType(LabelSizingType::Auto);
 
     addAction(&_spatialCorrelationAction);
-    addAction(&_hdCorrelationAction);
     addAction(&_diffAction);
     addAction(&_moranAction);
     addAction(&_spatialCorrelationZAction);
     addAction(&_spatialCorrelationYAction);
 
     _spatialCorrelationAction.setToolTip("Spatial correlation mode");
-    _hdCorrelationAction.setToolTip("HD correlation mode");
     _diffAction.setToolTip("Diff mode");
     _moranAction.setToolTip("Moran's I mode");
     _spatialCorrelationZAction.setToolTip("Spatial correlation mode Z");
@@ -40,12 +37,6 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
 
     connect(&_spatialCorrelationAction, &TriggerAction::triggered, [this, &corrFilter]() {
         corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIAL);
-        _geneSurferPlugin->updateFilterLabel();
-        _geneSurferPlugin->updateSelection();
-        });
-
-    connect(&_hdCorrelationAction, &TriggerAction::triggered, [this, &corrFilter]() {
-        corrFilter.setFilterType(corrFilter::CorrFilterType::HD);
         _geneSurferPlugin->updateFilterLabel();
         _geneSurferPlugin->updateSelection();
         });
@@ -117,8 +108,6 @@ void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
 
     if (variantMap["FilterMode"] == "Spatial")
         corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIAL);
-    else if (variantMap["FilterMode"] == "HD")
-        corrFilter.setFilterType(corrFilter::CorrFilterType::HD);
     else if (variantMap["FilterMode"] == "Diff")
         corrFilter.setFilterType(corrFilter::CorrFilterType::DIFF);
     else if (variantMap["FilterMode"] == "Moran")

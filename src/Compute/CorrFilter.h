@@ -13,7 +13,6 @@ namespace corrFilter
         SPATIAL,// x+y+z
         SPATIALZ,//z
         SPATIALY,//y
-        HD,
         DIFF,
         MORAN
     };
@@ -36,15 +35,6 @@ namespace corrFilter
         // TEST 3D cluster with mean position + one dimension + weighting
         void computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, const Eigen::VectorXf& weights, std::vector<float>& corrVector) const;
     
-    };
-
-    class HDCorr
-    {
-    public:
-        // scRNA-seq
-        void computeCorrelationVector(const std::vector<float>& waveNumbers, const DataMatrix& dataMatrix, std::vector<float>& corrVector) const;
-        // ST
-        void computeCorrelationVector(const std::vector<int>& waveNumbers, const DataMatrix& dataMatrix, std::vector<float>& corrVector) const;
     };
 
     class Diff
@@ -80,19 +70,16 @@ namespace corrFilter
 
         // Non-const member functions
         SpatialCorr&         getSpatialCorrFilter()  { return _spatialCorr; }
-        HDCorr&         getHDCorrFilter()       { return _highdimCorr; }
         Diff&         getDiffFilter()       { return _diff; }
 
         // Const member functions
         CorrFilterType                 getFilterType()         const { return _type; }      
         const SpatialCorr&   getSpatialCorrFilter()  const { return _spatialCorr; }
-        const HDCorr&   getHDCorrFilter()       const { return _highdimCorr; }
         const Diff&   getDiffFilter()       const { return _diff; }
 
     private:
         CorrFilterType        _type{CorrFilterType::SPATIAL};
         SpatialCorr          _spatialCorr;
-        HDCorr          _highdimCorr;
         Diff          _diff;
     };
 }

@@ -45,14 +45,12 @@ public: // Serialization
 
 public: // Action getters
     TriggerAction& getSpatialCorrelationAction() { return _spatialCorrelationAction; }
-    TriggerAction& getHDCorrelationAction() { return _hdCorrelationAction; }
     TriggerAction& getDiffAction() { return _diffAction; }
     TriggerAction& getMoranAction() { return _moranAction; }
 
 private:
     GeneSurferPlugin*   _geneSurferPlugin;     /** Pointer to the GeneSurfer plugin */
     TriggerAction       _spatialCorrelationAction;     /** Trigger action for activating the spatial correlation mode */
-    TriggerAction       _hdCorrelationAction;     /** Trigger action for activating the HD correlation mode */
     TriggerAction       _diffAction;     /** Trigger action for activating the diff mode */
     TriggerAction       _moranAction;     // experiment
     TriggerAction       _spatialCorrelationZAction;     // experiment
