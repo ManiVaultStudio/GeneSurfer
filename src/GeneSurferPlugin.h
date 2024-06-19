@@ -128,17 +128,11 @@ private:
     /** Read _floodFillDataset from data hierarchy */
     void updateFloodFillDataset();
 
-    /** Update the highlighted selection of mouse in _scatterViews */
-    void updateScatterSelection();
-
     /** Update the color scalars in _scatterViews */
     void updateScatterColors();
 
     /** Update the _dimView */
     void updateDimView(const QString& selectedDim);
-
-    /** order the 1D vector according to the spatial coordinates */
-    void orderSpatially(const std::vector<int>& unsortedIndices, const std::vector<int>& unsortedWave, std::vector<mv::Vector2f>& sortedCoordinates, std::vector<int>& sortedIndices, std::vector<int>& sortedWave);
 
     /** Cluster genes based on their pairwise correlations */
     void clusterGenes();
