@@ -187,6 +187,8 @@ private:
     /** compute the mean floodfill wave numbers by each annotation label in the floodfill*/
     void computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg);
 
+    void loadGlobalCorr(); // experiment for spatial test mode
+
 private:
 
     DataStorage                        _dataStore;
@@ -198,7 +200,7 @@ private:
     // Data
     mv::Dataset<Points>                _positionDataset;         // Smart pointer to points dataset for point position
     mv::Dataset<Points>                _positionSourceDataset;   // Smart pointer to source of the points dataset for point position (if any)
-    std::vector<mv::Vector2f>          _positions;               // Point positions
+    std::vector<mv::Vector2f>          _positions;               // Point positions - if 3D, _positions is the 2D projection of the 3D data
     int32_t                            _numPoints;               // Number of point positions
     std::vector<QString>               _enabledDimNames;
     bool                               _dataInitialized = false;
@@ -241,6 +243,7 @@ private:
     // Enrichment Analysis
     EnrichmentAnalysis*                _client;                  // Enrichment analysis client 
     QVariantList                       _enrichmentResult;        // Cached enrichment analysis result, in case the user clicks on one cell
+    QString                            _currentEnrichmentSpecies = "mmusculus"; // current enrichment species
 
     // Single cell data
     mv::Dataset<Points>                _avgExprDataset;          // Point dataset for average expression of each cluster
@@ -255,6 +258,8 @@ private:
     std::vector<QString>               _cellLabels;              // Labels for each point
     std::unordered_map<QString, int>   _countsMap;               // Count distribution of labels WITHIN floodfill
     std::vector<QString>               _clustersToKeep;          // clusters to keep for avg expression - same order as subset row - cluster alias name 
+    Eigen::VectorXf                    _countsSubset;            // counts for each label within the subset - same order as subset row
+    Eigen::VectorXf                    _countsAll;               // counts for each label within the entire dataset - same order as avgExpr row
 
     // Flags
     bool                               _isSingleCell = false;    // whether to use avg expression from single cell data
@@ -263,6 +268,11 @@ private:
     AvgExpressionStatus                _avgExprStatus = AvgExpressionStatus::NONE;
     QString                            _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
     QString                            _currentEnrichmentAPI = "ToppGene"; // current enrichment API
+
+    // Experiment
+    std::vector<float>                 _corrSpatialTotalST;
+    std::vector<float>                 _corrSpatialTotalSC;
+    
   
 
 public:
@@ -298,6 +308,9 @@ public:
 
     void setEnrichmentAPIOptions(QStringList options);
 
+    void updateEnrichmentSpecies();
+
+
 public: 
     /** Get reference to the scatter plot widget */
     std::vector<ScatterView*>& getProjectionViews() { return _scatterViews; }
@@ -325,6 +338,7 @@ protected:
     ColorMap1DAction             _colorMapAction;         // Color map action
     HorizontalToolbarAction      _primaryToolbarAction;   // Horizontal toolbar for primary content 
     HorizontalToolbarAction      _secondaryToolbarAction; // Secondary toolbar for secondary content - for enrichment analysis settings
+    HorizontalToolbarAction      _tertiaryToolbarAction;  // Tertiary toolbar for tertiary content - for slice slider
 };
 
 /**

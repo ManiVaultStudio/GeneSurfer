@@ -87,6 +87,7 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _settingsAction(this, "Settings Action"),
     _primaryToolbarAction(this, "PrimaryToolbar"),
     _secondaryToolbarAction(this, "SecondaryToolbar"),
+    _tertiaryToolbarAction(this, "TertiaryToolbar"),
     _selectedDimIndex(-1),
     _selectedClusterIndex(0),
     _colorMapAction(this, "Color map", "RdYlBu")
@@ -101,6 +102,8 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction());
 
     _secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
+
+    _tertiaryToolbarAction.addAction(&_settingsAction.getSliceAction());
 
     for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
     {
@@ -153,7 +156,7 @@ void GeneSurferPlugin::init()
     chartTableDimLayout->addWidget(_chartWidget, 60);
     chartTableDimLayout->addLayout(tableDimLayout, 40);
 
-    layout->addLayout(chartTableDimLayout, 1);// stretch factor same as clusterViewLayout
+    layout->addLayout(chartTableDimLayout, 50);// stretch factor same as clusterViewLayout
 
     auto clusterViewMainLayout = new QVBoxLayout();
     clusterViewMainLayout->setContentsMargins(6, 6, 6, 6);
@@ -170,7 +173,9 @@ void GeneSurferPlugin::init()
     }
     clusterViewMainLayout->addLayout(clusterViewRow2);
 
-    layout->addLayout(clusterViewMainLayout, 1);
+    layout->addWidget(_tertiaryToolbarAction.createWidget(&getWidget()));
+
+    layout->addLayout(clusterViewMainLayout, 50);
 
     // Apply the layout
     getWidget().setLayout(layout);
@@ -259,6 +264,7 @@ void GeneSurferPlugin::init()
                     {
                         _sliceDataset = candidateDataset;
                         updateSlice(0);// TODO: hard code 0?? March29
+                        loadGlobalCorr(); // TODO: temp code for loading global correlation
                     });
             }
             else {
@@ -300,28 +306,24 @@ void GeneSurferPlugin::init()
             return;
         }
         qDebug() << ">>>>>GeneSurferPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
+        qDebug() << "Before computeSubset" << "_sliceDataset.isValid = " << _sliceDataset.isValid();
 
-        // test to output the first n selected indices
-        /*int testSize;
-        if (selection->indices.size() > 500)
-            testSize = 500;
-        else 
-            testSize = selection->indices.size();
-
-        for (int i = 0; i < testSize; i++) {
-            std::cout << selection->indices[i] << ", ";
-        }
-        std::cout << std::endl;*/
-
-        if (!_sliceDataset.isValid()) {
+        if (!_sliceDataset.isValid()) 
+        {
+            qDebug() << "Before computeSubset 2D";
             _computeSubset.updateSelectedData(_positionDataset, selection, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
         }
-        else {
-            _computeSubset.updateSelectedData(_positionDataset, selection, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices);
+        else 
+        {
+            qDebug() << "Before computeSubset 3D";
+            _computeSubset.updateSelectedData(_positionDataset, selection, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices); 
+            // TODO check if _onSliceFloodIndices is needed
+            qDebug() << "_sortedFloodIndices.size = " << _sortedFloodIndices.size();
+            qDebug() << "_onSliceFloodIndices.size = " << _onSliceFloodIndices.size();
         }
 
         updateSelection();
-        });
+     });
 
     _client = new EnrichmentAnalysis(this);
     connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &GeneSurferPlugin::updateEnrichmentTable);
@@ -338,6 +340,83 @@ void GeneSurferPlugin::loadData(const mv::Datasets& datasets)
 
     // Load the first dataset
     _positionDataset = datasets.first();
+}
+
+void GeneSurferPlugin::loadGlobalCorr()
+{
+    // temp code for loading global correlation
+    // Experiment - load _corrSpatialTotal
+    
+    // ST data
+    int columnIndexST = 5;  // 
+    bool firstLineST = true;
+    QFile fileST(":/gene_surfer/ABCcorr_geneWspatialcoordinates_ST.csv/");
+    if (!fileST.open(QIODevice::ReadOnly)) {
+        qDebug() << "Failed to open corrSpatialTotalST file";
+        return;
+    }
+
+    QTextStream inST(&fileST);
+    while (!inST.atEnd()) {
+        QString line = inST.readLine();
+
+        // Skip the first line (header)
+        if (firstLineST) {
+            firstLineST = false;
+            continue;
+        }
+
+        QStringList cells = line.split(',');
+        if (cells.size() > columnIndexST) {
+            bool ok;
+            float value = cells[columnIndexST].toFloat(&ok);
+            if (ok) {
+                _corrSpatialTotalST.push_back(value);
+            }
+            else {
+                qDebug() << "Conversion error ST:" << value << "from line:" << line << "columIndexST" << columnIndexST;
+            }
+        }
+    }
+
+    fileST.close();
+    qDebug() << "GeneSurferPlugin::loadGlobalCorr(): _corrSpatialTotalST size: " << _corrSpatialTotalST.size();
+
+    // SC data
+    int columnIndexSC = 5;
+    bool firstLineSC = true;
+    QFile fileSC(":/gene_surfer/ABCcorr_geneWspatialcoordinates_SCAvg.csv/");
+    if (!fileSC.open(QIODevice::ReadOnly)) {
+        qDebug() << "Failed to open corrSpatialTotalSC file";
+        return;
+    }
+
+    QTextStream inSC(&fileSC);
+    while (!inSC.atEnd()) {
+        QString line = inSC.readLine();
+
+        // Skip the first line (header)
+        if (firstLineSC) {
+            firstLineSC = false;
+            continue;
+        }
+
+        QStringList cells = line.split(',');
+        if (cells.size() > columnIndexSC) {
+            bool ok;
+            float value = cells[columnIndexSC].toFloat(&ok);
+            if (ok) {
+                _corrSpatialTotalSC.push_back(value);
+            }
+            else {
+                qDebug() << "Conversion error SC:" << cells[columnIndexSC];
+            }
+        }
+    }
+
+    fileSC.close();
+    qDebug() << "GeneSurferPlugin::loadGlobalCorr(): _corrSpatialTotalSC size: " << _corrSpatialTotalSC.size();
+
 }
 
 void GeneSurferPlugin::positionDatasetChanged()
@@ -392,6 +471,7 @@ void GeneSurferPlugin::positionDatasetChanged()
     updateFloodFillDataset();
 
     _dataInitialized = true;
+
 }
 
 void GeneSurferPlugin::convertDataAndUpdateChart()
@@ -486,7 +566,14 @@ void GeneSurferPlugin::updateFloodFillDataset()
         qDebug() << "Warning: No floodFillDataset named allFloodNodesIndices found!";
         return;
     }
+
     qDebug() << "GeneSurferPlugin::updateFloodFillDataset: dataSets size: " << _floodFillDataset->getNumPoints();
+
+    if (_floodFillDataset->getNumPoints() == 0)
+    {
+        qDebug() << "Warning: No data in floodFillDataset named allFloodNodesIndices!";
+        return;
+    }
      
     if (!_sliceDataset.isValid()) {
         _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
@@ -514,8 +601,6 @@ void GeneSurferPlugin::updateSelectedDim() {
     for (int i = 0; i < _dataStore.getProjectionView().rows(); i++) {
         _positions[i].set(_dataStore.getProjectionView()(i, 0), _dataStore.getProjectionView()(i, 1));
     }
-
-    //qDebug() << "GeneSurferPlugin::updateSelectedDim(): positions size: " << positions.size();
 
     updateViewData(_positions);
 }
@@ -758,6 +843,7 @@ void GeneSurferPlugin::updateEnrichmentAPI()
     getFuntionalEnrichment();
 }
 
+
 void GeneSurferPlugin::setEnrichmentAPI(QString apiName)
 {
     _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().setCurrentText(apiName);
@@ -766,6 +852,28 @@ void GeneSurferPlugin::setEnrichmentAPI(QString apiName)
 void GeneSurferPlugin::setEnrichmentAPIOptions(QStringList options)
 {
     _settingsAction.getEnrichmentAction().getEnrichmentAPIPickerAction().setOptions(options);
+}
+
+
+void GeneSurferPlugin::updateEnrichmentSpecies()
+{
+    QString selectedSpecies = _settingsAction.getEnrichmentAction().getSpeciesPickerAction().getCurrentText();
+
+    if (selectedSpecies == "Mus musculus")
+    {
+        _currentEnrichmentSpecies = "mmusculus";
+        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+        getFuntionalEnrichment();
+
+    }
+    else if (selectedSpecies == "Homo sapiens")
+    {
+        _currentEnrichmentSpecies = "hsapiens";
+        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
+        getFuntionalEnrichment();
+    }
+    else
+        qDebug() << "ERROR: no valid species selected for enrichment analysis";
 }
 
 void GeneSurferPlugin::updateSelection()
@@ -784,6 +892,7 @@ void GeneSurferPlugin::updateSelection()
     qDebug() << "GeneSurferPlugin::updateSelection(): start... ";
     auto start = std::chrono::high_resolution_clock::now();
 
+
     ////////////////////
     // Compute subset //
     ////////////////////
@@ -794,9 +903,14 @@ void GeneSurferPlugin::updateSelection()
     if (!_isSingleCell && _sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 3D + ST";
         //subset data only contains the onSliceFloodIndice
-        _computeSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData);
+        qDebug() << "GeneSurferPlugin::updateSelection(): _onSliceFloodIndices size: " << _onSliceFloodIndices.size();
+        _computeSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData); //TODO: check if needed
+        qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData size: " << _subsetData.rows() << " " << _subsetData.cols();
         //subset data contains all floodfill indices     
+        qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
         _computeSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
+        qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
+
     }
     if (_isSingleCell && !_sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 2D + SingleCell";
@@ -804,20 +918,58 @@ void GeneSurferPlugin::updateSelection()
         _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
         _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
         _subsetData = _subsetDataAvgOri;
+
+        // add weighting
+        qDebug() << "GeneSurferPlugin::updateSelection(): _countsMap size: " << _countsMap.size();
+        qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
+        _countsSubset.resize(_clustersToKeep.size());
+        for (int i = 0; i < _clustersToKeep.size(); ++i) {
+            const QString& clusterName = _clustersToKeep[i];
+            _countsSubset[i] = static_cast<float>(_countsMap[clusterName]); // number of pt in each cluster WITHIN the selection
+        }
     }
     if (_isSingleCell && _sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 3D + SingleCell";
         countLabelDistribution();
         _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
+        
+        // add weighting
+        qDebug() << "GeneSurferPlugin::updateSelection(): _countsMap size: " << _countsMap.size();
+        qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
+        _countsSubset.resize(_clustersToKeep.size());
+        for (int i = 0; i < _clustersToKeep.size(); ++i) {
+            const QString& clusterName = _clustersToKeep[i];
+            _countsSubset[i] = static_cast<float>(_countsMap[clusterName]); // number of pt in each cluster WITHIN the selection
+        }
+        /*qDebug() << "GeneSurferPlugin::updateSelection(): _countsSubset size: " << _countsSubset.size();
+        qDebug() << "_clustersToKeep[0] " << _clustersToKeep[0] << "_countsSubset[0]" << _countsSubset[0];*/
+
+        //output _sqrtCounts for checking using std::cout
+       /* std::cout << "sqrtCounts: ";
+        for (int i = 0; i < _sqrtCounts.size(); ++i) {
+            std::cout << _clustersToKeep[i].toStdString() << " " << _countsMap[_clustersToKeep[i]] << " " << _sqrtCounts[i] << " ";
+        }*/
+        /*qDebug() << "counts[0] and counts[1] " << counts[0] << " " << counts[1];
+        std::cout << "First 3 elements of the first row Before multiplication:" << std::endl;
+        std::cout << _subsetDataAvgOri.block<1, 3>(0, 0) << std::endl;
+        std::cout << "First 3 elements of the second row Before multiplication:" << std::endl;
+        std::cout << _subsetDataAvgOri.block<1, 3>(1, 0) << std::endl;*/
+        //_subsetDataAvgOri = _subsetDataAvgOri.array().colwise() * _sqrtCounts.array();
+        /*std::cout << "First 3 elements of the first row after multiplication:" << std::endl;
+        std::cout << _subsetDataAvgOri.block<1, 3>(0, 0) << std::endl;
+        std::cout << "First 3 elements of the second row after multiplication:" << std::endl;
+        std::cout << _subsetDataAvgOri.block<1, 3>(1, 0) << std::endl;*/
+
         _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
         _subsetData3D = _subsetDataAvgOri;
     }
 
+    
     //////////////////////////////////////////////
     // Compute correlation for filtering genes //
     /////////////////////////////////////////////
     
-    // -------------- Spatial Correlation --------------
+    //-------------- Spatial Correlation -------------- // TODO: add weighting for SC
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIAL) {
         qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorr";
         _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
@@ -864,33 +1016,276 @@ void GeneSurferPlugin::updateSelection()
         _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData, _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
-        qDebug() << ">>>>>Compute subset: 3D + ST + HDCorr";
+        qDebug() << ">>>>>Compute corr: 3D + ST + HDCorr";
         _corrFilter.getHDCorrFilter().computeCorrelationVector(_sortedWaveNumbers, _subsetData3D, _corrGeneVector);
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
-        qDebug() << ">>>>>Compute subset: 2D + SingleCell + HDCorr";
+        qDebug() << ">>>>>Compute corr: 2D + SingleCell + HDCorr";
         std::vector<float> waveAvg;
         computeMeanWaveNumbersByCluster(waveAvg);
         _corrFilter.getHDCorrFilter().computeCorrelationVector(waveAvg, _subsetDataAvgOri, _corrGeneVector);
     }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::HD) {
-        qDebug() << ">>>>>Compute subset: 3D + SingleCell + HDCorr";
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + HDCorr";
         std::vector<float> waveAvg;
         computeMeanWaveNumbersByCluster(waveAvg);
         _corrFilter.getHDCorrFilter().computeCorrelationVector(waveAvg, _subsetDataAvgOri, _corrGeneVector);
     }
     // -------------- Diff --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << ">>>>>Compute subset: 2D + ST + Diff";
+        qDebug() << ">>>>>Compute corr: 2D + ST + Diff";
         _corrFilter.getDiffFilter().computeDiff(_subsetData, _dataStore.getBaseData(), _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << ">>>>>Compute subset: 3D + ST + Diff";
+        qDebug() << ">>>>>Compute corr: 3D + ST + Diff";
         _corrFilter.getDiffFilter().computeDiff(_subsetData3D, _dataStore.getBaseData(), _corrGeneVector);
     }
     if (_isSingleCell && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << ">>>>>Compute subset: SingleCell +Diff";
-        _corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector);
+        qDebug() << ">>>>>Compute corr: SingleCell +Diff";
+        //_corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector); //without weighting
+        
+        // add weighting for number of cells in each cluster
+        Eigen::VectorXf ratioCountsSubset = _countsSubset / _sortedFloodIndices.size() * _subsetDataAvgOri.rows();
+        //Eigen::VectorXf ratioCountsSubset = (_countsSubset / float(_sortedFloodIndices.size())) * float(_subsetDataAvgOri.rows())
+        Eigen::VectorXf ratioCountsAll = _countsAll / _numPoints * _avgExpr.rows();
+
+        qDebug() << "_countsSubset size: " << _countsSubset.size() << "_countsSubset[0]: " << _countsSubset[0] << "_sortedFloodIndices.size()" << _sortedFloodIndices.size() <<"_subsetDataAvgOri.rows()" << _subsetDataAvgOri.rows();
+        qDebug() << "ratioCountsSubset[0]: " << ratioCountsSubset[0];
+        qDebug() << "max element in _countsSubset: " << *std::max_element(_countsSubset.begin(), _countsSubset.end());
+        qDebug() << "_countsAll size: " << _countsAll.size() << "_countsAll[0]: " << _countsAll[0];
+        qDebug() << "ratioCountsAll[0]: " << ratioCountsAll[0];
+        qDebug() << "max element in _countsAll: " << *std::max_element(_countsAll.begin(), _countsAll.end());
+
+        qDebug() << "_subsetDataAvgOri size: " << _subsetDataAvgOri.rows() << " " << _subsetDataAvgOri.cols();
+        qDebug() << "ratioCountsSubset size" << ratioCountsSubset.size();
+        qDebug() << "_avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();
+        qDebug() << "ratioCountsAll size" << ratioCountsAll.size();
+
+        Eigen::MatrixXf weightedSubsetData = _subsetDataAvgOri.array().colwise() * ratioCountsSubset.array();
+        Eigen::MatrixXf weightedAvgExpr = _avgExpr.array().colwise() * ratioCountsAll.array();
+        _corrFilter.getDiffFilter().computeDiff(weightedSubsetData, weightedAvgExpr, _corrGeneVector);    
+    }
+    // -------------- Experiment Moran's I -------------- // TO DO: add weighting for SC
+    
+    // temporary code only for 2D data and is very slow 
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN) {
+        qDebug() << ">>>>>Compute corr: 2D + ST + Moran";
+        _corrFilter.computeMoranVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+    {
+        qDebug() << ">>>>>Compute corr: 3D + ST + Moran";
+        std::vector<float> xPositions;
+        _positionDataset->extractDataForDimension(xPositions, 2);
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
+        std::vector<float> zPositions;
+        _positionDataset->extractDataForDimension(zPositions, 0);
+        _corrFilter.computeMoranVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, _corrGeneVector);
+
+        // experiment May 8: check how many genes diff<0 in the first _numFilteredGenes
+        std::vector<float> diffVector;
+        Eigen::VectorXf meanA = _subsetData3D.colwise().mean();
+        Eigen::VectorXf meanB = _dataStore.getBaseData().colwise().mean();
+        Eigen::VectorXf contrast = meanA - meanB;
+        diffVector.assign(contrast.data(), contrast.data() + contrast.size());
+        // get the diff values for gens with the highest correlation in _corrGeneVector
+        std::vector<std::tuple<float, float, QString>> combined(_corrGeneVector.size());
+        for (size_t i = 0; i < _corrGeneVector.size(); ++i) {
+            combined[i] = std::make_tuple(std::abs(_corrGeneVector[i]), diffVector[i], _enabledDimNames[i]);
+        }
+        // Partially sort based on correlation values (descending order)
+        std::nth_element(combined.begin(), combined.begin() + _numGenesThreshold, combined.end(),
+            [](const auto& left, const auto& right) {
+                return std::get<0>(left) > std::get<0>(right); // Sort by correlation value
+            });
+        combined.resize(_numGenesThreshold);
+        QStringList negativeDiffGenes;
+        for (const auto& [corr, diff, name] : combined) {
+            if (diff < 0) {
+                negativeDiffGenes << name;
+            }
+        }
+        QString negativeDiffGenesStr = negativeDiffGenes.join(" ");
+        qDebug() << "Number of genes with negative diff values:" << negativeDiffGenes.size();
+        qDebug() << "Genes with negative diff values:" << negativeDiffGenesStr; 
+        // end of experiment May 8
+    }
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+    {
+        qDebug() << ">>>>>Compute corr: 2D + SingleCell + Moran";
+        DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
+        _corrFilter.computeMoranVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
+     }
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+    {
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + Moran";
+        std::vector<float> xAvg;
+        std::vector<float> yAvg;
+        std::vector<float> zAvg;
+        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
+        qDebug() << "GeneSurferPlugin::updateSelection(): xAvg size: " << xAvg.size() << "yAvg size " << yAvg.size() << "zAvg size " << zAvg.size();
+        qDebug() << "GeneSurferPlugin::updateSelection(): _subsetDataAvgOri size: " << _subsetDataAvgOri.rows() << " " << _subsetDataAvgOri.cols();
+        qDebug() << "xAvg[0] " << xAvg[0] << "yAvg[0] " << yAvg[0] << "zAvg[0] " << zAvg[0];
+        qDebug() << "_subsetDataAvgOri(0, 0) " << _subsetDataAvgOri(0, 0);
+
+        _corrFilter.computeMoranVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
+
+        // experiment May 8: check how many genes diff<0 in the first _numFilteredGenes
+        std::vector<float> diffVector;
+        Eigen::VectorXf meanA = _subsetData3D.colwise().mean();
+        Eigen::VectorXf meanB = _avgExpr.colwise().mean();
+        Eigen::VectorXf contrast = meanA - meanB;
+        diffVector.assign(contrast.data(), contrast.data() + contrast.size());
+        // get the diff values for gens with the highest correlation in _corrGeneVector - way 2
+        std::vector<std::tuple<float, float, QString>> combined(_corrGeneVector.size());
+        for (size_t i = 0; i < _corrGeneVector.size(); ++i) {
+            combined[i] = std::make_tuple(std::abs(_corrGeneVector[i]), diffVector[i], _enabledDimNames[i]);
+        }
+        // Partially sort based on correlation values (descending order)
+        std::nth_element(combined.begin(), combined.begin() + _numGenesThreshold, combined.end(),
+            [](const auto& left, const auto& right) {
+                return std::get<0>(left) > std::get<0>(right); // Sort by correlation value
+            });
+        combined.resize(_numGenesThreshold);
+        QStringList negativeDiffGenes;
+        for (const auto& [corr, diff, name] : combined) {
+            if (diff < 0) {
+                negativeDiffGenes << name;
+            }
+        }
+        QString negativeDiffGenesStr = negativeDiffGenes.join(" ");
+        qDebug() << "Number of genes with negative diff values:" << negativeDiffGenes.size();
+        qDebug() << "Genes with negative diff values:" << negativeDiffGenesStr;
+        // end of experiment May 8
+    }
+
+    // -------------- Experiment Spatial test -------------- // TO DO: to remove
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
+        qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrTest";
+        qDebug() << "ERROR: NOT IMPLEMENTED yet";
+        return;
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
+        qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorrTest";
+        std::vector<float> xPositions;
+        _positionDataset->extractDataForDimension(xPositions, 2);
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
+        std::vector<float> zPositions;
+        _positionDataset->extractDataForDimension(zPositions, 0);
+        std::vector<float> corrLocalVector;
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, corrLocalVector);
+
+        qDebug() << "corrLocalVector size " << corrLocalVector.size();
+        qDebug() << "_corrGeneVector size " << _corrGeneVector.size();
+        qDebug() << "_corrSpatialTotalST size " << _corrSpatialTotalST.size();
+
+        _corrGeneVector.clear();
+        _corrGeneVector.resize(_corrSpatialTotalST.size(), 0);
+        for (int i = 0; i < corrLocalVector.size(); ++i) {
+            if (corrLocalVector[i] != 0)
+                //_corrGeneVector[i] = (corrLocalVector[i]*3 - _corrSpatialTotalST[i]) / (corrLocalVector[i] * 3);// (corrLocal - corrTotal)/corrLocal
+                _corrGeneVector[i] = corrLocalVector[i] * 3 / (corrLocalVector[i] + _corrSpatialTotalST[i]);// corrLocal/(corrLocal+corrTotal)
+            else 
+                _corrGeneVector[i] = 0;
+        }
+
+        // normalize the values to [0, 1] range
+        float minVal = *std::min_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        float maxVal = *std::max_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        for (int i = 0; i < _corrGeneVector.size(); ++i) {
+            _corrGeneVector[i] = (_corrGeneVector[i] - minVal) / (maxVal - minVal);
+        }
+
+    }
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
+        qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorrTest";
+        qDebug() << "ERROR: NOT IMPLEMENTED yet";
+        return;
+    }
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALTEST) {
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrTest";
+
+        std::vector<float> xAvg;
+        std::vector<float> yAvg;
+        std::vector<float> zAvg;
+        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
+        std::vector<float> corrLocalVector;
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, corrLocalVector);
+        qDebug() << "corrLocalVector size " << corrLocalVector.size();
+        qDebug() << "_corrGeneVector size " << _corrGeneVector.size();
+        qDebug() << "_corrSpatialTotalSC size " << _corrSpatialTotalSC.size();
+
+        _corrGeneVector.clear();
+        _corrGeneVector.resize(_corrSpatialTotalSC.size(), 0);
+        // (corrLocal - corrTotal)/corrLocal
+        for (int i = 0; i < corrLocalVector.size(); ++i) {
+            if (corrLocalVector[i] != 0)
+                //_corrGeneVector[i] = (corrLocalVector[i] * 3 - _corrSpatialTotalSC[i]) / (corrLocalVector[i] * 3); // (corrLocal - corrTotal)/corrLocal
+                _corrGeneVector[i] = corrLocalVector[i] * 3 / (corrLocalVector[i] + _corrSpatialTotalST[i]);// corrLocal/(corrLocal+corrTotal)
+            else
+                _corrGeneVector[i] = 0;
+        }
+
+        // normalize the values to [0, 1] range
+        float minVal = *std::min_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        float maxVal = *std::max_element(_corrGeneVector.begin(), _corrGeneVector.end());
+        qDebug() << "Before norm of _corrGeneVector: minVal: " << minVal << " maxVal: " << maxVal;
+        for (int i = 0; i < _corrGeneVector.size(); ++i) {
+            _corrGeneVector[i] = (_corrGeneVector[i] - minVal) / (maxVal - minVal);
+        }
+    }
+    // -------------- Experiment Spatial z --------------
+    if (!_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
+        qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrZ";
+        qDebug() << "ERROR: no z axis in 2D dataset";
+        return;
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
+        qDebug() << ">>>>>Compute corr: 3D + ST + SpatialZ";
+        std::vector<float> zPositions;
+        _positionDataset->extractDataForDimension(zPositions, 0);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData3D, zPositions, _corrGeneVector);
+    }
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrZ";
+        std::vector<float> xAvg;
+        std::vector<float> yAvg;
+        std::vector<float> zAvg;
+        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
+        //_corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _corrGeneVector);// without weighting
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _countsSubset, _corrGeneVector);// with weighting
+    }
+    // -------------- Experiment Spatial y --------------
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
+        qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrY";
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData, yPositions, _corrGeneVector);
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
+        qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorrY";
+
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData3D, yPositions, _corrGeneVector);
+    }
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
+        qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorrY";
+        std::vector<float> yPositions;
+        _positionDataset->extractDataForDimension(yPositions, 1);
+        DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, populatedSubsetAvg, yPositions, _corrGeneVector);// no need for weighting
+    }
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
+        qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrY";
+        std::vector<float> xAvg;
+        std::vector<float> yAvg;
+        std::vector<float> zAvg;
+        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
+        // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _corrGeneVector);// without weighting
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _countsSubset, _corrGeneVector);// with weighting
     }
     
 
@@ -965,19 +1360,21 @@ void GeneSurferPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg,
 
     std::vector<float> xPositions;
     _positionDataset->extractDataForDimension(xPositions, 2);
-    //qDebug() << "max of xPositions: " << *std::max_element(xPositions.begin(), xPositions.end());
+
     std::vector<float> yPositions;
     _positionDataset->extractDataForDimension(yPositions, 1);
-    //qDebug() << "max of yPositions: " << *std::max_element(yPositions.begin(), yPositions.end());
     std::vector<float> zPositions;
     _positionDataset->extractDataForDimension(zPositions, 0);
-    //qDebug() << "max of zPositions: " << *std::max_element(zPositions.begin(), zPositions.end());
+
+    qDebug() << "computeMeanCoordinatesByCluster(): _sortedFloodIndices.size(): " << _sortedFloodIndices.size();
 
     for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
         int ptIndex = _sortedFloodIndices[index];
 
         if (ptIndex >= zPositions.size())
-            qDebug() << "ERROR! computeMeanCoordinatesByCluster(): ptIndex: " << ptIndex << " >= zPositions.size(): " << zPositions.size();
+
+           qDebug() << ">>>>ERROR! ptIndex " << ptIndex << " >= zPositions.size() " << zPositions.size();
+
 
         QString label = _cellLabels[ptIndex];
 
@@ -989,6 +1386,11 @@ void GeneSurferPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg,
     xAvg.clear();
     yAvg.clear();
     zAvg.clear();
+
+    qDebug() << "computeMeanCoordinatesByCluster(): _clustersToKeep.size(): " << _clustersToKeep.size();
+    qDebug() << "_clustersToKeep[0]" << _clustersToKeep[0];
+    qDebug() << "_clustersToKeep[_clustersToKeep.size()-1] " << _clustersToKeep[_clustersToKeep.size() - 1];
+    qDebug() << "_countsMap.size(): " << _countsMap.size();
 
     for (int i = 0; i < _clustersToKeep.size(); ++i) {
         QString label = _clustersToKeep[i];
@@ -1451,11 +1853,22 @@ void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
 
 void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
     qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): start... ";
+    std::ifstream file;
 
-    /*load file of avg expr - file from Michael */
-    //std::ifstream file("precomputed_stats_ABC_revision_230821_alias_identifier.csv"); // in this file column:gene identifier, row:cluster alias
-    std::ifstream file("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
-    //std::ifstream file("avg_MERFISH_aliasgenesymbol_august.csv");// august data, self computed from MERFISH data
+    // temporary code to load avg expression from file TO DO: generalize to select file from GUI
+    qDebug() << "Test get gui name" << _positionDataset->getGuiName();
+    qDebug() << "Test get gui name" << _positionSourceDataset->getGuiName();
+    if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
+        qDebug() << "Load avg expression for SEAAD dataset";
+        file.open("SEAAD_average_expression_supertype.csv"); // in this file column:gene symbol, row:supertype
+    }
+    else {
+        qDebug() << "Load avg expression for ABC Atlas";
+        /*load file of avg expr - file from Michael */
+        //std::ifstream file("precomputed_stats_ABC_revision_230821_alias_identifier.csv"); // in this file column:gene identifier, row:cluster alias
+        file.open("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
+        //std::ifstream file("avg_MERFISH_aliasgenesymbol_august.csv");// august data, self computed from MERFISH data
+    }
 
     if (!file.is_open()) {
         qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas Error: Could not open the avg expr file.";
@@ -1569,12 +1982,21 @@ void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
 void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
     // this is loading label from ST dataset!!!
     // Different from loading from singlecell datset!!!
+    QString labelDatasetName;
+    if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
+        qDebug() << "Load labels for SEAAD dataset";
+        labelDatasetName = "Supertype";
+    }
+    else {
+        qDebug() << "Load labels for ABC Atlas";
+        labelDatasetName = "cluster_alias";
+    }
 
     Dataset<Clusters> labelDataset;
     for (const auto& data : mv::data().getAllDatasets())
     {
         //qDebug() << data->getGuiName();
-        if (data->getGuiName() == "cluster_alias") {
+        if (data->getGuiName() == labelDatasetName) {
             labelDataset = data;
         }
     }
@@ -1583,17 +2005,55 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
 
     qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): labelClusters size: " << labelClusters.size();
 
+    // add weighting for each cluster of whole data - 1
+    //_countsAll.resize(labelClusters.size()); // number of annotation types in ST
+
+    //// precompute the cell-label array
+    //_cellLabels.clear();
+    //_cellLabels.resize(_numPoints);
+
+    //for (int i = 0; i < labelClusters.size(); ++i) {
+    //    QString clusterName = labelClusters[i].getName();
+    //    const auto& ptIndices = labelClusters[i].getIndices();
+    //    for (int j = 0; j < ptIndices.size(); ++j) {
+    //        int ptIndex = ptIndices[j];
+    //        _cellLabels[ptIndex] = clusterName;
+    //    }
+    //   // add weighting for each cluster of whole data
+    //   _countsAll[i] = ptIndices.size();// number of pt in each cluster
+    //}
+
+    // TEST add weighting for each cluster of whole data - 2
+    _countsAll.resize(_clusterNamesAvgExpr.size()); // number of clusters in SC
+
     // precompute the cell-label array
     _cellLabels.clear();
     _cellLabels.resize(_numPoints);
 
 
-    for (int i = 0; i < labelClusters.size(); ++i) {
-        QString clusterName = labelClusters[i].getName();
-        const auto& ptIndices = labelClusters[i].getIndices();
-        for (int j = 0; j < ptIndices.size(); ++j) {
-            int ptIndex = ptIndices[j];
-            _cellLabels[ptIndex] = clusterName;
+    for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
+        QString clusterName = _clusterNamesAvgExpr[i];
+        bool found = false;
+
+        //search for the cluster name in labelClusters
+        for (const auto& cluster : labelClusters) {
+            if (cluster.getName() == clusterName) {
+                const auto& ptIndices = cluster.getIndices();
+                for (int j = 0; j < ptIndices.size(); ++j) {
+                    int ptIndex = ptIndices[j];
+                    _cellLabels[ptIndex] = clusterName;
+                }
+                // add weighting for each cluster of whole data
+                _countsAll[i] = ptIndices.size(); // number of pt in each cluster
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            // If the cluster is not found in labelClusters
+            qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): cluster in SC" << clusterName << " not found in ST";
+            _countsAll[i] = 0;
         }
     }
 
@@ -1816,11 +2276,53 @@ void GeneSurferPlugin::clusterGenes()
 
     if (!_sliceDataset.isValid()) {
         qDebug() << "computePairwiseCorrelationVector: 2D dataset";
-        _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData, corrFilteredGene);// TO DO: dimNames not needed in this function
+        if (!_isSingleCell) {
+            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData, corrFilteredGene);// TO DO: dimNames not needed in this function
+        }
+        else {
+            // add weighting 
+            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData, _countsSubset, corrFilteredGene);// SC: with weighting
+        }
     } 
     else {
         qDebug() << "computePairwiseCorrelationVector: 3D dataset";
-        _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGene);
+        if (!_isSingleCell) {
+           _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGene);// ST: without weighting
+        }
+        else {
+            // add weighting 
+            qDebug() << "computePairwiseCorrelationVector: 3D dataset singlecell";
+            qDebug() << "computePairwiseCorrelationVector: _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
+            qDebug() << "computePairwiseCorrelationVector: _countsSubset size: " << _countsSubset.size() << "_countsSubset[0] " << _countsSubset[0];
+            qDebug() << "computePairwiseCorrelationVector: filteredDimNames size: " << filteredDimNames.size() << " filteredDimIndices size: " << filteredDimIndices.size();
+
+            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, _countsSubset, corrFilteredGene);// SC: with weighting
+
+            // output the element in the first row and first column of corrFilteredGene
+            qDebug() << "GeneSurferPlugin::clusterGenes(): corrFilteredGene(0,0): " << corrFilteredGene(0, 0);
+            qDebug() << "GeneSurferPlugin::clusterGenes(): corrFilteredGene(1,0): " << corrFilteredGene(1, 0);
+            qDebug() << " Mean of corrFilteredGene.row(0) : " << corrFilteredGene.row(0).mean();
+
+            // test without weighting
+            Eigen::MatrixXf corrFilteredGeneTEST(filteredDimNames.size(), filteredDimNames.size());
+            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGeneTEST);
+
+            // compare the two correlation matrices
+            /*std::cout << "Mean of corrFilteredGene: " << corrFilteredGene.mean() << std::endl;
+            std::cout << "Mean of corrFilteredGeneTEST: " << corrFilteredGeneTEST.mean() << std::endl;
+
+            std::cout << "Norm of corrFilteredGene: " << corrFilteredGene.norm() << std::endl;
+            std::cout << "Norm of corrFilteredGeneTEST: " << corrFilteredGeneTEST.norm() << std::endl;*/
+
+            /*Eigen::MatrixXf diffMatrix = corrFilteredGene - corrFilteredGeneTEST;
+            std::cout << "Norm of Difference Matrix: " << diffMatrix.norm() << std::endl;
+            std::cout << "Max difference in matrices: " << diffMatrix.cwiseAbs().maxCoeff() << std::endl;
+
+            std::cout << "Correlation Matrix with Weighting: \n" << corrFilteredGene << std::endl;
+            std::cout << "Correlation Matrix without Weighting: \n" << corrFilteredGeneTEST << std::endl;
+            std::cout << "Difference Matrix: \n" << diffMatrix << std::endl;*/
+        }
+            
     }
 
     auto end2 = std::chrono::high_resolution_clock::now();
@@ -2203,7 +2705,7 @@ void GeneSurferPlugin::getFuntionalEnrichment()
                 qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
             }
             qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
-            _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames);
+            _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames, _currentEnrichmentSpecies);
         }
 
         //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);
@@ -2287,16 +2789,26 @@ void GeneSurferPlugin::onTableClicked(int row, int column) {
 
     QStringList geneSymbolList = geneSymbols.split(",");
 
-    // match the gene symbols with the gene names in the cluster - gene symbols returned from topGene are all capitals
+    // match the gene symbols with the gene names in the cluster - gene symbols returned from toppGene are all capitals
     QVariantList geneNamesForHighlighting;
     for (const QString& symbol : geneSymbolList) {
         
         QString searchGeneSymbol;
 
+
+        // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all upper case
         if (_currentEnrichmentAPI == "ToppGene") {
-        // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all capitals -not needed for gProfiler
-        searchGeneSymbol = symbol.toLower();
-        searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
+
+            // first check if the gene symbol is already in the same format as the data
+            if (_enabledDimNames[0][1].isUpper()) // check if the second letter is uppercase
+            {
+                searchGeneSymbol = symbol;
+            }
+            else
+            {
+                searchGeneSymbol = symbol.toLower(); // convert to lower case
+                searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
+            }
         }
 
         // gProfiler
@@ -2379,6 +2891,27 @@ void GeneSurferPlugin::updateClick() {
                 }
                 dimV.assign(dimValue.data(), dimValue.data() + dimValue.size());
             }
+
+            // May 2 - check the scalar values within selection
+            std::vector<float> dimVSelection;
+            for (int i = 0; i < _sortedFloodIndices.size(); i++) {
+                dimVSelection.push_back(dimV[_sortedFloodIndices[i]]);
+            }
+            qDebug() << "dimVSelection max: " << *std::max_element(dimVSelection.begin(), dimVSelection.end());
+            qDebug() << "dimVSelection min: " << *std::min_element(dimVSelection.begin(), dimVSelection.end());
+            qDebug() << "dimVSelection mean: " << std::accumulate(dimVSelection.begin(), dimVSelection.end(), 0.0) / dimVSelection.size();
+            // compare to the original dimV
+            qDebug() << "dimV max: " << *std::max_element(dimV.begin(), dimV.end());
+            qDebug() << "dimV min: " << *std::min_element(dimV.begin(), dimV.end());
+            qDebug() << "dimV mean: " << std::accumulate(dimV.begin(), dimV.end(), 0.0) / dimV.size();
+            // temporarily only show the selection in VolumeViewer and normalize within selection
+            /*std::vector<float> dimVTEST(dimV.size(), 0.0f);
+            for (int i = 0; i < _sortedFloodIndices.size(); i++) {
+                dimVTEST[_sortedFloodIndices[i]] = dimV[_sortedFloodIndices[i]];
+            }
+            dimV = dimVTEST;*/
+            // end of May 2
+            
 
             normalizeVector(dimV);
             updateClusterScalarOutput(dimV);
@@ -2472,6 +3005,8 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
         qDebug() << "GeneSurferPlugin::fromVariantMap() 4 ";
         _currentSliceIndex = variantMap["CurrentSliceIdx"].toInt();
         updateSlice(_currentSliceIndex);
+
+        loadGlobalCorr(); // TO DO: check if this is necessary
     }
 
     qDebug() << "GeneSurferPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;
