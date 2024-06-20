@@ -282,7 +282,7 @@ void GeneSurferPlugin::init()
         
         // update flag for point selection
         _selectedByFlood = true;
-        qDebug() << ">>>>>  _selectedByFlood = true";
+        //qDebug() << "_selectedByFlood = true";
 
         //qDebug() << ">>>>>GeneSurferPlugin::_floodFillDataset::dataChanged";
         if (!_sliceDataset.isValid()) {
@@ -301,12 +301,12 @@ void GeneSurferPlugin::init()
         if (selection->indices.size() <= 1) {
             return;
         }
-        //qDebug() << ">>>>>GeneSurferPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
+        //qDebug() << "GeneSurferPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
         //qDebug() << "Before computeSubset" << "_sliceDataset.isValid = " << _sliceDataset.isValid();
 
         // update flag for point selection
         _selectedByFlood = false;
-        qDebug() << ">>>>>  _selectedByFlood = false";
+        //qDebug() << "_selectedByFlood = false";
 
         if (!_sliceDataset.isValid()) 
         {
@@ -500,7 +500,7 @@ void GeneSurferPlugin::updateFloodFillDataset()
      
     // update flag for point selection
     _selectedByFlood = true;
-    qDebug() << ">>>>>  _selectedByFlood = true";
+    //qDebug() << "_selectedByFlood = true";
 
     if (!_sliceDataset.isValid()) {
         _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
@@ -798,8 +798,8 @@ void GeneSurferPlugin::updateEnrichmentSpecies()
         qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
         getFuntionalEnrichment();
     }
-    else
-        qDebug() << "ERROR: no valid species selected for enrichment analysis";
+    /*else
+        qDebug() << "ERROR: no valid species selected for enrichment analysis";*/ // TODO check if needed?
 }
 
 void GeneSurferPlugin::updateSelection()
@@ -822,11 +822,11 @@ void GeneSurferPlugin::updateSelection()
     // Compute subset //
     ////////////////////
     if (!_isSingleCell && !_sliceDataset.isValid()) {
-        qDebug() << ">>>>>Compute subset: 2D + ST";
+        qDebug() << "Compute subset: 2D + ST";
         _computeSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData);
     }
     if (!_isSingleCell && _sliceDataset.isValid()) {
-        qDebug() << ">>>>>Compute subset: 3D + ST";
+        qDebug() << "Compute subset: 3D + ST";
         //subset data only contains the onSliceFloodIndice
         //qDebug() << "GeneSurferPlugin::updateSelection(): _onSliceFloodIndices size: " << _onSliceFloodIndices.size();
         _computeSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData); //TODO: check if needed
@@ -838,14 +838,14 @@ void GeneSurferPlugin::updateSelection()
 
     }
     if (_isSingleCell && !_sliceDataset.isValid()) {
-        qDebug() << ">>>>>Compute subset: 2D + SingleCell";
+        qDebug() << "Compute subset: 2D + SingleCell";
         countLabelDistribution();
         _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
         _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
         _subsetData = _subsetDataAvgOri;
     }
     if (_isSingleCell && _sliceDataset.isValid()) {
-        qDebug() << ">>>>>Compute subset: 3D + SingleCell";
+        qDebug() << "Compute subset: 3D + SingleCell";
         countLabelDistribution();
         _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
         _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
@@ -859,15 +859,15 @@ void GeneSurferPlugin::updateSelection()
     
     // -------------- Diff --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << ">>>>>Compute corr: 2D + ST + Diff";
+        qDebug() << "Compute corr: 2D + ST + Diff";
         _corrFilter.getDiffFilter().computeDiff(_subsetData, _dataStore.getBaseData(), _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << ">>>>>Compute corr: 3D + ST + Diff";
+        qDebug() << "Compute corr: 3D + ST + Diff";
         _corrFilter.getDiffFilter().computeDiff(_subsetData3D, _dataStore.getBaseData(), _corrGeneVector);
     }
     if (_isSingleCell && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << ">>>>>Compute corr: SingleCell +Diff";
+        qDebug() << "Compute corr: SingleCell +Diff";
         //_corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector); //without weighting
         
         // add weighting for number of cells in each cluster
@@ -894,12 +894,12 @@ void GeneSurferPlugin::updateSelection()
     
     // TODO temporary code only for 2D data and is very slow 
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN) {
-        qDebug() << ">>>>>Compute corr: 2D + ST + Moran";
+        qDebug() << "Compute corr: 2D + ST + Moran";
         _corrFilter.getMoranFilter().computeMoranVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
-        qDebug() << ">>>>>Compute corr: 3D + ST + Moran";
+        qDebug() << "Compute corr: 3D + ST + Moran";
         std::vector<float> xPositions;
         _positionDataset->extractDataForDimension(xPositions, 2);
         std::vector<float> yPositions;
@@ -910,13 +910,13 @@ void GeneSurferPlugin::updateSelection()
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
-        qDebug() << ">>>>>Compute corr: 2D + SingleCell + Moran";
+        qDebug() << "Compute corr: 2D + SingleCell + Moran";
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
         _corrFilter.getMoranFilter().computeMoranVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
      }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
-        qDebug() << ">>>>>Compute corr: 3D + SingleCell + Moran";
+        qDebug() << "Compute corr: 3D + SingleCell + Moran";
         std::vector<float> xAvg;
         std::vector<float> yAvg;
         std::vector<float> zAvg;
@@ -931,18 +931,18 @@ void GeneSurferPlugin::updateSelection()
 
     // -------------- Spatial z --------------
     if (!_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
-        qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrZ";
+        qDebug() << "Compute corr: 2D + ST + SpatialCorrZ";
         qDebug() << "ERROR: no z axis in 2D dataset";
         return;
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
-        qDebug() << ">>>>>Compute corr: 3D + ST + SpatialZ";
+        qDebug() << "Compute corr: 3D + ST + SpatialZ";
         std::vector<float> zPositions;
         _positionDataset->extractDataForDimension(zPositions, 0);
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData3D, zPositions, _corrGeneVector);
     }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
-        qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrZ";
+        qDebug() << "Compute corr: 3D + SingleCell + SpatialCorrZ";
         std::vector<float> xAvg;
         std::vector<float> yAvg;
         std::vector<float> zAvg;
@@ -952,27 +952,27 @@ void GeneSurferPlugin::updateSelection()
     }
     // -------------- Spatial y --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
-        qDebug() << ">>>>>Compute corr: 2D + ST + SpatialCorrY";
+        qDebug() << "Compute corr: 2D + ST + SpatialCorrY";
         std::vector<float> yPositions;
         _positionDataset->extractDataForDimension(yPositions, 1);
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData, yPositions, _corrGeneVector);
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
-        qDebug() << ">>>>>Compute corr: 3D + ST + SpatialCorrY";
+        qDebug() << "Compute corr: 3D + ST + SpatialCorrY";
 
         std::vector<float> yPositions;
         _positionDataset->extractDataForDimension(yPositions, 1);
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData3D, yPositions, _corrGeneVector);
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
-        qDebug() << ">>>>>Compute corr: 2D + SingleCell + SpatialCorrY";
+        qDebug() << "Compute corr: 2D + SingleCell + SpatialCorrY";
         std::vector<float> yPositions;
         _positionDataset->extractDataForDimension(yPositions, 1);
         DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, populatedSubsetAvg, yPositions, _corrGeneVector);// no need for weighting
     }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
-        qDebug() << ">>>>>Compute corr: 3D + SingleCell + SpatialCorrY";
+        qDebug() << "Compute corr: 3D + SingleCell + SpatialCorrY";
         std::vector<float> xAvg;
         std::vector<float> yAvg;
         std::vector<float> zAvg;
@@ -1066,7 +1066,7 @@ void GeneSurferPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg,
 
         if (ptIndex >= zPositions.size())
 
-           qDebug() << ">>>>ERROR! ptIndex " << ptIndex << " >= zPositions.size() " << zPositions.size();
+           qDebug() << "ERROR! ptIndex " << ptIndex << " >= zPositions.size() " << zPositions.size();
 
 
         QString label = _cellLabels[ptIndex];
@@ -2512,8 +2512,8 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
                 _clusterNamesAvgExpr[index] = clusterNamesAvgExprVariant[key].toString();
             }
         }
-        qDebug() << ">>>>>GeneSurferPlugin::fromVariantMap(): clusterNamesAvgExpr.size();" << _clusterNamesAvgExpr.size();
-        qDebug() << ">>>>>GeneSurferPlugin::fromVariantMap(): clusterNamesAvgExpr[0];" << _clusterNamesAvgExpr[0];
+        //qDebug() << "GeneSurferPlugin::fromVariantMap(): clusterNamesAvgExpr.size();" << _clusterNamesAvgExpr.size();
+        //qDebug() << "GeneSurferPlugin::fromVariantMap(): clusterNamesAvgExpr[0];" << _clusterNamesAvgExpr[0];
     }
 
     variantMapMustContain(variantMap, "SettingsAction");

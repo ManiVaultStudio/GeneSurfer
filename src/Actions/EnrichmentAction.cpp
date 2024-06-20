@@ -15,12 +15,11 @@ EnrichmentAction::EnrichmentAction(QObject* parent, const QString& title) :
     _enrichmentAPIPickerAction.setToolTip("Enrichment analysis API");
     _speciesPickerAction.setToolTip("Species");
 
-    _enrichmentAPIPickerAction.initialize(QStringList({ "ToppGene", "gProfiler" }), "ToppGene");
+    _enrichmentAPIPickerAction.initialize(QStringList({ "ToppGene", "gProfiler" }), "gProfiler");
     addAction(&_enrichmentAPIPickerAction);
 
-    _speciesPickerAction.initialize(QStringList({ "None", "Mus musculus", "Homo sapiens" }), "None");
+    _speciesPickerAction.initialize(QStringList({ "Mus musculus", "Homo sapiens" }), "Mus musculus");
     addAction(&_speciesPickerAction);
-    _speciesPickerAction.setEnabled(false);
 
     auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
     if (geneSurferPlugin == nullptr)
@@ -39,7 +38,7 @@ EnrichmentAction::EnrichmentAction(QObject* parent, const QString& title) :
         else
         {
             _speciesPickerAction.setEnabled(false);
-            _speciesPickerAction.setOptions(QStringList({ "None", "Mus musculus", "Homo sapiens" }));
+            _speciesPickerAction.setOptions(QStringList({ "None"}));
             _speciesPickerAction.setCurrentText("None");
         }
         });
