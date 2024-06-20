@@ -14,7 +14,6 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
 
     _dimensionAction.setToolTip("Select the dimension to be shown");
 
-
     auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
     if (geneSurferPlugin == nullptr)
         return;

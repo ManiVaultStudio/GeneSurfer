@@ -1267,8 +1267,6 @@ void GeneSurferPlugin::updateNumCluster()
 }
 
 void GeneSurferPlugin::updateCorrThreshold() {
-    //_corrThreshold = _settingsAction.getClusteringAction().getCorrThresholdAction().getValue();
-
     _numGenesThreshold = _settingsAction.getClusteringAction().getNumGenesThresholdAction().getValue();
 
     // cannot be changed before plotting

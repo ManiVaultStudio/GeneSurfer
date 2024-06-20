@@ -1,6 +1,5 @@
 #pragma once
 #include <actions/VerticalGroupAction.h>
-#include <actions/DecimalAction.h>
 #include <actions/IntegralAction.h>
 
 using namespace mv::gui;
@@ -10,7 +9,7 @@ class GeneSurferPlugin;
 /**
  * Clustering setting action class
  *
- * Action class for choosing correlation mode setting
+ * Action class for clustering parameter setting
  */
 class ClusteringAction : public VerticalGroupAction
 {
@@ -45,12 +44,10 @@ public: // Serialization
 public: // Action getters
 
    IntegralAction& getNumClusterAction() { return _numClusterAction; }
-   //DecimalAction& getCorrThresholdAction() { return _corrThresholdAction; }
    IntegralAction& getNumGenesThresholdAction() { return _numGenesThresholdAction; }
 
 private:
     IntegralAction          _numClusterAction;        /** number of cluster action */
-    //DecimalAction           _corrThresholdAction;        /** correlation threshold action */
     IntegralAction          _numGenesThresholdAction;        /** number of gene threshold action */
 };
 
