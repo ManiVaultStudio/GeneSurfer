@@ -2338,6 +2338,11 @@ void GeneSurferPlugin::updateClick() {
     }
     _dimView->selectView(false);
 
+    if (_sortedFloodIndices.empty()) {
+        qDebug() << "ERROR! updateClick(): point selection is empty";
+        return;
+    }
+
     ScatterView* selectedView = nullptr;
     for (int i = 0; i < _nclust; i++) {
         if (_selectedClusterIndex == i) {
