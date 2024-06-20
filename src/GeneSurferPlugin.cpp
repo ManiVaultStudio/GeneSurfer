@@ -31,7 +31,7 @@
 
 #include <chrono>
 
-#include <unordered_set> // check if needed
+//#include <unordered_set> // TODO: remove
 
 
 
@@ -116,7 +116,6 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
 
     connect(_dimView, &ScatterView::initialized, this, [this]() {_dimView->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
     connect(_dimView, &ScatterView::viewSelected, this, [this]() { _selectedClusterIndex = 6; updateClick(); });  
-
 }
 
 void GeneSurferPlugin::init()
@@ -188,7 +187,6 @@ void GeneSurferPlugin::init()
 
         const auto datasetsMimeData = dynamic_cast<const DatasetsMimeData*>(mimeData);
 
-
         if (datasetsMimeData == nullptr)
             return dropRegions;
 
@@ -200,7 +198,6 @@ void GeneSurferPlugin::init()
         const auto datasetId = dataset->getId();
         const auto dataType = dataset->getDataType();
         const auto dataTypes = DataTypes({ PointType, ClusterType });
-
 
         //check if the data type can be dropped
         if (!dataTypes.contains(dataType))
@@ -820,13 +817,13 @@ void GeneSurferPlugin::updateSelection()
     if (!_isSingleCell && _sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 3D + ST";
         //subset data only contains the onSliceFloodIndice
-        qDebug() << "GeneSurferPlugin::updateSelection(): _onSliceFloodIndices size: " << _onSliceFloodIndices.size();
+        //qDebug() << "GeneSurferPlugin::updateSelection(): _onSliceFloodIndices size: " << _onSliceFloodIndices.size();
         _computeSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData); //TODO: check if needed
-        qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData size: " << _subsetData.rows() << " " << _subsetData.cols();
+        //qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData size: " << _subsetData.rows() << " " << _subsetData.cols();
         //subset data contains all floodfill indices     
-        qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
+        //qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
         _computeSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
-        qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
+        //qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
 
     }
     if (_isSingleCell && !_sliceDataset.isValid()) {
@@ -835,51 +832,11 @@ void GeneSurferPlugin::updateSelection()
         _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
         _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
         _subsetData = _subsetDataAvgOri;
-
-        // add weighting
-        //qDebug() << "GeneSurferPlugin::updateSelection(): _countsMap size: " << _countsMap.size();
-        //qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
-
-        // TODO: update _countsSubset in a separate function
-        _countsSubset.resize(_clustersToKeep.size());
-        for (int i = 0; i < _clustersToKeep.size(); ++i) {
-            const QString& clusterName = _clustersToKeep[i];
-            _countsSubset[i] = static_cast<float>(_countsMap[clusterName]); // number of pt in each cluster WITHIN the selection
-        }
     }
     if (_isSingleCell && _sliceDataset.isValid()) {
         qDebug() << ">>>>>Compute subset: 3D + SingleCell";
         countLabelDistribution();
         _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
-        
-        // add weighting
-        //qDebug() << "GeneSurferPlugin::updateSelection(): _countsMap size: " << _countsMap.size();
-        //qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
-
-        _countsSubset.resize(_clustersToKeep.size());
-        for (int i = 0; i < _clustersToKeep.size(); ++i) {
-            const QString& clusterName = _clustersToKeep[i];
-            _countsSubset[i] = static_cast<float>(_countsMap[clusterName]); // number of pt in each cluster WITHIN the selection
-        }
-        /*qDebug() << "GeneSurferPlugin::updateSelection(): _countsSubset size: " << _countsSubset.size();
-        qDebug() << "_clustersToKeep[0] " << _clustersToKeep[0] << "_countsSubset[0]" << _countsSubset[0];*/
-
-        //output _sqrtCounts for checking using std::cout
-       /* std::cout << "sqrtCounts: ";
-        for (int i = 0; i < _sqrtCounts.size(); ++i) {
-            std::cout << _clustersToKeep[i].toStdString() << " " << _countsMap[_clustersToKeep[i]] << " " << _sqrtCounts[i] << " ";
-        }*/
-        /*qDebug() << "counts[0] and counts[1] " << counts[0] << " " << counts[1];
-        std::cout << "First 3 elements of the first row Before multiplication:" << std::endl;
-        std::cout << _subsetDataAvgOri.block<1, 3>(0, 0) << std::endl;
-        std::cout << "First 3 elements of the second row Before multiplication:" << std::endl;
-        std::cout << _subsetDataAvgOri.block<1, 3>(1, 0) << std::endl;*/
-        //_subsetDataAvgOri = _subsetDataAvgOri.array().colwise() * _sqrtCounts.array();
-        /*std::cout << "First 3 elements of the first row after multiplication:" << std::endl;
-        std::cout << _subsetDataAvgOri.block<1, 3>(0, 0) << std::endl;
-        std::cout << "First 3 elements of the second row after multiplication:" << std::endl;
-        std::cout << _subsetDataAvgOri.block<1, 3>(1, 0) << std::endl;*/
-
         _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
         _subsetData3D = _subsetDataAvgOri;
     }
@@ -904,7 +861,6 @@ void GeneSurferPlugin::updateSelection()
         
         // add weighting for number of cells in each cluster
         Eigen::VectorXf ratioCountsSubset = _countsSubset / _sortedFloodIndices.size() * _subsetDataAvgOri.rows();
-        //Eigen::VectorXf ratioCountsSubset = (_countsSubset / float(_sortedFloodIndices.size())) * float(_subsetDataAvgOri.rows())
         Eigen::VectorXf ratioCountsAll = _countsAll / _numPoints * _avgExpr.rows();
 
        /* qDebug() << "_countsSubset size: " << _countsSubset.size() << "_countsSubset[0]: " << _countsSubset[0] << "_sortedFloodIndices.size()" << _sortedFloodIndices.size() <<"_subsetDataAvgOri.rows()" << _subsetDataAvgOri.rows();
@@ -1733,7 +1689,7 @@ void GeneSurferPlugin::matchLabelInSubset()
 {
     int numClusters = _avgExpr.rows();
     int numGenes = _avgExpr.cols();
-    qDebug() << "GeneSurferPlugin::matchLabelInSubset(): before matching numClusters: " << numClusters << " numGenes: " << numGenes;
+    //qDebug() << "GeneSurferPlugin::matchLabelInSubset(): before matching numClusters: " << numClusters << " numGenes: " << numGenes;
 
     std::vector<QString> clustersToKeep; // it is cluster names 1
     for (int i = 0; i < numClusters; ++i) {
@@ -1768,7 +1724,14 @@ void GeneSurferPlugin::matchLabelInSubset()
 
     _clustersToKeep.clear();
     _clustersToKeep = clustersToKeep; // TO DO: dirty copy
-    qDebug() << "GeneSurferPlugin::matchLabelInSubset(): after matching numClusters: " << _clustersToKeep.size();
+    //qDebug() << "GeneSurferPlugin::matchLabelInSubset(): after matching numClusters: " << _clustersToKeep.size();
+
+    // prepare the subset counting for adding weighting to the subset
+    _countsSubset.resize(_clustersToKeep.size());
+    for (int i = 0; i < _clustersToKeep.size(); ++i) {
+        const QString& clusterName = _clustersToKeep[i];
+        _countsSubset[i] = static_cast<float>(_countsMap[clusterName]); // number of pt in each cluster WITHIN the selection
+    }
 
 }
 
@@ -1822,7 +1785,7 @@ void GeneSurferPlugin::clusterGenes()
 
 
     if (!_sliceDataset.isValid()) {
-        qDebug() << "computePairwiseCorrelationVector: 2D dataset";
+        //qDebug() << "computePairwiseCorrelationVector: 2D dataset";
         if (!_isSingleCell) {
             _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData, corrFilteredGene);// TO DO: dimNames not needed in this function
         }
@@ -1832,7 +1795,7 @@ void GeneSurferPlugin::clusterGenes()
         }
     } 
     else {
-        qDebug() << "computePairwiseCorrelationVector: 3D dataset";
+        //qDebug() << "computePairwiseCorrelationVector: 3D dataset";
         if (!_isSingleCell) {
            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGene);// ST: without weighting
         }
@@ -2235,11 +2198,11 @@ void GeneSurferPlugin::getFuntionalEnrichment()
                 for (const auto& name : _enabledDimNames) {
                     backgroundGeneNames.append(name);
                 }
-                qDebug() << "getFuntionalEnrichment(): ST mode, with background";
+                //qDebug() << "getFuntionalEnrichment(): ST mode, with background";
             }
             else {
                 // in single cell mode, background is empty
-                qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
+                //qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
             }
             //qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
             _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames, _currentEnrichmentSpecies);
