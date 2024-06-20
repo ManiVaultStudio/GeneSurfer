@@ -87,7 +87,7 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _secondaryToolbarAction(this, "SecondaryToolbar"),
     _tertiaryToolbarAction(this, "TertiaryToolbar"),
     _selectedDimIndex(-1),
-    _selectedClusterIndex(0),
+    _selectedClusterIndex(-1), // -1 means no view selected
     _colorMapAction(this, "Color map", "RdYlBu")
 
 {
@@ -1355,6 +1355,7 @@ void GeneSurferPlugin::updateScatterColors()
     // Clear clicked frame - _scatterViews
     if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
         _scatterViews[_selectedClusterIndex]->selectView(false);
+        _selectedClusterIndex = -1;// reset the selected cluster index to -1
         //qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
     }
 
@@ -1404,6 +1405,7 @@ void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
     // Clear clicked frame - _dimView
     if (_selectedClusterIndex == 6) {
         _dimView->selectView(false);
+        _selectedClusterIndex = -1;// reset the selected cluster index to -1
         //qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
     }
 
@@ -2346,15 +2348,21 @@ void GeneSurferPlugin::onTableClicked(int row, int column) {
 }
 
 void GeneSurferPlugin::updateClick() {
-    for (int i = 0; i < 6; i++) {// TO DO: hard coded for the current layout
-        _scatterViews[i]->selectView(false);
+    if (_selectedClusterIndex == -1) {
+        qDebug() << "Warning! updateClick(): _selectedClusterIndex is -1, no view is selected";
+        return;
     }
-    _dimView->selectView(false);
 
     if (_sortedFloodIndices.empty()) {
         qDebug() << "ERROR! updateClick(): point selection is empty";
         return;
     }
+
+    // clear clicked frames
+    for (int i = 0; i < 6; i++) {// TO DO: hard coded for the current layout
+        _scatterViews[i]->selectView(false);
+    }
+    _dimView->selectView(false);
 
     ScatterView* selectedView = nullptr;
     for (int i = 0; i < _nclust; i++) {
@@ -2553,6 +2561,10 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
         updateSelection();
     }
 
+    // load the selected view
+    _selectedClusterIndex = variantMap["SelectedClusterIndex"].toInt();
+    updateClick();
+
 
     _loadingFromProject = false;
 
@@ -2587,6 +2599,8 @@ QVariantMap GeneSurferPlugin::toVariantMap() const
     }
 
     variantMap.insert("SelectionFlag", _selectedByFlood);
+
+    variantMap.insert("SelectedClusterIndex", _selectedClusterIndex);
 
     return variantMap;
 }
