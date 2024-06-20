@@ -31,8 +31,6 @@
 
 #include <chrono>
 
-//#include <unordered_set> // TODO: remove
-
 
 
 Q_PLUGIN_METADATA(IID "nl.BioVault.GeneSurferPlugin")
@@ -1423,12 +1421,12 @@ void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
             }
         }
 
-        qDebug() << "Access _positionSourceData";
+        //qDebug() << "Access _positionSourceData";
 
         // TO DO: remove debugging info
         if (_selectedDimIndex == -1)
         {
-            qDebug() << "ERROR!!!updateDimView(): _selectedDimIndex is -1";
+            qDebug() << "Warning! updateDimView(): _selectedDimIndex is -1";
             return;
         }
             
@@ -1445,7 +1443,7 @@ void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
         // TO DO: remove debugging info
         if (_selectedDimIndex == -1)
         {
-            qDebug() << "ERROR!!!updateDimView(): _selectedDimIndex is -1";
+            qDebug() << "Warning! updateDimView(): _selectedDimIndex is -1";
             return;
         }
 

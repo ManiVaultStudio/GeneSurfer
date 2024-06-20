@@ -33,14 +33,6 @@ namespace
         }
     }
 
-    // TODO: remove
-    /*float euclideanDistance(float x1, float y1, float x2, float y2) {
-        return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
-    }
-
-    float euclideanDistance3D(float x1, float y1, float z1, float x2, float y2, float z2) {
-        return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
-    }*/
 }
 
 namespace corrFilter
@@ -49,8 +41,9 @@ namespace corrFilter
     void CorrFilter::computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const
     {   // without weighting
         qDebug() << "Compute pairwise correlation started...";
-        qDebug() << "dimNames.size(): " << dimNames.size() << " dimIndices.size(): " << dimIndices.size();
-        qDebug() << "dataMatrix.rows(): " << dataMatrix.rows() << " dataMatrix.cols(): " << dataMatrix.cols();
+
+        //qDebug() << "dimNames.size(): " << dimNames.size() << " dimIndices.size(): " << dimIndices.size();
+        //qDebug() << "dataMatrix.rows(): " << dataMatrix.rows() << " dataMatrix.cols(): " << dataMatrix.cols();
 
         // TO DO: dimNames not needed
         std::vector<Eigen::VectorXf> centeredVectors(dimNames.size());// precompute mean 
@@ -598,38 +591,12 @@ namespace corrFilter
         Eigen::VectorXf contrast = meanA - meanB;
 
 
-        // with normalization - back up code
-        //int numGenes = selectionDataMatrix.cols();
-        //Eigen::VectorXf minValues = allDataMatrix.colwise().minCoeff();
-        //Eigen::VectorXf maxValues = allDataMatrix.colwise().maxCoeff();
-
-        ///*Eigen::VectorXf scaleFactors(numGenes);
-        //for (int i = 0; i < numGenes; i++) {
-        //    float range = maxValues[i] - minValues[i];
-        //    if (range != 0)
-        //        scaleFactors[i] = 1.0f / range;
-        //    else
-        //        scaleFactors[i] = 1.0f; 
-        //}
-
-        //Eigen::VectorXf meanA = selectionDataMatrix.colwise().mean();*/
-        ///*for (int i = 0; i < numGenes; i++) {
-        //    meanA[i] = (meanA[i] - minValues[i]) * scaleFactors[i];
-        //    meanB[i] = (meanB[i] - minValues[i]) * scaleFactors[i];
-        //}*/
-
-        //Eigen::VectorXf rescaleValues = 1.0f / (maxValues - minValues).array();
-        //Eigen::MatrixXf normalizedSelectionDataMatrix = (selectionDataMatrix.colwise() - minValues).array().colwise() * rescaleValues.array();
-        //Eigen::VectorXf meanA = normalizedSelectionDataMatrix.colwise().mean();
-        //Eigen::VectorXf meanB = allDataMatrix.colwise().mean();
-        //Eigen::VectorXf contrast = meanA - meanB;
-
-        qDebug() << "<<<<< contrast size: " << contrast.size() << " contrast min: " << contrast.minCoeff() << " contrast max: " << contrast.maxCoeff();
+        /*qDebug() << "<<<<< contrast size: " << contrast.size() << " contrast min: " << contrast.minCoeff() << " contrast max: " << contrast.maxCoeff();
         qDebug() << "contrast[0] " << contrast[0] << " contrast[1] " << contrast[1] << " contrast[2] " << contrast[2];
         qDebug() << "meanA size: " << meanA.size() << " meanA min: " << meanA.minCoeff() << " meanA max: " << meanA.maxCoeff();
         qDebug() << "meanA[0] " << meanA[0] << " meanA[1] " << meanA[1] << " meanA[2] " << meanA[2];
         qDebug() << "meanB size: " << meanB.size() << " meanB min: " << meanB.minCoeff() << " meanB max: " << meanB.maxCoeff();
-        qDebug() << "meanB[0] " << meanB[0] << " meanB[1] " << meanB[1] << " meanB[2] " << meanB[2];
+        qDebug() << "meanB[0] " << meanB[0] << " meanB[1] " << meanB[1] << " meanB[2] " << meanB[2];*/
 
         // Norm to range [0, 1] for plotting in the bar chart
         float minContrast = contrast.minCoeff();
