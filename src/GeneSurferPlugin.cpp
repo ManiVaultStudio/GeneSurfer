@@ -281,7 +281,12 @@ void GeneSurferPlugin::init()
 
     connect(&_floodFillDataset, &Dataset<Points>::dataChanged, this, [this]() {
         // Use the flood fill dataset to update the cell subset
-        qDebug() << ">>>>>GeneSurferPlugin::_floodFillDataset::dataChanged";
+        
+        // update flag for point selection
+        _selectedByFlood = true;
+        qDebug() << ">>>>>  _selectedByFlood = true";
+
+        //qDebug() << ">>>>>GeneSurferPlugin::_floodFillDataset::dataChanged";
         if (!_sliceDataset.isValid()) {
             _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
         }
@@ -300,6 +305,10 @@ void GeneSurferPlugin::init()
         }
         //qDebug() << ">>>>>GeneSurferPlugin::_positionDataset::dataSelectionChanged(): selected indices size: " << selection->indices.size();
         //qDebug() << "Before computeSubset" << "_sliceDataset.isValid = " << _sliceDataset.isValid();
+
+        // update flag for point selection
+        _selectedByFlood = false;
+        qDebug() << ">>>>>  _selectedByFlood = false";
 
         if (!_sliceDataset.isValid()) 
         {
@@ -491,6 +500,10 @@ void GeneSurferPlugin::updateFloodFillDataset()
         return;
     }
      
+    // update flag for point selection
+    _selectedByFlood = true;
+    qDebug() << ">>>>>  _selectedByFlood = true";
+
     if (!_sliceDataset.isValid()) {
         _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
     }
@@ -2523,6 +2536,24 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
         _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().setEnabled(true);
     }
 
+    // loading selection of points
+    _selectedByFlood = variantMap["SelectionFlag"].toBool();
+    qDebug() << "GeneSurferPlugin::fromVariantMap(): _selectedByFlood = " << _selectedByFlood;
+    if (_selectedByFlood)
+    {
+        updateFloodFillDataset();
+    }
+    else 
+    {
+        auto selection = _positionDataset->getSelection<Points>();
+        if (!_sliceDataset.isValid())
+           _computeSubset.updateSelectedData(_positionDataset, selection, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
+        else
+          _computeSubset.updateSelectedData(_positionDataset, selection, _onSliceIndices, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex, _isFloodOnSlice, _onSliceFloodIndices);
+        updateSelection();
+    }
+
+
     _loadingFromProject = false;
 
 }
@@ -2554,6 +2585,8 @@ QVariantMap GeneSurferPlugin::toVariantMap() const
         }
         variantMap.insert("clusterNamesAvgExpr", clusterNamesAvgExprVariant);
     }
+
+    variantMap.insert("SelectionFlag", _selectedByFlood);
 
     return variantMap;
 }

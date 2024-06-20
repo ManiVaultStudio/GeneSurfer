@@ -260,6 +260,7 @@ private:
     AvgExpressionStatus                _avgExprStatus = AvgExpressionStatus::NONE;
     QString                            _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
     QString                            _currentEnrichmentAPI = "ToppGene"; // current enrichment API
+    bool                               _selectedByFlood = false; // false: selected by floodfill, true: selected by selection
 
 public:
     bool isDataInitialized() { return _dataInitialized; }
