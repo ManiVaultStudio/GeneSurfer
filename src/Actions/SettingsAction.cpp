@@ -129,6 +129,8 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     qDebug() << ">>>>> SettingsAction::fromVariantMap 3";
     _clusteringAction.fromParentVariantMap(variantMap);
     qDebug() << ">>>>> SettingsAction::fromVariantMap 4";
+    _enrichmentAction.fromParentVariantMap(variantMap);
+    qDebug() << ">>>>> SettingsAction::fromVariantMap 5";
     _positionAction.fromParentVariantMap(variantMap);  
     _pointPlotAction.fromParentVariantMap(variantMap); 
     _sliceAction.fromParentVariantMap(variantMap);
@@ -151,6 +153,7 @@ QVariantMap SettingsAction::toVariantMap() const
     _clusteringAction.insertIntoVariantMap(variantMap);
     _sliceAction.insertIntoVariantMap(variantMap);
     _correlationModeAction.insertIntoVariantMap(variantMap);
+    _enrichmentAction.insertIntoVariantMap(variantMap);
     //_dimensionSelectionAction.insertIntoVariantMap(variantMap); // TO DO: not needed, done in plugin.cpp
 
     return variantMap;

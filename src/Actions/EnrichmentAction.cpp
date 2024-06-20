@@ -53,12 +53,14 @@ void EnrichmentAction::fromVariantMap(const QVariantMap& variantMap)
 {
     HorizontalGroupAction::fromVariantMap(variantMap);
     _enrichmentAPIPickerAction.fromParentVariantMap(variantMap);
+    _speciesPickerAction.fromParentVariantMap(variantMap);
 }
 
 QVariantMap EnrichmentAction::toVariantMap() const
 {
     auto variantMap = HorizontalGroupAction::toVariantMap();
     _enrichmentAPIPickerAction.insertIntoVariantMap(variantMap);
+    _speciesPickerAction.insertIntoVariantMap(variantMap);
 
     return variantMap;
 }
