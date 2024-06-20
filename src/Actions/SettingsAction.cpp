@@ -25,7 +25,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
 
     _clusteringAction(this, "Cluster Settings"),
 
-    _sliceAction(this, "Slice", 0, 52), // TODO: hardcoded values for ABC Atlas
+    _sliceAction(this, "Slice", 0, 52), //initialize with 52 slices, will adjust after sliceDataset is loaded
 
     _correlationModeAction(this, "Correlation Mode"),
 
@@ -79,7 +79,9 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         _avgExprDatasetPickerAction.setCurrentDataset(dataset);
         });
 
-    //connect(&_sliceAction, &IntegralAction::valueChanged, _exampleViewJSPlugin, &GeneSurferPlugin::updateSlice());
+    connect(&_geneSurferPlugin->getSliceDataset(), &Dataset<Points>::changed, this, [this]() {
+        _sliceAction.setMaximum(_geneSurferPlugin->getSliceDataset()->getClusters().size() - 1);// Start from 0
+        });
 
     connect(&_sliceAction, &IntegralAction::valueChanged, this, [this]() {
         _geneSurferPlugin->updateSlice(_sliceAction.getValue());
