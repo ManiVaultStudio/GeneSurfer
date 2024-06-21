@@ -9,6 +9,8 @@ PointPlotAction::PointPlotAction(QObject* parent, const QString& title) :
     _pointOpacityAction(this, "Opacity", 0.f, 1.f, 0.1f, 2)
 {
     setIcon(mv::Application::getIconFont("FontAwesome").getIcon("paint-brush"));
+    setToolTip("Point plot settings");
+    setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
     setLabelSizingType(LabelSizingType::Auto);
 
     addAction(&_pointSizeAction);

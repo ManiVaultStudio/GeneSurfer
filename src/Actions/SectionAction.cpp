@@ -7,13 +7,13 @@ SectionAction::SectionAction(QObject* parent, const QString& title) :
     GroupAction(parent, title),
     _sliceAction(this, "Section", 0, 52) //initialize with 52 slices, will adjust after sliceDataset is loaded
 {
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("database"));
+    setToolTip("Section selection for 3D data");
+    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("mouse-pointer"));
     setLabelSizingType(LabelSizingType::Auto);
 
     addAction(&_sliceAction);
 
     _sliceAction.setToolTip("Section selection for 3D data");
-
 
     auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
     if (geneSurferPlugin == nullptr)
@@ -26,8 +26,6 @@ SectionAction::SectionAction(QObject* parent, const QString& title) :
     connect(&_sliceAction, &IntegralAction::valueChanged, this, [this, geneSurferPlugin]() {
         geneSurferPlugin->updateSlice(_sliceAction.getValue());
         });
-
-
 }
 
 void SectionAction::fromVariantMap(const QVariantMap& variantMap)

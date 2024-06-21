@@ -9,6 +9,8 @@ PositionAction::PositionAction(QObject* parent, const QString& title) :
     _yDimensionPickerAction(this, "Y")
 {
     setIcon(mv::Application::getIconFont("FontAwesome").getIcon("ruler-combined"));
+    setToolTip("Position settings");
+    setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
     setLabelSizingType(LabelSizingType::Auto);
 
     addAction(&_xDimensionPickerAction);

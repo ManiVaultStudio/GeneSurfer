@@ -9,26 +9,16 @@ using namespace mv::gui;
 SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     GroupAction(parent, title),
     _geneSurferPlugin(dynamic_cast<GeneSurferPlugin*>(parent)),
-
     _positionDatasetPickerAction(this, "PositionDataset"),
     _sliceDatasetPickerAction(this, "SliceDataset"),
-
     _avgExprDatasetPickerAction(this, "AvgExprDataset"),
-
     _positionAction(this, "Position"),
-
-    _dimensionSelectionAction(this, "Dim"),
-
+    _dimensionSelectionAction(this, "Gene searching"),
     _pointPlotAction(this, "Point Plot"),
-
     _singleCellModeAction(this, "Single Cell Mode"),
-
     _clusteringAction(this, "Cluster Settings"),
-
     _sectionAction(this, "Section selection"),
-
-    _correlationModeAction(this, "Correlation Mode"),
-
+    _correlationModeAction(this, "Gene filtering"),
     _enrichmentAction(this, "Enrichment settings")
 {
     setText("Settings");
@@ -41,11 +31,6 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         return;
 
     _singleCellModeAction.initialize(_geneSurferPlugin);
-    
-    _correlationModeAction.setToolTip("Correlation Mode");
-    _positionAction.setToolTip("Position Dimension");
-    _pointPlotAction.setToolTip("Point Plot");
-    _clusteringAction.setToolTip("Cluster Settings");
 
     const auto updateEnabled = [this]() {
         bool hasDataset = _geneSurferPlugin->getPositionDataset().isValid();

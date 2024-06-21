@@ -89,8 +89,6 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _colorMapAction(this, "Color map", "RdYlBu")
 
 {
-    _primaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);
-    _primaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 2, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
@@ -98,7 +96,9 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
 
     _secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
 
-    _tertiaryToolbarAction.addAction(&_settingsAction.getSectionAction());
+    _tertiaryToolbarAction.addAction(&_settingsAction.getSectionAction(),1, GroupAction::Horizontal);
+    _tertiaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);
+    _tertiaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
 
     for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
     {

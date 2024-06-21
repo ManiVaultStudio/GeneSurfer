@@ -8,7 +8,8 @@ ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
     _numClusterAction(this, "numClusters", 1, 6, 3),
     _numGenesThresholdAction(this, "numFilteredGenes", 1, 100, 50)
 {
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("image"));
+    setToolTip("Clustering settings");
+    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("th-large"));
     setLabelSizingType(LabelSizingType::Auto);
 
     addAction(&_numClusterAction);
