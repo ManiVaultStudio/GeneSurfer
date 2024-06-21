@@ -25,7 +25,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
 
     _clusteringAction(this, "Cluster Settings"),
 
-    _sliceAction(this, "Slice", 0, 52), //initialize with 52 slices, will adjust after sliceDataset is loaded
+    _sectionAction(this, "Section selection"),
 
     _correlationModeAction(this, "Correlation Mode"),
 
@@ -41,9 +41,6 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         return;
 
     _singleCellModeAction.initialize(_geneSurferPlugin);
-
-    //_sliceAction.setStretch(100);
-    _sliceAction.setConfigurationFlag(WidgetAction::ConfigurationFlag::User);
     
     _correlationModeAction.setToolTip("Correlation Mode");
     _positionAction.setToolTip("Position Dimension");
@@ -77,14 +74,6 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         });
     connect(&_geneSurferPlugin->getAvgExprDataset(), &Dataset<Clusters>::changed, this, [this](DatasetImpl* dataset) -> void {
         _avgExprDatasetPickerAction.setCurrentDataset(dataset);
-        });
-
-    connect(&_geneSurferPlugin->getSliceDataset(), &Dataset<Points>::changed, this, [this]() {
-        _sliceAction.setMaximum(_geneSurferPlugin->getSliceDataset()->getClusters().size() - 1);// Start from 0
-        });
-
-    connect(&_sliceAction, &IntegralAction::valueChanged, this, [this]() {
-        _geneSurferPlugin->updateSlice(_sliceAction.getValue());
         });
 }
 
@@ -133,7 +122,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     qDebug() << "SettingsAction::fromVariantMap 5";
     _positionAction.fromParentVariantMap(variantMap);  
     _pointPlotAction.fromParentVariantMap(variantMap); 
-    _sliceAction.fromParentVariantMap(variantMap);
+    _sectionAction.fromParentVariantMap(variantMap);
     
 }
 
@@ -149,7 +138,7 @@ QVariantMap SettingsAction::toVariantMap() const
     _pointPlotAction.insertIntoVariantMap(variantMap);
     _singleCellModeAction.insertIntoVariantMap(variantMap);
     _clusteringAction.insertIntoVariantMap(variantMap);
-    _sliceAction.insertIntoVariantMap(variantMap);
+    _sectionAction.insertIntoVariantMap(variantMap);
     _correlationModeAction.insertIntoVariantMap(variantMap);
     _enrichmentAction.insertIntoVariantMap(variantMap);
 

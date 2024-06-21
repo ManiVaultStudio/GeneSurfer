@@ -14,6 +14,7 @@
 #include "ClusteringAction.h"
 #include "DimensionSelectionAction.h"
 #include "EnrichmentAction.h"
+#include "SectionAction.h"
 
 using namespace mv::gui;
 
@@ -67,8 +68,8 @@ public: // Action getters
     ClusteringAction& getClusteringAction() { return _clusteringAction; }
 
     CorrelationModeAction& getCorrelationModeAction() { return _correlationModeAction; }
-
-    IntegralAction& getSliceAction() { return _sliceAction; }   
+ 
+    SectionAction& getSectionAction() { return _sectionAction; }
 
     EnrichmentAction& getEnrichmentAction() { return _enrichmentAction; }
 
@@ -92,7 +93,7 @@ private:
     
     ClusteringAction        _clusteringAction;          /** clustering action */
 
-    IntegralAction          _sliceAction;           /** slice action */
+    SectionAction            _sectionAction;         /** section action */
 
     EnrichmentAction        _enrichmentAction;          /** enrichment action */
 };

@@ -98,7 +98,7 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
 
     _secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
 
-    _tertiaryToolbarAction.addAction(&_settingsAction.getSliceAction());
+    _tertiaryToolbarAction.addAction(&_settingsAction.getSectionAction());
 
     for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
     {
@@ -2467,7 +2467,7 @@ void GeneSurferPlugin::updateSlice(int sliceIndex) {
 
     // TODO: should set the value in ScatterView with eventFilter
     // Otherwise if updateSlice is called by settingsAction, this is repeated
-    _settingsAction.getSliceAction().setValue(_currentSliceIndex); 
+    _settingsAction.getSectionAction().getSliceAction().setValue(_currentSliceIndex);
 
     if (!_sliceDataset.isValid()) {
         qDebug() << "GeneSurferPlugin::updateSlice(): _sliceDataset is not valid";
@@ -2544,7 +2544,7 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
     if (_sliceDataset.isValid())
     {
         qDebug() << "GeneSurferPlugin::fromVariantMap() 4 ";
-        _currentSliceIndex = variantMap["CurrentSliceIdx"].toInt();
+        _currentSliceIndex = variantMap["CurrentSliceIdx"].toInt();// TODO: check if this is still needed if _sectionAction is serialized
         updateSlice(_currentSliceIndex);
     }
 

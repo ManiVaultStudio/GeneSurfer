@@ -110,7 +110,7 @@ void EnrichmentAnalysis::handleEnrichmentReplyToppGene() {
 
         QJsonArray annotationsArray = jsonObject["Annotations"].toArray();
 
-        qDebug() << "annotationsArray size" << annotationsArray.size();
+        //qDebug() << "annotationsArray size" << annotationsArray.size();
 
         // previous code for filtering the reply + //if (GOCategories.contains(category)) {} in the loop
         /*const QStringList GOCategories = {"GeneOntologyMolecularFunction",

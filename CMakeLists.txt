@@ -81,6 +81,8 @@ set(Actions
 	src/Actions/GenePickerAction.h
 	src/Actions/EnrichmentAction.cpp
 	src/Actions/EnrichmentAction.h
+	src/Actions/SectionAction.cpp
+	src/Actions/SectionAction.h
 )
 
 
