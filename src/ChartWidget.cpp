@@ -49,12 +49,21 @@ ChartWidget::ChartWidget(GeneSurferPlugin* geneSurferPlugin):
     init(&_comObject);
 
     layout()->setContentsMargins(0, 0, 0, 0);
+
+    connect(this, &mv::gui::WebWidget::webPageFullyLoaded, this, &ChartWidget::onWebPageFullyLoaded);
 }
 
 void ChartWidget::initWebPage()
 {
     qDebug() << "ChartWidget::initWebPage: WebChannel bridge is available.";
     // This call ensures data chart setup when this view plugin is opened via the context menu of a data set
+    //_geneSurferPlugin->convertDataAndUpdateChart();
+}
+
+void ChartWidget::onWebPageFullyLoaded()
+{
+    qDebug() << "ChartWidget::onWebPageLoaded: Web page loaded.";
     _geneSurferPlugin->convertDataAndUpdateChart();
 }
+
 

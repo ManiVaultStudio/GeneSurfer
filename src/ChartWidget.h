@@ -55,6 +55,8 @@ private slots:
         js_available emits notifyJsBridgeIsAvailable, which is conencted to this slot in WebWidget.cpp*/
     void initWebPage() override;
 
+    void onWebPageFullyLoaded(); // Is invoked when mv::gui::WebWidget::webPageFullyLoaded
+
 private:
     GeneSurferPlugin*  _geneSurferPlugin;    // Pointer to the main plugin class
     ChartCommObject       _comObject;       // Communication Object between Qt (cpp) and JavaScript
