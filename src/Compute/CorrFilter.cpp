@@ -40,7 +40,7 @@ namespace corrFilter
 
     void CorrFilter::computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, DataMatrix& corrMatrix) const
     {   // without weighting
-        qDebug() << "Compute pairwise correlation started...";
+        //qDebug() << "Compute pairwise correlation started...";
 
         //qDebug() << "dimNames.size(): " << dimNames.size() << " dimIndices.size(): " << dimIndices.size();
         //qDebug() << "dataMatrix.rows(): " << dataMatrix.rows() << " dataMatrix.cols(): " << dataMatrix.cols();
@@ -70,12 +70,12 @@ namespace corrFilter
                 corrMatrix(col2, col1) = correlation;
             }
         }
-        qDebug() << "Compute pairwise correlation finished...";
+        //qDebug() << "Compute pairwise correlation finished...";
     }
 
     void CorrFilter::computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, const Eigen::VectorXf& weights, DataMatrix& corrMatrix) const
     {   // with weighting
-        qDebug() << "Compute pairwise correlation with weighting started...";
+        //qDebug() << "Compute pairwise correlation with weighting started...";
 
         //qDebug() << "dimNames.size(): " << dimNames.size() << " dimIndices.size(): " << dimIndices.size();
         //qDebug() << "dataMatrix.rows(): " << dataMatrix.rows() << " dataMatrix.cols(): " << dataMatrix.cols();
@@ -118,7 +118,7 @@ namespace corrFilter
             }
         }
 
-        qDebug() << "Compute pairwise correlation finished...";
+        //qDebug() << "Compute pairwise correlation finished...";
     
     }
 
@@ -139,7 +139,7 @@ namespace corrFilter
     void SpatialCorr::computeCorrelationVectorOneDimension(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& positionsOneDimension, std::vector<float>& corrVector) const
     {
         // 2D or 3D all flood indices
-        qDebug() << "Compute spatial correlation started...";
+        //qDebug() << "Compute spatial correlation started...";
         Eigen::VectorXf vector(floodIndices.size());
         for (int i = 0; i < floodIndices.size(); ++i) {
             int index = floodIndices[i];
@@ -150,13 +150,13 @@ namespace corrFilter
             }
             vector[i] = positionsOneDimension[index];
         }
-        qDebug() << "vector size" << vector.size();
+        //qDebug() << "vector size" << vector.size();
 
         // Precompute means and norms
         float mean = vector.mean();
         Eigen::VectorXf centered = vector - Eigen::VectorXf::Constant(vector.size(), mean);
         float norm = centered.squaredNorm();
-        qDebug() << "Compute centeredVectors and norms finished...";
+        //qDebug() << "Compute centeredVectors and norms finished...";
 
         std::vector<float> correlations(dataMatrix.cols());
 
@@ -173,7 +173,7 @@ namespace corrFilter
             if (std::isnan(correlation)) { correlation = 0.0f; }
             corrVector[i] = correlation;
         }
-        qDebug() << "corrVector size " << corrVector.size();
+        //qDebug() << "corrVector size " << corrVector.size();
     }
 
     void SpatialCorr::computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, std::vector<float>& corrVector) const
@@ -387,7 +387,7 @@ namespace corrFilter
             yCoordinates.push_back(positions[index].y);
         }
         std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xCoordinates, yCoordinates);
-        qDebug() << "Compute distance matrix finished...";
+        //qDebug() << "Compute distance matrix finished...";
 
         // compute weight-related parameters 
         float W, S1, S2, S4, S5;
@@ -423,12 +423,12 @@ namespace corrFilter
             //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
             moranVector[i] = zScore;
         }
-        qDebug() << "Compute moran's I finished...";
+        //qDebug() << "Compute moran's I finished...";
 
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
         float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
         float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
-        qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
+        //qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
 
         for (int i = 0; i < moranVector.size(); ++i) {
             moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
@@ -441,7 +441,8 @@ namespace corrFilter
         //3D all flood indices
         qDebug() << "Compute moran's I started...";
 
-        auto start1 = std::chrono::high_resolution_clock::now();
+        //auto start1 = std::chrono::high_resolution_clock::now();
+
         std::vector<float> xCoordinates;
         std::vector<float> yCoordinates;
         std::vector<float> zCoordinates;
@@ -460,20 +461,24 @@ namespace corrFilter
             zCoordinates.push_back(zPositions[index]);
         }
         std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xCoordinates, yCoordinates, zCoordinates);
-        auto end1 = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed1 = end1 - start1;
-        qDebug() << "Elapsed time for computeWeightMatrix: " << elapsed1.count();
-        qDebug() << "Compute distance matrix finished...";
+
+        //auto end1 = std::chrono::high_resolution_clock::now();
+        //std::chrono::duration<double> elapsed1 = end1 - start1;
+        //qDebug() << "Elapsed time for computeWeightMatrix: " << elapsed1.count();
+        //qDebug() << "Compute distance matrix finished...";
 
         // compute weight-related parameters 
-        auto start2 = std::chrono::high_resolution_clock::now();
+        //auto start2 = std::chrono::high_resolution_clock::now();
+
         float W, S1, S2, S4, S5;
         moranParameters(distanceMat, W, S1, S2, S4, S5);
-        auto end2 = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed2 = end2 - start2;
-        qDebug() << "Elapsed time for moranParameters: " << elapsed2.count();
 
-        auto start3 = std::chrono::high_resolution_clock::now();
+        //auto end2 = std::chrono::high_resolution_clock::now();
+        //std::chrono::duration<double> elapsed2 = end2 - start2;
+        //qDebug() << "Elapsed time for moranParameters: " << elapsed2.count();
+
+        //auto start3 = std::chrono::high_resolution_clock::now();
+
         moranVector.clear();
         moranVector.resize(dataMatrix.cols());
 
@@ -503,25 +508,27 @@ namespace corrFilter
             //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
             moranVector[i] = zScore;
         }
-        auto end3 = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed3 = end3 - start3;
-        qDebug() << "Elapsed time for computeMoranVector: " << elapsed3.count();
 
-        qDebug() << "Compute moran's I finished...";
+        //auto end3 = std::chrono::high_resolution_clock::now();
+        //std::chrono::duration<double> elapsed3 = end3 - start3;
+        //qDebug() << "Elapsed time for computeMoranVector: " << elapsed3.count();
+
+        //qDebug() << "Compute moran's I finished...";
 
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
-        auto start4 = std::chrono::high_resolution_clock::now();
+        //auto start4 = std::chrono::high_resolution_clock::now();
 
         float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
         float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
-        qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
+        //qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
 
         for (int i = 0; i < moranVector.size(); ++i) {
             moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
         }
-        auto end4 = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed4 = end4 - start4;
-        qDebug() << "Elapsed time for normalize: " << elapsed4.count();
+
+        //auto end4 = std::chrono::high_resolution_clock::now();
+        //std::chrono::duration<double> elapsed4 = end4 - start4;
+        //qDebug() << "Elapsed time for normalize: " << elapsed4.count();
 
         qDebug() << "Normalize moran's I finished...";
     }
@@ -531,8 +538,8 @@ namespace corrFilter
         // 3D cluster with mean position
         qDebug() << "Compute moran's I started...";
         std::vector<std::vector<float>> distanceMat = computeWeightMatrix(xPositions, yPositions, zPositions);
-        qDebug() << "Compute distance matrix finished...";
-        qDebug() << "distanceMat[0][0] " << distanceMat[0][0] << " distanceMat[0][1] " << distanceMat[0][1];
+        //qDebug() << "Compute distance matrix finished...";
+        //qDebug() << "distanceMat[0][0] " << distanceMat[0][0] << " distanceMat[0][1] " << distanceMat[0][1];
 
         // compute weight-related parameters 
         float W, S1, S2, S4, S5;
@@ -567,16 +574,16 @@ namespace corrFilter
             //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
             moranVector[i] = zScore;
         }
-        qDebug() << "Compute moran's I finished...";
+        //qDebug() << "Compute moran's I finished...";
 
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
         float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
         float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
-        qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
+        //qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
         // output the index of min and max correlation
         int minIndex = std::distance(moranVector.begin(), std::min_element(moranVector.begin(), moranVector.end()));
         int maxIndex = std::distance(moranVector.begin(), std::max_element(moranVector.begin(), moranVector.end()));
-        qDebug() << "minIndex: " << minIndex << " maxIndex: " << maxIndex;
+        //qDebug() << "minIndex: " << minIndex << " maxIndex: " << maxIndex;
 
         for (int i = 0; i < moranVector.size(); ++i) {
             moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);

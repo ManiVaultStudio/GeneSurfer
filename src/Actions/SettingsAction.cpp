@@ -83,7 +83,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     auto sliceDataset = _sliceDatasetPickerAction.getCurrentDataset();
     if (sliceDataset.isValid())
     {
-        qDebug() << ">>>>> Found a slice dataset " << sliceDataset->getGuiName();
+        qDebug() << ">>>>> Found slice dataset " << sliceDataset->getGuiName();
         Dataset pickedDataset = mv::data().getDataset(sliceDataset.getDatasetId());
         _geneSurferPlugin->getSliceDataset() = pickedDataset;
     }
@@ -96,15 +96,15 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
         Dataset pickedDataset = mv::data().getDataset(avgExprDataset.getDatasetId());
         _geneSurferPlugin->getAvgExprDataset() = pickedDataset;
     }
-    qDebug() << "SettingsAction::fromVariantMap 1";
+    //qDebug() << "SettingsAction::fromVariantMap 1";
     _correlationModeAction.fromParentVariantMap(variantMap);
-    qDebug() << "SettingsAction::fromVariantMap 2";
+    //qDebug() << "SettingsAction::fromVariantMap 2";
     _singleCellModeAction.fromParentVariantMap(variantMap);
-    qDebug() << "SettingsAction::fromVariantMap 3";
+    //qDebug() << "SettingsAction::fromVariantMap 3";
     _clusteringAction.fromParentVariantMap(variantMap);
-    qDebug() << "SettingsAction::fromVariantMap 4";
+    //qDebug() << "SettingsAction::fromVariantMap 4";
     _enrichmentAction.fromParentVariantMap(variantMap);
-    qDebug() << "SettingsAction::fromVariantMap 5";
+    //qDebug() << "SettingsAction::fromVariantMap 5";
     _positionAction.fromParentVariantMap(variantMap);  
     _pointPlotAction.fromParentVariantMap(variantMap); 
     _sectionAction.fromParentVariantMap(variantMap);

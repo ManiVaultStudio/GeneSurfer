@@ -189,7 +189,7 @@ void EnrichmentAnalysis::handleEnrichmentReplyToppGene() {
             emit enrichmentDataNotExists();
         }
    
-        qDebug() << "EnrichmentAnalysis::handleEnrichmentReplyToppGene end...";
+        //qDebug() << "EnrichmentAnalysis::handleEnrichmentReplyToppGene end...";
 
         //output all items in certain categories
         /*for (const QJsonValue& value : annotationsArray) {
@@ -214,7 +214,7 @@ void EnrichmentAnalysis::handleEnrichmentReplyToppGene() {
 }
 
 void EnrichmentAnalysis::postGeneGprofiler(const QStringList& query, const QStringList& background, const QString& species) { 
-    qDebug() << "gprofiler begin...";
+    //qDebug() << "gprofiler begin...";
 
     QUrl url("https://biit.cs.ut.ee/gprofiler/api/gost/profile/");
 
@@ -243,7 +243,7 @@ void EnrichmentAnalysis::postGeneGprofiler(const QStringList& query, const QStri
 void EnrichmentAnalysis::handleEnrichmentReplyGprofiler() {
     QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
 
-    qDebug() << "start to handle gprofiler reply...";
+    //qDebug() << "start to handle gprofiler reply...";
 
     if (reply && reply->error() == QNetworkReply::NoError) {
         QByteArray responseData = reply->readAll();

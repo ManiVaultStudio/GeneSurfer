@@ -40,7 +40,7 @@ void DataSubset::processFloodFillDataset(mv::Dataset<Points> floodFillDataset, s
     // get flood fill nodes from the core
     std::vector<float> floodNodesWave(floodFillDataset->getNumPoints());
     floodFillDataset->populateDataForDimensions < std::vector<float>, std::vector<float>>(floodNodesWave, { 0 });
-    qDebug() << "DataSubset::processFloodFillDataset(): floodNodesWave size: " << floodNodesWave.size();
+    //qDebug() << "DataSubset::processFloodFillDataset(): floodNodesWave size: " << floodNodesWave.size();
 
     // process the selected flood-fill 
     floodIndices.clear();
@@ -91,7 +91,7 @@ void DataSubset::updateFloodFillOnSlice(const std::vector<bool>& isFloodIndex, c
         isFloodOnSlice[i] = isFloodIndex[onSliceIndices[i]];
     }
 
-    qDebug() << "DataSubset::updateIsFloodOnSlice(): _isFloodOnSlice size" << isFloodOnSlice.size();
+    //qDebug() << "DataSubset::updateIsFloodOnSlice(): _isFloodOnSlice size" << isFloodOnSlice.size();
   
     onSliceFloodIndices.clear();   
     std::set<int> sliceIndicesSet(onSliceIndices.begin(), onSliceIndices.end());
@@ -101,7 +101,7 @@ void DataSubset::updateFloodFillOnSlice(const std::vector<bool>& isFloodIndex, c
         }
     }
 
-    qDebug() << "DataSubset::updateIsFloodOnSlice(): _onSliceFloodIndices size" << onSliceFloodIndices.size();
+    //qDebug() << "DataSubset::updateIsFloodOnSlice(): _onSliceFloodIndices size" << onSliceFloodIndices.size();
 }
 
 void DataSubset::updateSelectedData(mv::Dataset<Points> positionDataset, mv::Dataset<Points> selection, std::vector<int>& floodIndices, std::vector<int>& waveNumbers, std::vector<bool>& isFloodIndex)
@@ -196,5 +196,5 @@ void DataSubset::computeSubsetDataAvgExpr(const DataMatrix& dataMatrix, const st
         subsetDataMatrix.row(i) = dataMatrix.row(clusterIndex);
     }
 
-    qDebug() << "DataSubset::computeSubsetDataAvgExpr(): subset num rows (clusters): " << subsetDataMatrix.rows() << ", num columns (genes): " << subsetDataMatrix.cols();
+    //qDebug() << "DataSubset::computeSubsetDataAvgExpr(): subset num rows (clusters): " << subsetDataMatrix.rows() << ", num columns (genes): " << subsetDataMatrix.cols();
 }
