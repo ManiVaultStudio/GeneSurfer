@@ -713,16 +713,35 @@ void GeneSurferPlugin::loadLabelsFromSTDataset() {
 
     qDebug() << "GeneSurferPlugin::loadLabelsFromSTDataset(): labelClusters size: " << labelClusters.size();
 
+    // add weighting for each cluster of whole data
+    _countsAll.resize(_clusterNamesAvgExpr.size()); // number of clusters in SC
+
     // precompute the cell-label array
     _cellLabels.clear();
     _cellLabels.resize(_numPoints);
 
-    for (int i = 0; i < labelClusters.size(); ++i) {
-        QString clusterName = labelClusters[i].getName();
-        const auto& ptIndices = labelClusters[i].getIndices();
-        for (int j = 0; j < ptIndices.size(); ++j) {
-            int ptIndex = ptIndices[j];
-            _cellLabels[ptIndex] = clusterName;
+    for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
+        QString clusterName = _clusterNamesAvgExpr[i];
+        bool found = false;
+
+        //search for the cluster name in labelClusters
+        for (const auto& cluster : labelClusters) {
+            if (cluster.getName() == clusterName) {
+                const auto& ptIndices = cluster.getIndices();
+                for (int j = 0; j < ptIndices.size(); ++j) {
+                    int ptIndex = ptIndices[j];
+                    _cellLabels[ptIndex] = clusterName;
+                }
+                // add weighting for each cluster of whole data
+                _countsAll[i] = ptIndices.size(); // number of pt in each cluster
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            // If the cluster is not found in labelClusters
+            qDebug() << "GeneSurferPlugin::loadLabelsFromSTDataset(): cluster in SC" << clusterName << " not found in ST";
+            _countsAll[i] = 0;
         }
     }
 
@@ -835,7 +854,6 @@ void GeneSurferPlugin::updateSelection()
         //qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
         _computeSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
         //qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
-
     }
     if (_isSingleCell && !_sliceDataset.isValid()) {
         qDebug() << "Compute subset: 2D + SingleCell";
@@ -2530,11 +2548,9 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
         updateSlice(_currentSliceIndex);
     }
 
-    qDebug() << "GeneSurferPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;
     _selectedDimName = variantMap["SelectedDimName"].toString();
     if (_selectedDimName != "NoneSelected")
         updateDimView(_selectedDimName);
-    qDebug() << "GeneSurferPlugin::fromVariantMap(): _selectedDimName = " << _selectedDimName;
 
     if (_avgExprStatus != AvgExpressionStatus::NONE)
     {

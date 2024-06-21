@@ -122,19 +122,18 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
         Dataset pickedDataset = mv::data().getDataset(avgExprDataset.getDatasetId());
         _geneSurferPlugin->getAvgExprDataset() = pickedDataset;
     }
-    qDebug() << ">>>>> SettingsAction::fromVariantMap 1";
+    qDebug() << "SettingsAction::fromVariantMap 1";
     _correlationModeAction.fromParentVariantMap(variantMap);
-    qDebug() << ">>>>> SettingsAction::fromVariantMap 2";
+    qDebug() << "SettingsAction::fromVariantMap 2";
     _singleCellModeAction.fromParentVariantMap(variantMap);
-    qDebug() << ">>>>> SettingsAction::fromVariantMap 3";
+    qDebug() << "SettingsAction::fromVariantMap 3";
     _clusteringAction.fromParentVariantMap(variantMap);
-    qDebug() << ">>>>> SettingsAction::fromVariantMap 4";
+    qDebug() << "SettingsAction::fromVariantMap 4";
     _enrichmentAction.fromParentVariantMap(variantMap);
-    qDebug() << ">>>>> SettingsAction::fromVariantMap 5";
+    qDebug() << "SettingsAction::fromVariantMap 5";
     _positionAction.fromParentVariantMap(variantMap);  
     _pointPlotAction.fromParentVariantMap(variantMap); 
     _sliceAction.fromParentVariantMap(variantMap);
-    //_dimensionSelectionAction.fromParentVariantMap(variantMap);
     
 }
 
@@ -144,7 +143,6 @@ QVariantMap SettingsAction::toVariantMap() const
 
     _positionDatasetPickerAction.insertIntoVariantMap(variantMap);
     _sliceDatasetPickerAction.insertIntoVariantMap(variantMap);
-
     _avgExprDatasetPickerAction.insertIntoVariantMap(variantMap);
 
     _positionAction.insertIntoVariantMap(variantMap);
@@ -154,7 +152,6 @@ QVariantMap SettingsAction::toVariantMap() const
     _sliceAction.insertIntoVariantMap(variantMap);
     _correlationModeAction.insertIntoVariantMap(variantMap);
     _enrichmentAction.insertIntoVariantMap(variantMap);
-    //_dimensionSelectionAction.insertIntoVariantMap(variantMap); // TO DO: not needed, done in plugin.cpp
 
     return variantMap;
 }

@@ -58,7 +58,7 @@ namespace corrFilter
             norms[i] = centered.squaredNorm();
         }
 
-        qDebug() << "Compute centeredVectors and norms finished...";
+        //qDebug() << "Compute centeredVectors and norms finished...";
 
         #pragma omp parallel for
         for (int col1 = 0; col1 < dimNames.size(); ++col1) {
@@ -75,9 +75,10 @@ namespace corrFilter
 
     void CorrFilter::computePairwiseCorrelationVector(const std::vector<QString>& dimNames, const std::vector<int>& dimIndices, const DataMatrix& dataMatrix, const Eigen::VectorXf& weights, DataMatrix& corrMatrix) const
     {   // with weighting
-        qDebug() << "Compute pairwise correlation started...with weighting...";
-        qDebug() << "dimNames.size(): " << dimNames.size() << " dimIndices.size(): " << dimIndices.size();
-        qDebug() << "dataMatrix.rows(): " << dataMatrix.rows() << " dataMatrix.cols(): " << dataMatrix.cols();
+        qDebug() << "Compute pairwise correlation with weighting started...";
+
+        //qDebug() << "dimNames.size(): " << dimNames.size() << " dimIndices.size(): " << dimIndices.size();
+        //qDebug() << "dataMatrix.rows(): " << dataMatrix.rows() << " dataMatrix.cols(): " << dataMatrix.cols();
 
         // check if the size of weights is the same as dataMatrix.rows()
         if (weights.size() != dataMatrix.rows())
@@ -103,7 +104,7 @@ namespace corrFilter
             norms[i] = weightedCentered.squaredNorm();
         }
 
-        qDebug() << "Compute centeredVectors and norms finished...";
+        //qDebug() << "Compute centeredVectors and norms finished...";
 
 #pragma omp parallel for
         for (int col1 = 0; col1 < dimNames.size(); ++col1) {
