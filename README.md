@@ -17,5 +17,5 @@ Currently, only a Windows installer is provided, Linux and Mac will follow in th
 The Allen Brain Cell Atlas dataset is used to demonstrate the usage of GeneSurfer. Download the project file containing this dataset here: (mv file link)
 
 ### Data source
-Yao, Z., van Velthoven, C.T., Kunst, M., Zhang, M., McMillen, D., Lee, C., Jung, W., Goldy, J., Abdelhak, A., and Aitken, M. (2023). A high-resolution transcriptomic and spatial atlas of cell types in the whole mouse brain. Nature 624 , 317-332. 
+Yao, Z., van Velthoven, C.T.J., Kunst, M. et al. A high-resolution transcriptomic and spatial atlas of cell types in the whole mouse brain. Nature 624, 317–332 (2023). https://doi.org/10.1038/s41586-023-06812-z
 
