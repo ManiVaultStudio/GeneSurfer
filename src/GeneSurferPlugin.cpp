@@ -22,6 +22,7 @@
 #include <QVariantMap>
 #include <QMimeData>
 #include <QDebug>
+#include <QSplitter>
 
 // for reading hard-coded csv files
 #include <iostream>
@@ -118,21 +119,20 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
 
 void GeneSurferPlugin::init()
 {
-    //getWidget().setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+    getWidget().setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
     // Create layout
     auto layout = new QVBoxLayout();
-
-    auto chartTableDimLayout = new QHBoxLayout();
-    auto tableDimLayout = new QVBoxLayout();
-
     layout->setContentsMargins(0, 0, 0, 0);
-
     layout->addWidget(_primaryToolbarAction.createWidget(&getWidget()));
+
+    // Create the splitter for the barchart and tableDimLayout
+    QSplitter * splitterChartTable = new QSplitter(Qt::Horizontal, &getWidget());
 
     // Create barchart widget and set html contents of webpage 
     _chartWidget = new ChartWidget(this);
     _chartWidget->setPage(":gene_surfer/chart/bar_chart.html", "qrc:/gene_surfer/chart/");
+    _chartWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
     // Add label for filtering on top of the barchart
     _filterLabel = new QLabel(_chartWidget);
@@ -143,14 +143,22 @@ void GeneSurferPlugin::init()
     
     _tableWidget = new MyTableWidget();
 
+    // Container widget for table and dim view
+    QWidget* tableDimWidget = new QWidget();
+    auto tableDimLayout = new QVBoxLayout(tableDimWidget);
     tableDimLayout->addWidget(_secondaryToolbarAction.createWidget(&getWidget()));
     tableDimLayout->addWidget(_tableWidget, 50);
     tableDimLayout->addWidget(_dimView, 50);
+    tableDimWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
-    chartTableDimLayout->addWidget(_chartWidget, 60);
-    chartTableDimLayout->addLayout(tableDimLayout, 40);
+    // Add widgets to splitter, set stretch factors and add splitter to layout
+    splitterChartTable->addWidget(_chartWidget);
+    splitterChartTable->addWidget(tableDimWidget);
+    splitterChartTable->setStretchFactor(0, 60);
+    splitterChartTable->setStretchFactor(1, 40);
 
-    layout->addLayout(chartTableDimLayout, 50);// stretch factor same as clusterViewLayout
+    layout->addWidget(splitterChartTable, 50);// same stretch factor as clusterViewMainLayout
+
 
     auto clusterViewMainLayout = new QVBoxLayout();
     clusterViewMainLayout->setContentsMargins(6, 6, 6, 6);
@@ -169,7 +177,7 @@ void GeneSurferPlugin::init()
 
     layout->addWidget(_tertiaryToolbarAction.createWidget(&getWidget()));
 
-    layout->addLayout(clusterViewMainLayout, 50);
+    layout->addLayout(clusterViewMainLayout, 50);// same stretch factor as splitter
 
     // Apply the layout
     getWidget().setLayout(layout);
