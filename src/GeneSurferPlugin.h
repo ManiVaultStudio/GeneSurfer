@@ -2,8 +2,8 @@
 
 #include <ViewPlugin.h>
 
-#include "compute/DataStore.h"
-#include "compute/DataMatrix.h"
+#include "Compute/DataStore.h"
+#include "Compute/DataMatrix.h"
 #include "Compute/EnrichmentAnalysis.h"
 #include "Compute/CorrFilter.h"
 #include "Compute/DataSubset.h"
