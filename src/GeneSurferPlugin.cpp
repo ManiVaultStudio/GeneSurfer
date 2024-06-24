@@ -1412,7 +1412,7 @@ void GeneSurferPlugin::updateScatterColors()
                 }
                 else {
                     qDebug() << "Column index out of range: j=" << j << " i=" << i << " _onSliceIndices[i]=" << _onSliceIndices[i];
-                    break;
+                    //break; // TO DO: remove this break statement
                 }
             }
             _scatterViews[j]->setScalars(viewScalars, selection[0]);
