@@ -9,7 +9,9 @@ EnrichmentAction::EnrichmentAction(QObject* parent, const QString& title) :
     _enrichmentAPIPickerAction(this, "API"),
     _speciesPickerAction(this, "Species")
 {
-    //setIcon(mv::Application::getIconFont("FontAwesome").getIcon("ruler-combined"));
+    setToolTip("Enrichment API");
+    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("wrench"));
+    //setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceExpandedInGroup);
     setLabelSizingType(LabelSizingType::Auto);
 
     _enrichmentAPIPickerAction.setToolTip("Enrichment analysis API");
