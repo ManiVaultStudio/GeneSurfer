@@ -6,7 +6,6 @@ PROJECT(${GENESURFER})
 # -----------------------------------------------------------------------------
 # Library versions for Artifactory sourced binaries
 # -----------------------------------------------------------------------------
-set(HDILib_VERSION 1.2.7)
 
 if(NOT USE_ARTIFACTORY_LIBS)
     set(USE_ARTIFACTORY_LIBS TRUE CACHE BOOL "Use the prebuilt libraries from artifactory")
@@ -112,34 +111,6 @@ set_target_properties(${GENESURFER} PROPERTIES CXX_STANDARD 17)
 
 # Include the fastcluster source file
 target_sources(GeneSurfer PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/hclust/fastcluster.cpp)
-
-set(LIBRARY_INSTALL_DIR ${PROJECT_BINARY_DIR})
-include(InstallArtifactoryPackage)
-if (USE_ARTIFACTORY_LIBS AND NOT JS_ARTIFACTORY_LIBS_INSTALLED) 
-    message(STATUS "Installing artifactory packages to: ${LIBRARY_INSTALL_DIR}")
-    # Both HDILib and flann are available prebuilt in the lkeb-artifactory as combined Debug/Release packages
-    # lz4 is also available in the lkb-artifactory in separate Debug and |Release packages
-    install_artifactory_package(HDILib ${HDILib_VERSION} biovault TRUE) 
-
-
-    message(STATUS "module path ${CMAKE_MODULE_PATH}")
-    message(STATUS "Call find_package HDILib search ${CMAKE_SOURCE_DIR}/HDILib/lib/cmake/HDILib")
-    message(STATUS "Run find_package HDILib")
-
-    set(JS_ARTIFACTORY_LIBS_INSTALLED TRUE CACHE BOOL "Use the prebuilt libraries from artifactory" FORCE)
-endif()
-
-if(USE_ARTIFACTORY_LIBS AND JS_ARTIFACTORY_LIBS_INSTALLED)
-    # If the HDILib_VERSION is not a x.y.z version number 
-    # omit the version argument from find package
-    find_package(HDILib COMPONENTS hdidimensionalityreduction hdiutils hdidata PATHS "${LIBRARY_INSTALL_DIR}/HDILib" CONFIG REQUIRED)
-
-    #HDILib include dir
-    target_include_directories(${GENESURFER} PRIVATE "${HDILib_INCLUDE_DIR}")
-
-    # HDILib linking
-    target_link_libraries(${GENESURFER} PRIVATE ${HDILib_LINK_LIBS})
-endif()
 
 # Include mv headers, including system data plugins
 target_include_directories(${GENESURFER} PRIVATE "${MV_INSTALL_DIR}/$<CONFIGURATION>/include/")
