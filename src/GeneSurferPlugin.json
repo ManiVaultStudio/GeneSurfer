@@ -1,5 +1,5 @@
 {
     "name" : "Gene Surfer",
-    "version" : "1",
+    "version" : "0.1",
     "dependencies" : ["Points"]
 }
