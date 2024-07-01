@@ -2,3 +2,4 @@
 CMakePresets.json
 CMakeUserPresets.json
 out/
+aql_out.txt
