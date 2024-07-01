@@ -127,7 +127,7 @@ void GeneSurferPlugin::init()
     layout->addWidget(_primaryToolbarAction.createWidget(&getWidget()));
 
     // Create the splitter for the barchart and tableDimLayout
-    QSplitter * splitterChartTable = new QSplitter(Qt::Horizontal, &getWidget());
+    QSplitter* splitterChartTable = new QSplitter(Qt::Horizontal, &getWidget());
 
     // Create barchart widget and set html contents of webpage 
     _chartWidget = new ChartWidget(this);
@@ -143,19 +143,24 @@ void GeneSurferPlugin::init()
     
     _tableWidget = new MyTableWidget();
 
+
+    auto widget = _secondaryToolbarAction.createWidget(&getWidget());
+    widget->setMinimumWidth(10);// Fix the width of the secondary toolbar for splitter to work properly
+
     // Container widget for table and dim view
     QWidget* tableDimWidget = new QWidget();
     auto tableDimLayout = new QVBoxLayout(tableDimWidget);
-    tableDimLayout->addWidget(_secondaryToolbarAction.createWidget(&getWidget()));
+    tableDimLayout->addWidget(widget);
     tableDimLayout->addWidget(_tableWidget, 50);
     tableDimLayout->addWidget(_dimView, 50);
-    tableDimWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+    //tableDimWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
     // Add widgets to splitter, set stretch factors and add splitter to layout
     splitterChartTable->addWidget(_chartWidget);
     splitterChartTable->addWidget(tableDimWidget);
     splitterChartTable->setStretchFactor(0, 60);
     splitterChartTable->setStretchFactor(1, 40);
+    splitterChartTable->setChildrenCollapsible(false);
 
     layout->addWidget(splitterChartTable, 50);// same stretch factor as clusterViewMainLayout
 
