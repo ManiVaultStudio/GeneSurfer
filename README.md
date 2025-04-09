@@ -12,9 +12,9 @@ The installer of this software which includes the GeneSurfer plugin can be downl
 Currently, only a Windows installer is provided, Linux and Mac will follow in the coming period.
 
 ## Example Projects and Data
-Our main analysis and figures in the paper are based on the Allen Brain Cell Atlas[1]. To reproduce the key results, we recommend downloading the `.mv` [**project file for ABC Atlas**](https://osf.io/47z2y), which contains saved UI configurations and data. A minimum of 16GB memory is required, 32GB+ recommended.
+Our main analysis and figures in the paper are demonstrated using the Allen Brain Cell Atlas (ABC Atlas)[1]. To reproduce the results, we recommend downloading the `.mv` [**project file for ABC Atlas**](https://osf.io/47z2y), which contains saved UI configurations and data. A minimum of 16GB memory is required, 32GB+ recommended.
 
-To demonstrate GeneSurfer's general applicability, we also tested it on datasets from other spatial transcriptomics platforms. All files are available via [**our OSF repository**](https://osf.io/eg97r/wiki/).
+To demonstrate GeneSurfer's general applicability, we also tested it on datasets from other spatial transcriptomics platforms. All data files and project files are available via [**our OSF repository**](https://osf.io/eg97r/). For detailed descriptions of the files and guidance on usage, please refer to the [**OSF project wiki**](https://osf.io/eg97r/wiki/).
 
 ### Data source
 [1] Yao, Z., van Velthoven, C.T.J., Kunst, M. et al. A high-resolution transcriptomic and spatial atlas of cell types in the whole mouse brain. Nature 624, 317–332 (2023). https://doi.org/10.1038/s41586-023-06812-z
