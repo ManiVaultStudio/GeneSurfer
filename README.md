@@ -7,13 +7,15 @@ This software is described in [**GeneSurfer Enables Transcriptome-wide Explorati
 ## Installation
 GeneSurfer is built as a plug-in for the ManiVault application building system. For more information about ManiVault Studio, see [**ManiVault**](https://www.manivault.studio/).
 
-The installer of this software which includes the GeneSurfer plugin can be downloaded [**here**](https://osf.io/eg97r/).
+The installer of this software which includes the GeneSurfer plugin can be downloaded [**here**](https://osf.io/u6cej).
 
 Currently, only a Windows installer is provided, Linux and Mac will follow in the coming period.
 
-## Example Dataset
-The Allen Brain Cell Atlas dataset is used to demonstrate the usage of GeneSurfer. To explore this dataset, a minimum of 16GB of memory is required. Download the project file containing this dataset [**here**](https://osf.io/eg97r/).
+## Example Projects and Data
+Our main analysis and figures in the paper are based on the Allen Brain Cell Atlas[1]. To reproduce the key results, we recommend downloading the `.mv` [**project file for ABC Atlas**](https://osf.io/47z2y), which contains saved UI configurations and data. A minimum of 16GB memory is required, 32GB+ recommended.
+
+To demonstrate GeneSurfer's general applicability, we also tested it on datasets from other spatial transcriptomics platforms. All files are available via [**our OSF repository**](https://osf.io/eg97r/wiki/).
 
 ### Data source
-Yao, Z., van Velthoven, C.T.J., Kunst, M. et al. A high-resolution transcriptomic and spatial atlas of cell types in the whole mouse brain. Nature 624, 317–332 (2023). https://doi.org/10.1038/s41586-023-06812-z
+[1] Yao, Z., van Velthoven, C.T.J., Kunst, M. et al. A high-resolution transcriptomic and spatial atlas of cell types in the whole mouse brain. Nature 624, 317–332 (2023). https://doi.org/10.1038/s41586-023-06812-z
 
