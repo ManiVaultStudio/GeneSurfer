@@ -2646,9 +2646,9 @@ QVariantMap GeneSurferPlugin::toVariantMap() const
 // Plugin Factory 
 // =============================================================================
 
-QIcon GeneSurferPluginFactory::getIcon(const QColor& color /*= Qt::black*/) const
+GeneSurferPluginFactory::GeneSurferPluginFactory()
 {
-    return mv::Application::getIconFont("FontAwesome").getIcon("bullseye", color);
+    setIconByName("bullseye");
 }
 
 ViewPlugin* GeneSurferPluginFactory::produce()
@@ -2675,7 +2675,7 @@ mv::gui::PluginTriggerActions GeneSurferPluginFactory::getPluginTriggerActions(c
     const auto numberOfDatasets = datasets.count();
 
     if (numberOfDatasets >= 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
-        auto pluginTriggerAction = new PluginTriggerAction(const_cast<GeneSurferPluginFactory*>(this), this, "Gene Surfer", "Gene Surfer visualization", getIcon(), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
+        auto pluginTriggerAction = new PluginTriggerAction(const_cast<GeneSurferPluginFactory*>(this), this, "Gene Surfer", "Gene Surfer visualization", StyledIcon("braille"), [this, getPluginInstance, datasets](PluginTriggerAction& pluginTriggerAction) -> void {
             for (auto dataset : datasets)
                 getPluginInstance()->loadData(Datasets({ dataset }));
 

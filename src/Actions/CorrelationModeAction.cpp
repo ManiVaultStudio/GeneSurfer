@@ -13,7 +13,7 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _spatialCorrelationZAction(this, "Filter by Spatial Correlation Z"),
     _spatialCorrelationYAction(this, "Filter by Spatial Correlation Y")
 {
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("filter"));
+    setIcon(mv::util::StyledIcon("filter"));
     setToolTip("Gene filtering Mode");
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
     setLabelSizingType(LabelSizingType::Auto);

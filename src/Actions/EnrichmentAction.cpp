@@ -10,7 +10,7 @@ EnrichmentAction::EnrichmentAction(QObject* parent, const QString& title) :
     _speciesPickerAction(this, "Species")
 {
     setToolTip("Enrichment API");
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("wrench"));
+    setIcon(mv::util::StyledIcon("wrench"));
     //setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceExpandedInGroup);
     setLabelSizingType(LabelSizingType::Auto);
 

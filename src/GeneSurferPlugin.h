@@ -343,13 +343,10 @@ class GeneSurferPluginFactory : public ViewPluginFactory
 public:
 
     /** Default constructor */
-    GeneSurferPluginFactory() {}
+    GeneSurferPluginFactory();
 
     /** Destructor */
     ~GeneSurferPluginFactory() override {}
-    
-    /** Get plugin icon */
-    QIcon getIcon(const QColor& color = Qt::black) const override;
 
     /** Creates an instance of the gene surfer plugin */
     ViewPlugin* produce() override;

@@ -7,7 +7,7 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
     GroupAction(parent, title),
     _dimensionAction(this, "Gene")
 {
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("search"));
+    setIcon(mv::util::StyledIcon("search"));
     setLabelSizingType(LabelSizingType::Auto);
 
     addAction(&_dimensionAction);

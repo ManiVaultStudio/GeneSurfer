@@ -128,7 +128,7 @@ GenePickerAction::Widget::Widget(QWidget* parent, GenePickerAction* genePickerAc
     auto lineEditWidget = genePickerAction->getCurrentDimensionAction().createWidget(this, OptionAction::LineEdit);
 
     // Gets search icon to decorate the line edit
-    const auto searchIcon = Application::getIconFont("FontAwesome").getIcon("search");
+    const auto searchIcon = mv::util::StyledIcon("search");
 
     // Add the icon to the line edit
     lineEditWidget->findChild<QLineEdit*>("LineEdit")->addAction(searchIcon, QLineEdit::TrailingPosition);

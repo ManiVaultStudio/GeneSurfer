@@ -13,7 +13,7 @@ SingleCellModeAction::SingleCellModeAction(QObject* parent, const QString& title
     _loadAvgExpressionAction(this, "Load average expression"),
     _labelDatasetPickerAction(this, "Label for mapping")
 {
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("braille"));//"eye", "braille", "database", "chart-area"
+    setIcon(mv::util::StyledIcon("braille"));//"eye", "braille", "database", "chart-area"
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
 
     _singleCellOptionAction.setToolTip("Single Cell Option");

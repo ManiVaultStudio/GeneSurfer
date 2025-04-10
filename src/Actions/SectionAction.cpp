@@ -8,7 +8,7 @@ SectionAction::SectionAction(QObject* parent, const QString& title) :
     _sliceAction(this, "Section", 0, 52) //initialize with 52 slices, will adjust after sliceDataset is loaded
 {
     setToolTip("Section selection for 3D data");
-    setIcon(mv::Application::getIconFont("FontAwesome").getIcon("mouse-pointer"));
+    setIcon(mv::util::StyledIcon("mouse-pointer"));
     setLabelSizingType(LabelSizingType::Auto);
 
     addAction(&_sliceAction);
