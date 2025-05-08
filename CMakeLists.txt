@@ -1,16 +1,11 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.22)
 
 set(GENESURFER "GeneSurfer")
 PROJECT(${GENESURFER})
 
 # -----------------------------------------------------------------------------
-# Library versions for Artifactory sourced binaries
+# CMake options
 # -----------------------------------------------------------------------------
-
-if(NOT USE_ARTIFACTORY_LIBS)
-    set(USE_ARTIFACTORY_LIBS TRUE CACHE BOOL "Use the prebuilt libraries from artifactory")
-endif()
-
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTORCC ON)
@@ -20,20 +15,29 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /EHsc /MP /permissive- /Zc:__cplusplus")
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MD")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
 endif(MSVC)
 
 
-# Check if the directory to the ManiVault installation has been provided
-if(NOT DEFINED MV_INSTALL_DIR)
-    set(MV_INSTALL_DIR "" CACHE PATH "Directory where ManiVault is installed")
-    message(FATAL_ERROR "Please set MV_INSTALL_DIR to the directory where ManiVault is installed")
-endif()
-file(TO_CMAKE_PATH ${MV_INSTALL_DIR} MV_INSTALL_DIR)
+# # Check if the directory to the ManiVault installation has been provided
+# if(NOT DEFINED MV_INSTALL_DIR)
+    # set(MV_INSTALL_DIR "" CACHE PATH "Directory where ManiVault is installed")
+    # message(FATAL_ERROR "Please set MV_INSTALL_DIR to the directory where ManiVault is installed")
+# endif()
+# file(TO_CMAKE_PATH ${MV_INSTALL_DIR} MV_INSTALL_DIR)
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
 
 find_package(Qt6 COMPONENTS Widgets WebEngineWidgets OpenGL OpenGLWidgets REQUIRED)
 
-# Define the plugin sources
+find_package(ManiVault COMPONENTS Core PointData ClusterData CONFIG QUIET)
+
+# -----------------------------------------------------------------------------
+# Source files
+# -----------------------------------------------------------------------------
 set(PLUGIN
     src/GeneSurferPlugin.h
     src/GeneSurferPlugin.cpp
@@ -104,50 +108,57 @@ source_group(Actions FILES ${Actions})
 source_group(Web FILES ${WEB})
 source_group(Aux FILES ${AUX})
 
-
-# Create dynamic library for the plugin
+# -----------------------------------------------------------------------------
+# CMake Target
+# -----------------------------------------------------------------------------
 add_library(${GENESURFER} SHARED ${PLUGIN} ${Compute} ${Actions} ${AUX} ${WEB} ${RESOURCE_FILES})
-set_target_properties(${GENESURFER} PROPERTIES CXX_STANDARD 17)
+
+# -----------------------------------------------------------------------------
+# Target include directories
+# -----------------------------------------------------------------------------
+target_include_directories(${GENESURFER} PRIVATE "${ManiVault_INCLUDE_DIR}")
 
 # Include the fastcluster source file
 target_sources(GeneSurfer PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/hclust/fastcluster.cpp)
 
-# Include mv headers, including system data plugins
-target_include_directories(${GENESURFER} PRIVATE "${MV_INSTALL_DIR}/$<CONFIGURATION>/include/")
 target_include_directories(${GENESURFER} SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/Eigen/include)
 target_include_directories(${GENESURFER} SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/hclust)
 
-# Request C++17
-#target_compile_features(${GENESURFER} PRIVATE cxx_std_17)
+# -----------------------------------------------------------------------------
+# Target properties
+# -----------------------------------------------------------------------------
+target_compile_features(${GENESURFER} PRIVATE cxx_std_20)
 
-# Link to Qt libraries
+if(MV_UNITY_BUILD)
+    set_target_properties(${GENESURFER} PROPERTIES UNITY_BUILD ON)
+endif()
+
+
+# set_target_properties(${GENESURFER} PROPERTIES CXX_STANDARD 17)
+
+# # Include the fastcluster source file
+# target_sources(GeneSurfer PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/hclust/fastcluster.cpp)
+
+# # Include mv headers, including system data plugins
+# target_include_directories(${GENESURFER} PRIVATE "${MV_INSTALL_DIR}/$<CONFIGURATION>/include/")
+# target_include_directories(${GENESURFER} SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/Eigen/include)
+# target_include_directories(${GENESURFER} SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/hclust)
+
+# -----------------------------------------------------------------------------
+# Target library linking
+# -----------------------------------------------------------------------------
 target_link_libraries(${GENESURFER} PRIVATE Qt6::Widgets)
 target_link_libraries(${GENESURFER} PRIVATE Qt6::WebEngineWidgets)
 target_link_libraries(${GENESURFER} PRIVATE Qt6::OpenGL)
 target_link_libraries(${GENESURFER} PRIVATE Qt6::OpenGLWidgets)
 
-# Link to mv and data plugins
-# The link path in this repo assumes that the ManiVault core was built locally
-# in contrast to having been installed with an installer. In the latter case you'll have
-# to adapt the MV_LINK_PATH and PLUGIN_LINK_PATH to your install folder
-set(MV_LINK_PATH "${MV_INSTALL_DIR}/$<CONFIGURATION>/lib")
-set(PLUGIN_LINK_PATH "${MV_INSTALL_DIR}/$<CONFIGURATION>/$<IF:$<CXX_COMPILER_ID:MSVC>,lib,Plugins>")
-set(MV_LINK_SUFFIX $<IF:$<CXX_COMPILER_ID:MSVC>,${CMAKE_LINK_LIBRARY_SUFFIX},${CMAKE_SHARED_LIBRARY_SUFFIX}>)
+target_link_libraries(${GENESURFER} PRIVATE ManiVault::Core)
+target_link_libraries(${GENESURFER} PRIVATE ManiVault::PointData)
+target_link_libraries(${GENESURFER} PRIVATE ManiVault::ClusterData)
 
-set(MV_LINK_LIBRARY "${MV_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}MV_Public${MV_LINK_SUFFIX}")
-set(POINTDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}PointData${MV_LINK_SUFFIX}") 
-set(CLUSTERDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}ClusterData${MV_LINK_SUFFIX}") 
-
-target_link_libraries(${GENESURFER} PRIVATE "${MV_LINK_LIBRARY}")
-target_link_libraries(${GENESURFER} PRIVATE "${POINTDATA_LINK_LIBRARY}")
-target_link_libraries(${GENESURFER} PRIVATE "${CLUSTERDATA_LINK_LIBRARY}")
-
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(${GENESURFER} PRIVATE OpenMP::OpenMP_CXX)
-endif()
-
-# Install the shared plugin libary to the "Plugins" folder in the ManiVault install directory
+# -----------------------------------------------------------------------------
+# Target installation
+# -----------------------------------------------------------------------------
 install(TARGETS ${GENESURFER}
     RUNTIME DESTINATION Plugins COMPONENT PLUGINS # Windows .dll
     LIBRARY DESTINATION Plugins COMPONENT PLUGINS # Linux/Mac .so
@@ -157,11 +168,53 @@ add_custom_command(TARGET ${GENESURFER} POST_BUILD
     COMMAND "${CMAKE_COMMAND}"
         --install ${CMAKE_CURRENT_BINARY_DIR}
         --config $<CONFIGURATION>
-        --prefix ${MV_INSTALL_DIR}/$<CONFIGURATION>
+        --prefix ${ManiVault_INSTALL_DIR}/$<CONFIGURATION>
 )
 
+set_target_properties(${GENESURFER}
+    PROPERTIES
+    FOLDER ViewPlugins
+)
+
+
+# Link to mv and data plugins
+# The link path in this repo assumes that the ManiVault core was built locally
+# in contrast to having been installed with an installer. In the latter case you'll have
+# to adapt the MV_LINK_PATH and PLUGIN_LINK_PATH to your install folder
+# set(MV_LINK_PATH "${MV_INSTALL_DIR}/$<CONFIGURATION>/lib")
+# set(PLUGIN_LINK_PATH "${MV_INSTALL_DIR}/$<CONFIGURATION>/$<IF:$<CXX_COMPILER_ID:MSVC>,lib,Plugins>")
+# set(MV_LINK_SUFFIX $<IF:$<CXX_COMPILER_ID:MSVC>,${CMAKE_LINK_LIBRARY_SUFFIX},${CMAKE_SHARED_LIBRARY_SUFFIX}>)
+
+# set(MV_LINK_LIBRARY "${MV_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}MV_Public${MV_LINK_SUFFIX}")
+# set(POINTDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}PointData${MV_LINK_SUFFIX}") 
+# set(CLUSTERDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}ClusterData${MV_LINK_SUFFIX}") 
+
+# target_link_libraries(${GENESURFER} PRIVATE "${MV_LINK_LIBRARY}")
+# target_link_libraries(${GENESURFER} PRIVATE "${POINTDATA_LINK_LIBRARY}")
+# target_link_libraries(${GENESURFER} PRIVATE "${CLUSTERDATA_LINK_LIBRARY}")
+
+# find_package(OpenMP)
+# if(OpenMP_CXX_FOUND)
+    # target_link_libraries(${GENESURFER} PRIVATE OpenMP::OpenMP_CXX)
+# endif()
+
+# # Install the shared plugin libary to the "Plugins" folder in the ManiVault install directory
+# install(TARGETS ${GENESURFER}
+    # RUNTIME DESTINATION Plugins COMPONENT PLUGINS # Windows .dll
+    # LIBRARY DESTINATION Plugins COMPONENT PLUGINS # Linux/Mac .so
+# )
+
+# add_custom_command(TARGET ${GENESURFER} POST_BUILD
+    # COMMAND "${CMAKE_COMMAND}"
+        # --install ${CMAKE_CURRENT_BINARY_DIR}
+        # --config $<CONFIGURATION>
+        # --prefix ${MV_INSTALL_DIR}/$<CONFIGURATION>
+# )
+# -----------------------------------------------------------------------------
+# Miscellaneous
+# -----------------------------------------------------------------------------
 # Automatically set the debug environment (command + working directory) for MSVC
 if(MSVC)
-    set_property(TARGET ${GENESURFER} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<IF:$<CONFIG:DEBUG>,${MV_INSTALL_DIR}/debug,${MV_INSTALL_DIR}/release>)
-    set_property(TARGET ${GENESURFER} PROPERTY VS_DEBUGGER_COMMAND $<IF:$<CONFIG:DEBUG>,"${MV_INSTALL_DIR}/debug/ManiVault Studio.exe","${MV_INSTALL_DIR}/release/ManiVault Studio.exe">)
+	set_property(TARGET ${GENESURFER} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<IF:$<CONFIG:DEBUG>,${ManiVault_INSTALL_DIR}/Debug,$<IF:$<CONFIG:RELWITHDEBINFO>,${ManiVault_INSTALL_DIR}/RelWithDebInfo,${ManiVault_INSTALL_DIR}/Release>>)
+    set_property(TARGET ${GENESURFER} PROPERTY VS_DEBUGGER_COMMAND $<IF:$<CONFIG:DEBUG>,"${ManiVault_INSTALL_DIR}/Debug/ManiVault Studio.exe",$<IF:$<CONFIG:RELWITHDEBINFO>,"${ManiVault_INSTALL_DIR}/RelWithDebInfo/ManiVault Studio.exe","${ManiVault_INSTALL_DIR}/Release/ManiVault Studio.exe">>)
 endif()
