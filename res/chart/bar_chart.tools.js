@@ -8,7 +8,8 @@ function drawChart(data) {
     // remove possible old chart 
     d3.select("div#container").select("*").remove();
 
-    if (data.length == 0) {
+
+    if (data != null && data.length == 0) {
         log("GeneSurfer: bar_chart.tools.js: data empty")
 
         // add text to the container

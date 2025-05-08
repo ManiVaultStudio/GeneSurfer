@@ -4,6 +4,8 @@
 
 #include <QVariantList>
 
+Q_DECLARE_METATYPE(QVariantList)
+
 class GeneSurferPlugin;
 
 // =============================================================================
@@ -20,7 +22,7 @@ signals:
     // Signals from Qt to JS side
     // This specific signal is used to transfer data from ManiVault to the D3 plot
     // But other communication like messaging selection IDs can be handled the same
-    void qt_js_setDataAndPlotInJS(QVariantList& data);
+    void qt_js_setDataAndPlotInJS(const QVariantList& data);
 
     void qt_js_highlightInJS(QVariantList& dimensions);
 
@@ -31,7 +33,7 @@ signals:
 public slots:
     // Invoked from JS side 
     // Used to receive selection IDs from the D3 plot, will emit passSelectionToCore
-    void js_qt_passSelectionToQt(QString data);
+    void js_qt_passSelectionToQt(const QString& data);
 
 private:
     std::vector<unsigned int> _selectedIDsFromJS;   // Used for converting incoming selection IDs from the js side
