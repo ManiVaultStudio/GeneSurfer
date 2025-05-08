@@ -19,14 +19,6 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
 endif(MSVC)
 
-
-# # Check if the directory to the ManiVault installation has been provided
-# if(NOT DEFINED MV_INSTALL_DIR)
-    # set(MV_INSTALL_DIR "" CACHE PATH "Directory where ManiVault is installed")
-    # message(FATAL_ERROR "Please set MV_INSTALL_DIR to the directory where ManiVault is installed")
-# endif()
-# file(TO_CMAKE_PATH ${MV_INSTALL_DIR} MV_INSTALL_DIR)
-
 # -----------------------------------------------------------------------------
 # Dependencies
 # -----------------------------------------------------------------------------
@@ -133,17 +125,6 @@ if(MV_UNITY_BUILD)
     set_target_properties(${GENESURFER} PROPERTIES UNITY_BUILD ON)
 endif()
 
-
-# set_target_properties(${GENESURFER} PROPERTIES CXX_STANDARD 17)
-
-# # Include the fastcluster source file
-# target_sources(GeneSurfer PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/hclust/fastcluster.cpp)
-
-# # Include mv headers, including system data plugins
-# target_include_directories(${GENESURFER} PRIVATE "${MV_INSTALL_DIR}/$<CONFIGURATION>/include/")
-# target_include_directories(${GENESURFER} SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/Eigen/include)
-# target_include_directories(${GENESURFER} SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/thirdparty/hclust)
-
 # -----------------------------------------------------------------------------
 # Target library linking
 # -----------------------------------------------------------------------------
@@ -177,39 +158,6 @@ set_target_properties(${GENESURFER}
 )
 
 
-# Link to mv and data plugins
-# The link path in this repo assumes that the ManiVault core was built locally
-# in contrast to having been installed with an installer. In the latter case you'll have
-# to adapt the MV_LINK_PATH and PLUGIN_LINK_PATH to your install folder
-# set(MV_LINK_PATH "${MV_INSTALL_DIR}/$<CONFIGURATION>/lib")
-# set(PLUGIN_LINK_PATH "${MV_INSTALL_DIR}/$<CONFIGURATION>/$<IF:$<CXX_COMPILER_ID:MSVC>,lib,Plugins>")
-# set(MV_LINK_SUFFIX $<IF:$<CXX_COMPILER_ID:MSVC>,${CMAKE_LINK_LIBRARY_SUFFIX},${CMAKE_SHARED_LIBRARY_SUFFIX}>)
-
-# set(MV_LINK_LIBRARY "${MV_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}MV_Public${MV_LINK_SUFFIX}")
-# set(POINTDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}PointData${MV_LINK_SUFFIX}") 
-# set(CLUSTERDATA_LINK_LIBRARY "${PLUGIN_LINK_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}ClusterData${MV_LINK_SUFFIX}") 
-
-# target_link_libraries(${GENESURFER} PRIVATE "${MV_LINK_LIBRARY}")
-# target_link_libraries(${GENESURFER} PRIVATE "${POINTDATA_LINK_LIBRARY}")
-# target_link_libraries(${GENESURFER} PRIVATE "${CLUSTERDATA_LINK_LIBRARY}")
-
-# find_package(OpenMP)
-# if(OpenMP_CXX_FOUND)
-    # target_link_libraries(${GENESURFER} PRIVATE OpenMP::OpenMP_CXX)
-# endif()
-
-# # Install the shared plugin libary to the "Plugins" folder in the ManiVault install directory
-# install(TARGETS ${GENESURFER}
-    # RUNTIME DESTINATION Plugins COMPONENT PLUGINS # Windows .dll
-    # LIBRARY DESTINATION Plugins COMPONENT PLUGINS # Linux/Mac .so
-# )
-
-# add_custom_command(TARGET ${GENESURFER} POST_BUILD
-    # COMMAND "${CMAKE_COMMAND}"
-        # --install ${CMAKE_CURRENT_BINARY_DIR}
-        # --config $<CONFIGURATION>
-        # --prefix ${MV_INSTALL_DIR}/$<CONFIGURATION>
-# )
 # -----------------------------------------------------------------------------
 # Miscellaneous
 # -----------------------------------------------------------------------------
