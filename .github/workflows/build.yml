@@ -88,7 +88,7 @@ jobs:
           conan-cc: gcc-${{matrix.build-cversion}}
           conan-cxx: g++-${{matrix.build-cversion}}
   
-     - name: Mac build
+      - name: Mac build
         if: startsWith(matrix.os, 'macos')
         uses: ManiVaultStudio/github-actions/conan_linuxmac_build@main
         with:
