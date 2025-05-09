@@ -76,6 +76,7 @@ void DataSubset::updateIsFloodIndex(const int numPoints, const std::vector<int>&
         }
         else {
             qDebug() << "DataSubset::updateIsFloodIndex(): idx out of range: " << idx;
+            qWarning() << "ERROR: allFloodNodesIndices might do not match active dataset."; // TODO: tie floodfill data to specific datasets
             return;
         }
     }
