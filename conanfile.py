@@ -129,7 +129,7 @@ class GeneSurferConan(ConanFile):
         relWithDebInfo_dir = package_dir / "RelWithDebInfo"
         release_dir = package_dir / "Release"
         print("Packaging install dir: ", package_dir)
-         subprocess.run(
+        subprocess.run(
             [
                 "cmake",
                 "--install",
