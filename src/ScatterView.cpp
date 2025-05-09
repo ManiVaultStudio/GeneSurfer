@@ -33,7 +33,7 @@ namespace
 
 ScatterView::ScatterView(GeneSurferPlugin* geneSurferPlugin) :
     _geneSurferPlugin(geneSurferPlugin),
-    _pointRenderer(),
+    _pointRenderer(this),
     _backgroundColor(255, 255, 255, 255)
 {
     //setContextMenuPolicy(Qt::CustomContextMenu);
@@ -89,21 +89,19 @@ bool ScatterView::isInitialized()
 
 void ScatterView::setData(const std::vector<Vector2f>* points)
 {
-    auto dataBounds = getDataBounds(*points);
+    _dataBounds = getDataBounds(*points);
 
-    dataBounds.ensureMinimumSize(1e-07f, 1e-07f);
-    dataBounds.makeSquare();
-    dataBounds.expand(0.1f);
+    const auto dataBoundsRect = QRectF(QPointF(_dataBounds.getLeft(), _dataBounds.getBottom()), QSizeF(_dataBounds.getWidth(), _dataBounds.getHeight()));
+    
+    _pointRenderer.setDataBounds(dataBoundsRect);
 
-    _dataBounds = dataBounds;
-
-    // Pass bounds and data to renderer
-    _pointRenderer.setBounds(_dataBounds);
     _pointRenderer.setData(*points);
 
     _pointRenderer.setSelectionOutlineColor(Vector3f(1, 0, 0));
     _pointRenderer.setAlpha(1.0f);
     //_pointRenderer.setPointScaling(PointScaling::Relative);
+
+    _pointRenderer.getNavigator().resetView(true);
 
     update();
 }
@@ -287,7 +285,8 @@ void ScatterView::paintGL()
         invM[0] = 1;
         invM[4] = -1;
 
-        Vector2f cp = toScreen * invM * orthoM * _currentPoint;
+        const auto screenPoint = _pointRenderer.getWorldPositionToScreenPoint(QVector3D(_currentPoint.x, _currentPoint.y, 0.f));
+        const auto cp = Vector2f(screenPoint.x(), screenPoint.y());
 
         // Render selection dot
         /*painter.setBrush(Qt::red);
