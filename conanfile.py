@@ -73,7 +73,7 @@ class GeneSurferConan(ConanFile):
         pass
 
     def system_requirements(self):
-         if os_info.is_macos:
+        if os_info.is_macos:
             installer = SystemPackageTool()
             installer.install("libomp")
             proc = subprocess.run("brew --prefix libomp",  shell=True, capture_output=True)
