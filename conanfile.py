@@ -73,19 +73,21 @@ class GeneSurferConan(ConanFile):
         pass
 
     def system_requirements(self):
-        if os_info.is_macos:
-            installer = SystemPackageTool()
-            installer.install("libomp")
-            proc = subprocess.run("brew --prefix libomp",  shell=True, capture_output=True)
-            subprocess.run(f"ln {proc.stdout.decode('UTF-8').strip()}/lib/libomp.dylib /usr/local/lib/libomp.dylib", shell=True)
-        if os_info.is_linux:
-            self.run("sudo apt update && sudo apt install -y libtbb-dev")
-            cwd = pathlib.Path().resolve()
-            self.run("sudo apt update && sudo apt install -y libtbb-dev")
-            print(f"current working directory: {cwd}")
-            self.run("sudo ls cmake/")
-            self.run("sudo cp cmake/lkeb-artifactory-lumc-nl-chain.crt /usr/local/share/ca-certificates/")
-            self.run("sudo update-ca-certificates")
+        # if os_info.is_macos:
+            # installer = SystemPackageTool()
+            # installer.install("libomp")
+            # proc = subprocess.run("brew --prefix libomp",  shell=True, capture_output=True)
+            # subprocess.run(f"ln {proc.stdout.decode('UTF-8').strip()}/lib/libomp.dylib /usr/local/lib/libomp.dylib", shell=True)
+        # if os_info.is_linux:
+            # self.run("sudo apt update && sudo apt install -y libtbb-dev")
+            # cwd = pathlib.Path().resolve()
+            # self.run("sudo apt update && sudo apt install -y libtbb-dev")
+            # print(f"current working directory: {cwd}")
+            # self.run("sudo ls cmake/")
+            # self.run("sudo cp cmake/lkeb-artifactory-lumc-nl-chain.crt /usr/local/share/ca-certificates/")
+            # self.run("sudo update-ca-certificates")
+        #  May be needed for macOS or Linux
+        pass
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -115,10 +117,13 @@ class GeneSurferConan(ConanFile):
         print("ManiVault_DIR: ", manivault_dir)
         tc.variables["ManiVault_DIR"] = manivault_dir
 
-        if os_info.is_macos:
-            proc = subprocess.run("brew --prefix libomp", shell=True, capture_output=True)
-            prefix_path = f"{proc.stdout.decode('UTF-8').strip()}"
-            tc.variables["OpenMP_ROOT"] = prefix_path
+        # if os_info.is_macos:
+            # proc = subprocess.run("brew --prefix libomp", shell=True, capture_output=True)
+            # prefix_path = f"{proc.stdout.decode('UTF-8').strip()}"
+            # tc.variables["OpenMP_ROOT"] = prefix_path
+            
+        # Set some build options
+        tc.variables["MV_UNITY_BUILD"] = "ON"
 
         tc.generate()
 
