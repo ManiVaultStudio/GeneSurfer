@@ -74,6 +74,8 @@ ScatterView::ScatterView(GeneSurferPlugin* geneSurferPlugin) :
 
     setFocusPolicy(Qt::ClickFocus);
     installEventFilter(this);
+
+    _pointRenderer.getNavigator().setZoomMarginScreen(10.f);
 }
 
 ScatterView::~ScatterView()
