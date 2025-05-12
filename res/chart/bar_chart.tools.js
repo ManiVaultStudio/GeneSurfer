@@ -56,17 +56,19 @@ function drawChart(data, type) {
         .padding(0);
 
     // Y axis
-    if (type == "Others")
-    {
+    if (type == "Others") { // for all other types of charts, use the same y-axis scale
         var y = d3.scaleLinear()
             //.domain([d3.min(data, function (d) { return d.Value; }), d3.max(data, function (d) { return d.Value; })])
             .domain([-1, 1])
             .range([height, 0]);
     }
-    else if (type == "Moran")
-    {
+    else if (type == "Moran") {
+        
         var minY = d3.min(data, function (d) { return d.Value; });
         var maxY = d3.max(data, function (d) { return d.Value; });
+
+        log("GeneSurfer: bar_chart.tools.js: minY: " + minY)
+        log("GeneSurfer: bar_chart.tools.js: maxY: " + maxY)
 
         // Add a small buffer to the y-axis range for better visuals
         var buffer = 0.05 * (maxY - minY);
@@ -75,6 +77,34 @@ function drawChart(data, type) {
         var y = d3.scaleLinear()
             .domain([minY - buffer, maxY + buffer])
             .range([height, 0]);
+
+        const thresholds = [1.96, -1.96]; // Z-scores for 95% confidence interval
+
+        // Add threhold line to show the siginificance of z-score
+        thresholds.forEach(function (threshold) {
+            if (threshold >= minY - buffer || threshold <= maxY + buffer) { 
+
+            svg.append("line")
+                .attr("x1", 0)
+                .attr("x2", width+10)
+                .attr("y1", y(threshold))
+                .attr("y2", y(threshold))
+                .attr("stroke", "red")
+                .attr("stroke-dasharray", "4")
+                .attr("stroke-width", 1);
+
+            svg.append("text")
+                .attr("x", 5)
+                .attr("y", y(threshold) - 3)
+                .text(`Z = ${threshold.toFixed(2)}`)
+                .style("font-size", "12px")
+                .style("fill", "red")
+                .attr("text-anchor", "start")
+                .style("font-family", "Arial");
+            } else {
+                log("GeneSurfer: bar_chart.tools.js: threshold " + threshold + " is off-chart");
+            }
+        });
     }
 
 

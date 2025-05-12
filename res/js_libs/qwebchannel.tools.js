@@ -15,7 +15,7 @@ try {
             const data = dataMap["data"];
             const type = dataMap["FilterType"];
 
-            log("GeneSurfer: Received chart payload with type: " + type);
+            //log("GeneSurfer: Received chart payload with type: " + type);
 
             drawChart(data, type);
         });

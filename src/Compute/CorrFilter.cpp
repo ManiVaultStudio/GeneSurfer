@@ -426,8 +426,8 @@ namespace corrFilter
         //qDebug() << "Compute moran's I finished...";
 
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
-        float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
-        float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
+        //float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
+        //float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
         //qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
 
        /* for (int i = 0; i < moranVector.size(); ++i) {
@@ -518,19 +518,19 @@ namespace corrFilter
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
         //auto start4 = std::chrono::high_resolution_clock::now();
 
-        float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
-        float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
-        //qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
+        //float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
+        //float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
+        ////qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
 
-        for (int i = 0; i < moranVector.size(); ++i) {
-            moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
-        }
+        //for (int i = 0; i < moranVector.size(); ++i) {
+        //    moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
+        //}
 
-        //auto end4 = std::chrono::high_resolution_clock::now();
-        //std::chrono::duration<double> elapsed4 = end4 - start4;
-        //qDebug() << "Elapsed time for normalize: " << elapsed4.count();
+        ////auto end4 = std::chrono::high_resolution_clock::now();
+        ////std::chrono::duration<double> elapsed4 = end4 - start4;
+        ////qDebug() << "Elapsed time for normalize: " << elapsed4.count();
 
-        qDebug() << "Normalize moran's I finished...";
+        //qDebug() << "Normalize moran's I finished...";
     }
 
     void Moran::computeMoranVector(const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& moranVector)
@@ -577,18 +577,18 @@ namespace corrFilter
         //qDebug() << "Compute moran's I finished...";
 
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
-        float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
-        float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
-        //qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
-        // output the index of min and max correlation
-        int minIndex = std::distance(moranVector.begin(), std::min_element(moranVector.begin(), moranVector.end()));
-        int maxIndex = std::distance(moranVector.begin(), std::max_element(moranVector.begin(), moranVector.end()));
-        //qDebug() << "minIndex: " << minIndex << " maxIndex: " << maxIndex;
+        //float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
+        //float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
+        ////qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
+        //// output the index of min and max correlation
+        //int minIndex = std::distance(moranVector.begin(), std::min_element(moranVector.begin(), moranVector.end()));
+        //int maxIndex = std::distance(moranVector.begin(), std::max_element(moranVector.begin(), moranVector.end()));
+        ////qDebug() << "minIndex: " << minIndex << " maxIndex: " << maxIndex;
 
-        for (int i = 0; i < moranVector.size(); ++i) {
-            moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
-        }
-        qDebug() << "Normalize moran's I finished...";
+        //for (int i = 0; i < moranVector.size(); ++i) {
+        //    moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
+        //}
+        //qDebug() << "Normalize moran's I finished...";
     }
 
     void Diff::computeDiff(const DataMatrix& selectionDataMatrix, const DataMatrix& allDataMatrix, std::vector<float>& diffVector)
