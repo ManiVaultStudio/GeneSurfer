@@ -4,7 +4,7 @@
 
 var svg;
 
-function drawChart(data) {
+function drawChart(data, type) {
     // remove possible old chart 
     d3.select("div#container").select("*").remove();
 
@@ -23,6 +23,7 @@ function drawChart(data) {
         return
     }
 
+
     log("GeneSurfer: bar_chart.tools.js: draw chart")
 
     // set the dimensions and margins of the graph
@@ -31,7 +32,7 @@ function drawChart(data) {
 
     var svgWidth = 800;
     var svgHeight = 400;
-       
+
     var margin = { top: 30, right: 30, bottom: 30, left: 30 },
         width = svgWidth - margin.left - margin.right,//800
         height = svgHeight - margin.top - margin.bottom;//400
@@ -55,10 +56,27 @@ function drawChart(data) {
         .padding(0);
 
     // Y axis
-    var y = d3.scaleLinear()
-        //.domain([d3.min(data, function (d) { return d.Value; }), d3.max(data, function (d) { return d.Value; })])
-        .domain([-1, 1])
-        .range([height, 0]);
+    if (type == "Others")
+    {
+        var y = d3.scaleLinear()
+            //.domain([d3.min(data, function (d) { return d.Value; }), d3.max(data, function (d) { return d.Value; })])
+            .domain([-1, 1])
+            .range([height, 0]);
+    }
+    else if (type == "Moran")
+    {
+        var minY = d3.min(data, function (d) { return d.Value; });
+        var maxY = d3.max(data, function (d) { return d.Value; });
+
+        // Add a small buffer to the y-axis range for better visuals
+        var buffer = 0.05 * (maxY - minY);
+        if (buffer === 0) buffer = 0.05;  // Avoid zero-range axis
+
+        var y = d3.scaleLinear()
+            .domain([minY - buffer, maxY + buffer])
+            .range([height, 0]);
+    }
+
 
     // Add X axis at y = 0 position
     //svg.append("g")
@@ -156,7 +174,7 @@ function drawChart(data) {
     //        .attr("height", breakSymbolHeight)
     //        .style("fill", "white");
     //}
-    
+
 
     // Add legend
     var clusters = Array.from(new Set(data.map(function (d) { return d.cluster; })));
@@ -215,7 +233,7 @@ function highlightBars(dimensions) {
     }
 
     log("GeneSurfer: bar_chart.tools.js: highlight bars")
-    
+
     d3.selectAll(".myRect").style("opacity", 0.2);
 
     d3.selectAll(".geneNameText").remove();
@@ -224,24 +242,24 @@ function highlightBars(dimensions) {
         d3.selectAll(".myRect").filter(function (d) {
             return d.Gene === dim;
         }).style("opacity", 1)
-        .each(function (d) {
-            var bar = d3.select(this);
-            var xpos = parseFloat(bar.attr("x")) + parseFloat(bar.attr("width")) / 2
-            var ypos = d.Value > 0 ? parseFloat(bar.attr("y")) - 20 : parseFloat(bar.attr("y")) + parseFloat(bar.attr("height")) + 20
+            .each(function (d) {
+                var bar = d3.select(this);
+                var xpos = parseFloat(bar.attr("x")) + parseFloat(bar.attr("width")) / 2
+                var ypos = d.Value > 0 ? parseFloat(bar.attr("y")) - 20 : parseFloat(bar.attr("y")) + parseFloat(bar.attr("height")) + 20
 
-            svg.append("text")
-                .attr("class", "geneNameText")
-                .attr("x", xpos)
-                .attr("y", ypos)
-                .attr("text-anchor", "middle")
-                .attr("transform", function () {
-                    return "rotate(-90," + xpos + "," + ypos + ")";
-                })
-                .text(d.Gene) 
-                .attr("fill", "black") 
-                .attr("font-family", "Arial")
-                .attr("font-size", "10px")
-                
+                svg.append("text")
+                    .attr("class", "geneNameText")
+                    .attr("x", xpos)
+                    .attr("y", ypos)
+                    .attr("text-anchor", "middle")
+                    .attr("transform", function () {
+                        return "rotate(-90," + xpos + "," + ypos + ")";
+                    })
+                    .text(d.Gene)
+                    .attr("fill", "black")
+                    .attr("font-family", "Arial")
+                    .attr("font-size", "10px")
+
             });
     });
 }

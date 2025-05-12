@@ -22,7 +22,8 @@ signals:
     // Signals from Qt to JS side
     // This specific signal is used to transfer data from ManiVault to the D3 plot
     // But other communication like messaging selection IDs can be handled the same
-    void qt_js_setDataAndPlotInJS(const QVariantList& data);
+    //void qt_js_setDataAndPlotInJS(const QVariantList& data);
+    void qt_js_setDataAndPlotInJS(const QVariantMap& dataMap);
 
     void qt_js_highlightInJS(QVariantList& dimensions);
 

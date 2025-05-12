@@ -430,10 +430,10 @@ namespace corrFilter
         float maxCorr = *std::max_element(moranVector.begin(), moranVector.end());
         //qDebug() << "minCorr: " << minCorr << " maxCorr: " << maxCorr;
 
-        for (int i = 0; i < moranVector.size(); ++i) {
+       /* for (int i = 0; i < moranVector.size(); ++i) {
             moranVector[i] = (moranVector[i] - minCorr) / (maxCorr - minCorr);
         }
-        qDebug() << "Normalize moran's I finished...";
+        qDebug() << "Normalize moran's I finished...";*/
     }
 
     void Moran::computeMoranVector(const std::vector<int>& floodIndices, const DataMatrix& dataMatrix, const std::vector<float>& xPositions, const std::vector<float>& yPositions, const std::vector<float>& zPositions, std::vector<float>& moranVector)

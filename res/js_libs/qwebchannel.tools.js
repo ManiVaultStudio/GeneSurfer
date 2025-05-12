@@ -9,7 +9,17 @@ try {
         QtBridge = channel.objects.QtBridge;
 
         // register signals
-        QtBridge.qt_js_setDataAndPlotInJS.connect(function () { drawChart(arguments[0]); });   // drawChart is defined in bar_chart.tools.js
+        //QtBridge.qt_js_setDataAndPlotInJS.connect(function () { drawChart(arguments[0]); });   // drawChart is defined in bar_chart.tools.js
+        QtBridge.qt_js_setDataAndPlotInJS.connect(function () {
+            const dataMap = arguments[0];
+            const data = dataMap["data"];
+            const type = dataMap["FilterType"];
+
+            log("GeneSurfer: Received chart payload with type: " + type);
+
+            drawChart(data, type);
+        });
+
         QtBridge.qt_js_highlightInJS.connect(function () { highlightBars(arguments[0]); }); // highlightBars is defined in bar_chart.tools.js
 
         // confirm successfull connection

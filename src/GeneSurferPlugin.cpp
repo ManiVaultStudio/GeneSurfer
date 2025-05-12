@@ -464,8 +464,16 @@ void GeneSurferPlugin::convertDataAndUpdateChart()
         payload.push_back(entry);
     }
 
+    QVariantMap payloadMap;
+    payloadMap["data"] = payload;
+    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+        payloadMap["FilterType"] = "Moran";
+    else 
+        payloadMap["FilterType"] = "Others";
+
+
     qDebug() << "GeneSurferPlugin::convertDataAndUpdateChart: Send data from Qt cpp to D3 js";
-    emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payload);
+    emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payloadMap);
 }
 
 void GeneSurferPlugin::publishSelection(const QString& selection)
@@ -1820,8 +1828,9 @@ void GeneSurferPlugin::clusterGenes()
         _toClearBarchart = true;
 
         // emit an empty payload to JS and to clear the barchart
-        QVariantList payload;
-        emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payload);
+        //QVariantList payload;
+        QVariantMap payloadMap;
+        emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payloadMap);
 
         return;
     }
