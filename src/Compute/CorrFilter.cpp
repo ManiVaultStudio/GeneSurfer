@@ -423,7 +423,7 @@ namespace corrFilter
             //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
             moranVector[i] = zScore;
         }
-        //qDebug() << "Compute moran's I finished...";
+        qDebug() << "Compute moran's I finished...";
 
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
         //float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
@@ -513,7 +513,7 @@ namespace corrFilter
         //std::chrono::duration<double> elapsed3 = end3 - start3;
         //qDebug() << "Elapsed time for computeMoranVector: " << elapsed3.count();
 
-        //qDebug() << "Compute moran's I finished...";
+        qDebug() << "Compute moran's I finished...";
 
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
         //auto start4 = std::chrono::high_resolution_clock::now();
@@ -574,7 +574,7 @@ namespace corrFilter
             //qDebug() << "Gene name: " << _enabledDimNames[i] << " Moran's I: " << result[0] << " sd: " << sd << " Z-score: " << zScore;
             moranVector[i] = zScore;
         }
-        //qDebug() << "Compute moran's I finished...";
+        qDebug() << "Compute moran's I finished...";
 
         // normalize the correlation vector to 0 to 1for plotting in the bar chart
         //float minCorr = *std::min_element(moranVector.begin(), moranVector.end());
