@@ -133,6 +133,8 @@ namespace corrFilter
             return "Spatial Z";
         case CorrFilterType::SPATIALY:
             return "Spatial Y";
+        default: 
+            return "Unknown";
         }
     }
 
