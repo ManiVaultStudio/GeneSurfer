@@ -142,7 +142,7 @@ class GeneSurferConan(ConanFile):
         cmake.build(build_type="Release")
 
     def package(self):
-        package_dir = os.path.join(self.build_folder, "package")
+        package_dir = pathlib.Path(self.build_folder, "package")
         relWithDebInfo_dir = package_dir / "RelWithDebInfo"
         release_dir = package_dir / "Release"
         print("Packaging install dir: ", package_dir)
