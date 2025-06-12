@@ -27,6 +27,13 @@ find_package(Qt6 COMPONENTS Widgets WebEngineWidgets OpenGL OpenGLWidgets REQUIR
 
 find_package(ManiVault COMPONENTS Core PointData ClusterData CONFIG QUIET)
 
+find_package(OpenMP)
+
+if(OpenMP_CXX_FOUND)
+    message(STATUS "Found OpenMP")
+endif()
+
+
 # -----------------------------------------------------------------------------
 # Source files
 # -----------------------------------------------------------------------------
@@ -136,6 +143,10 @@ target_link_libraries(${GENESURFER} PRIVATE Qt6::OpenGLWidgets)
 target_link_libraries(${GENESURFER} PRIVATE ManiVault::Core)
 target_link_libraries(${GENESURFER} PRIVATE ManiVault::PointData)
 target_link_libraries(${GENESURFER} PRIVATE ManiVault::ClusterData)
+
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(${GENESURFER} PRIVATE OpenMP::OpenMP_CXX)
+endif()
 
 # -----------------------------------------------------------------------------
 # Target installation
