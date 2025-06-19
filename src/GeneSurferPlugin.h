@@ -360,6 +360,4 @@ public:
      * @return Vector of plugin trigger actions
      */
     PluginTriggerActions getPluginTriggerActions(const mv::Datasets& datasets) const override;
-
-
 };

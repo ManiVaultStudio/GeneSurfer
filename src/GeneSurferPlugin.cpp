@@ -2658,6 +2658,7 @@ QVariantMap GeneSurferPlugin::toVariantMap() const
 GeneSurferPluginFactory::GeneSurferPluginFactory()
 {
     setIconByName("bullseye");
+    getProjectsDsnsAction().addString("https://osf.io/download/68517acd4d3926945cb68775/");
 }
 
 ViewPlugin* GeneSurferPluginFactory::produce()
