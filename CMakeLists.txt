@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 set(GENESURFER "GeneSurfer")
-PROJECT(${GENESURFER})
+PROJECT(${GENESURFER} LANGUAGES CXX)
 
 # -----------------------------------------------------------------------------
 # CMake options
@@ -11,13 +11,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOMOC ON)
 
-if(MSVC)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /EHsc /MP /permissive- /Zc:__cplusplus")
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MD")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
-endif(MSVC)
+endif()
 
 # -----------------------------------------------------------------------------
 # Dependencies
@@ -42,11 +42,11 @@ set(PLUGIN
     src/GeneSurferPlugin.cpp
     src/ChartWidget.h
     src/ChartWidget.cpp
-    src/GeneSurferPlugin.json
 	src/ScatterView.h
     src/ScatterView.cpp
 	src/TableWidget.h
     src/TableWidget.cpp
+	PluginInfo.json
 )
 
 set(Compute
@@ -163,17 +163,14 @@ add_custom_command(TARGET ${GENESURFER} POST_BUILD
         --prefix ${ManiVault_INSTALL_DIR}/$<CONFIGURATION>
 )
 
-set_target_properties(${GENESURFER}
-    PROPERTIES
-    FOLDER ViewPlugins
-)
+mv_handle_plugin_config(${GENESURFER})
 
 
 # -----------------------------------------------------------------------------
 # Miscellaneous
 # -----------------------------------------------------------------------------
 # Automatically set the debug environment (command + working directory) for MSVC
-if(MSVC)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	set_property(TARGET ${GENESURFER} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<IF:$<CONFIG:DEBUG>,${ManiVault_INSTALL_DIR}/Debug,$<IF:$<CONFIG:RELWITHDEBINFO>,${ManiVault_INSTALL_DIR}/RelWithDebInfo,${ManiVault_INSTALL_DIR}/Release>>)
     set_property(TARGET ${GENESURFER} PROPERTY VS_DEBUGGER_COMMAND $<IF:$<CONFIG:DEBUG>,"${ManiVault_INSTALL_DIR}/Debug/ManiVault Studio.exe",$<IF:$<CONFIG:RELWITHDEBINFO>,"${ManiVault_INSTALL_DIR}/RelWithDebInfo/ManiVault Studio.exe","${ManiVault_INSTALL_DIR}/Release/ManiVault Studio.exe">>)
 endif()
