@@ -2,7 +2,7 @@
 
 GeneSurfer is an interactive interface for exploring localized transcriptome-wide gene co-expression patterns in the 3D spatial domain.
 
-This software is described in [**GeneSurfer Enables Transcriptome-wide Exploration and Functional Annotation of Gene Co-expression Modules in 3D Spatial Transcriptomics Data**](https://doi.org/10.1101/2024.07.05.602230).
+This software is described in [**GeneSurfer Enables Transcriptome-wide Exploration and Annotation of Gene Co-expression Modules in 3D Spatial Transcriptomics Data**](https://doi.org/10.1016/j.isci.2025.112713).
 
 ## Installation
 GeneSurfer is built as a plug-in for the ManiVault application building system. For more information about ManiVault Studio, see [**ManiVault**](https://www.manivault.studio/).
