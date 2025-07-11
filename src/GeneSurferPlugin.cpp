@@ -1550,6 +1550,11 @@ void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
         qDebug() << "Load avg expression for SEAAD dataset";
         file.open("SEAAD_average_expression_supertype.csv"); // in this file column:gene symbol, row:supertype
     }
+    else if (_positionSourceDataset->getGuiName() == "SubCortex_Xenium-CJ23")
+    {
+        qDebug() << "Load avg expression for test dataset";
+        file.open("marm_Cluster_v4_metacell_onlyNumber.csv"); // in this file column:gene symbol, row:cluster alias
+    }
     else {
         qDebug() << "Load avg expression for ABC Atlas";
         file.open("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
@@ -1667,6 +1672,11 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
     if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
         qDebug() << "Load labels for SEAAD dataset";
         labelDatasetName = "Supertype";
+    }
+    else if (_positionSourceDataset->getGuiName() == "SubCortex_Xenium-CJ23")
+    {
+        qDebug() << "Load labels for test dataset";
+        labelDatasetName = "CDM_Cluster_label";
     }
     else {
         qDebug() << "Load labels for ABC Atlas";
