@@ -1673,6 +1673,12 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetFromFile() {
     // this is loading label from ST dataset!!!
     // Different from loading from singlecell datset!!!
 
+    if (!_avgExprDataset.isValid()) // skip if it's not valid
+    {
+        qDebug() << "loadLabelsFromSTDatasetFromFile: _avgExprDataset is not valid";
+        return;
+    }
+
     QString labelDatasetName;
 
     labelDatasetName = _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentText();
@@ -1684,7 +1690,14 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetFromFile() {
         //qDebug() << data->getGuiName();
         if (data->getGuiName() == labelDatasetName) {
             labelDataset = data;
+            break;
         }
+    }
+
+    if (!labelDataset.isValid())
+    {
+        qDebug() << "ERROR: Could not find label dataset with name " << labelDatasetName;
+        return;
     }
 
     QVector<Cluster> labelClusters = labelDataset->getClusters();
