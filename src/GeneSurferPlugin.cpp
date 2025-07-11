@@ -803,6 +803,9 @@ void GeneSurferPlugin::setLabelDataset() {
 
     _settingsAction.getSingleCellModeAction().getComputeAvgExpressionAction().setEnabled(true);
 
+    //TODO: should trigger loadLabelsFromSTDatasetFromFile() if load avgExprDataset from file
+    qDebug() << "Warning: only the label dataset is set, avgExprDataset still needs to be computed or loaded";
+
 }
 
 void GeneSurferPlugin::updateEnrichmentAPI()
