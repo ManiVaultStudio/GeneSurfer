@@ -165,14 +165,14 @@ private:
     /** Match the annotations labels in ST and acRNA-seq data in the floodfill*/
     void matchLabelInSubset();
 
-    /** load data for labels from ST dataset*/
+    /** load data for labels from ST dataset - work with computing avg*/
     void loadLabelsFromSTDataset();
 
-    /** load data for labels from ST dataset - ONLY FOR ABCAtlas*/
-    void loadLabelsFromSTDatasetABCAtlas();
+    /** load data for labels from ST dataset - work with loaded csv file*/
+    void loadLabelsFromSTDatasetFromFile();
 
-    /** load data for average expression of each cluster - ONLY FOR ABCAtlas*/
-    void loadAvgExpressionABCAtlas();
+    /** load data for average expression of each cluster - load from a csv file*/
+    void loadAvgExpressionFromFile();
 
     /** populate the avg expr values to spatil domain */
     DataMatrix populateAvgExprToSpatial();
