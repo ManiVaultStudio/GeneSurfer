@@ -1756,6 +1756,16 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
 
     qDebug() << "Warning! GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas: " << numClustersNotInST << " clusters not found in ST";
 
+    if (numClustersNotInST == _clusterNamesAvgExpr.size()) {
+        qDebug() << "ERROR: None of the clusters from loaded csv file were found in the selected ST label dataset.";
+        QMessageBox::warning(
+            nullptr,
+            "Label Matching Error",
+            "None of the scRNA-seq clusters were found in the selected ST label dataset."
+        );
+    }
+
+
     /*qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): _cellLabels size: " << _cellLabels.size();
     qDebug() << "_cellLabels[0]" << _cellLabels[0];*/
 }
