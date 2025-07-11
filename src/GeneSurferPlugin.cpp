@@ -1549,23 +1549,8 @@ void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
 
 void GeneSurferPlugin::loadAvgExpressionFromFile() {
     qDebug() << "GeneSurferPlugin::loadAvgExpressionFromFile(): start... ";
-    std::ifstream file;
 
-    // temporary code to load avg expression from file 
-    // TO DO: generalize to select file from GUI
-    //if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
-    //    qDebug() << "Load avg expression for SEAAD dataset";
-    //    file.open("SEAAD_average_expression_supertype.csv"); // in this file column:gene symbol, row:supertype
-    //}
-    //else if (_positionSourceDataset->getGuiName() == "SubCortex_Xenium-CJ23")
-    //{
-    //    qDebug() << "Load avg expression for test dataset";
-    //    file.open("marm_Cluster_v4_metacell_onlyNumber.csv"); // in this file column:gene symbol, row:cluster alias
-    //}
-    //else {
-    //    qDebug() << "Load avg expression for ABC Atlas";
-    //    file.open("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
-    //}
+    std::ifstream file;
 
     QString filePath = QFileDialog::getOpenFileName(
         nullptr,
@@ -1688,21 +1673,7 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetFromFile() {
     // this is loading label from ST dataset!!!
     // Different from loading from singlecell datset!!!
 
-
     QString labelDatasetName;
-    /*if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
-        qDebug() << "Load labels for SEAAD dataset";
-        labelDatasetName = "Supertype";
-    }
-    else if (_positionSourceDataset->getGuiName() == "SubCortex_Xenium-CJ23")
-    {
-        qDebug() << "Load labels for test dataset";
-        labelDatasetName = "CDM_Cluster_label";
-    }
-    else {
-        qDebug() << "Load labels for ABC Atlas";
-        labelDatasetName = "cluster_alias";
-    }*/
 
     labelDatasetName = _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentText();
     qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetFromFile(): labelDatasetName: " << labelDatasetName;
