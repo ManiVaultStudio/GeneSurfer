@@ -1687,7 +1687,7 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
     // this is loading label from ST dataset!!!
     // Different from loading from singlecell datset!!!
     QString labelDatasetName;
-    if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
+    /*if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
         qDebug() << "Load labels for SEAAD dataset";
         labelDatasetName = "Supertype";
     }
@@ -1699,7 +1699,10 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
     else {
         qDebug() << "Load labels for ABC Atlas";
         labelDatasetName = "cluster_alias";
-    }
+    }*/
+
+    labelDatasetName = _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentText();
+    qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): labelDatasetName: " << labelDatasetName;
 
     Dataset<Clusters> labelDataset;
     for (const auto& data : mv::data().getAllDatasets())
