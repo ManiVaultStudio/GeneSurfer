@@ -690,10 +690,16 @@ void GeneSurferPlugin::computeAvgExpression() {
 }
 
 void GeneSurferPlugin::loadAvgExpression() {
-    qDebug() << "ONLY FOR ABCAtlas";
 
-    loadAvgExpressionABCAtlas();// TO DO: hard coded only for ABC Atlas
-    loadLabelsFromSTDatasetABCAtlas();
+    loadAvgExpressionFromFile();
+
+    if (!_avgExprDataset.isValid()) // skip if it's not valid
+    {
+        qDebug() << "loadAvgExpression aborted: _avgExprDataset is not valid";
+        return;
+    }
+
+    loadLabelsFromSTDatasetFromFile();
 
     _avgExprDatasetExists = true;
 
@@ -1217,7 +1223,7 @@ void GeneSurferPlugin::updateSingleCellOption() {
                     for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
                         _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
                     }
-                    loadLabelsFromSTDatasetABCAtlas();
+                    loadLabelsFromSTDatasetFromFile();
 
                     break;
                 }
@@ -1541,24 +1547,30 @@ void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
 
 }
 
-void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
-    qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): start... ";
+void GeneSurferPlugin::loadAvgExpressionFromFile() {
+    qDebug() << "GeneSurferPlugin::loadAvgExpressionFromFile(): start... ";
+
     std::ifstream file;
 
-    // temporary code to load avg expression from file TO DO: generalize to select file from GUI
-    if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
-        qDebug() << "Load avg expression for SEAAD dataset";
-        file.open("SEAAD_average_expression_supertype.csv"); // in this file column:gene symbol, row:supertype
-    }
-    else {
-        qDebug() << "Load avg expression for ABC Atlas";
-        file.open("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
+    QString filePath = QFileDialog::getOpenFileName(
+        nullptr,
+        "Select Average Expression CSV File",
+        "",
+        "CSV Files (*.csv);;All Files (*)"
+    );
+
+    if (filePath.isEmpty()) {
+        qDebug() << "No file selected. Aborting.";
+        return; 
     }
 
+    file.open(filePath.toStdString());
+
     if (!file.is_open()) {
-        qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas Error: Could not open the avg expr file.";
+        qDebug() << "GeneSurferPlugin::loadAvgExpressionFromFile Error: Could not open the avg expr file.";
         return;
     }
+
 
     _clusterNamesAvgExpr.clear();
     _geneNamesAvgExpr.clear();
@@ -1617,9 +1629,6 @@ void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
         _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
     }
 
-    /*qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas()" << numGenes << " genes and " << numClusters << " clusters"; 
-    qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): finished";*/
-
     // identify duplicate gene symbols and append an index to them
     std::map<QString, int> geneSymbolCount;
     for (const auto& geneName : _geneNamesAvgExpr) {
@@ -1641,7 +1650,7 @@ void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
         allData.insert(allData.end(), row.begin(), row.end());
     }
 
-    qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): allData size: " << allData.size();
+    qDebug() << "GeneSurferPlugin::loadAvgExpressionFromFile(): allData size: " << allData.size();
 
     if (!_avgExprDataset.isValid()) {
         qDebug() << "Create an avgExprDataset";
@@ -1652,7 +1661,7 @@ void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
     _avgExprDataset->setData(allData.data(), numClusters, numGenes); // Assuming this function signature is (data, rows, columns)
     _avgExprDataset->setDimensionNames(_geneNamesAvgExpr);
     events().notifyDatasetDataChanged(_avgExprDataset);
-    qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): _avgExprDataset dataset created";
+    qDebug() << "GeneSurferPlugin::loadAvgExpressionFromFile(): _avgExprDataset dataset created";
 
     // convert to eigen
     _avgExpr.resize(numClusters, numGenes);
@@ -1660,18 +1669,20 @@ void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
 
 }
 
-void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
+void GeneSurferPlugin::loadLabelsFromSTDatasetFromFile() {
     // this is loading label from ST dataset!!!
     // Different from loading from singlecell datset!!!
+
+    if (!_avgExprDataset.isValid()) // skip if it's not valid
+    {
+        qDebug() << "loadLabelsFromSTDatasetFromFile: _avgExprDataset is not valid";
+        return;
+    }
+
     QString labelDatasetName;
-    if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
-        qDebug() << "Load labels for SEAAD dataset";
-        labelDatasetName = "Supertype";
-    }
-    else {
-        qDebug() << "Load labels for ABC Atlas";
-        labelDatasetName = "cluster_alias";
-    }
+
+    labelDatasetName = _settingsAction.getSingleCellModeAction().getLabelDatasetPickerAction().getCurrentText();
+    qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetFromFile(): labelDatasetName: " << labelDatasetName;
 
     Dataset<Clusters> labelDataset;
     for (const auto& data : mv::data().getAllDatasets())
@@ -1679,12 +1690,19 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
         //qDebug() << data->getGuiName();
         if (data->getGuiName() == labelDatasetName) {
             labelDataset = data;
+            break;
         }
+    }
+
+    if (!labelDataset.isValid())
+    {
+        qDebug() << "ERROR: Could not find label dataset with name " << labelDatasetName;
+        return;
     }
 
     QVector<Cluster> labelClusters = labelDataset->getClusters();
 
-    //qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): labelClusters size: " << labelClusters.size();
+    //qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetFromFile(): labelClusters size: " << labelClusters.size();
 
     // add weighting for each cluster of whole data
     _countsAll.resize(_clusterNamesAvgExpr.size()); // number of clusters in SC
@@ -1717,15 +1735,24 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
 
         if (!found) {
             // If the cluster is not found in labelClusters
-            //qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): cluster in SC" << clusterName << " not found in ST";
+            //qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetFromFile(): cluster in SC" << clusterName << " not found in ST";
             numClustersNotInST++;
             _countsAll[i] = 0;
         }
     }
 
-    qDebug() << "Warning! GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas: " << numClustersNotInST << " clusters not found in ST";
+    qDebug() << "Warning! GeneSurferPlugin::loadLabelsFromSTDatasetFromFile: " << numClustersNotInST << " clusters not found in ST";
 
-    /*qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): _cellLabels size: " << _cellLabels.size();
+    if (numClustersNotInST == _clusterNamesAvgExpr.size()) {
+        qDebug() << "ERROR: None of the clusters from loaded csv file were found in the selected ST label dataset.";
+        QMessageBox::warning(
+            nullptr,
+            "Label Matching Error",
+            "None of the scRNA-seq clusters were found in the selected ST label dataset."
+        );
+    }
+
+    /*qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetFromFile(): _cellLabels size: " << _cellLabels.size();
     qDebug() << "_cellLabels[0]" << _cellLabels[0];*/
 }
 
