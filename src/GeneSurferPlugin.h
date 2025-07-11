@@ -26,6 +26,8 @@
 #include <QNetworkReply>
 #include <QTableWidgetItem>
 
+#include <QFileDialog>
+
 
 
 /** All plugin related classes are in the mv plugin namespace */

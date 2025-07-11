@@ -1545,25 +1545,43 @@ void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
     qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas(): start... ";
     std::ifstream file;
 
-    // temporary code to load avg expression from file TO DO: generalize to select file from GUI
-    if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
-        qDebug() << "Load avg expression for SEAAD dataset";
-        file.open("SEAAD_average_expression_supertype.csv"); // in this file column:gene symbol, row:supertype
+    // temporary code to load avg expression from file 
+    // TO DO: generalize to select file from GUI
+    //if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
+    //    qDebug() << "Load avg expression for SEAAD dataset";
+    //    file.open("SEAAD_average_expression_supertype.csv"); // in this file column:gene symbol, row:supertype
+    //}
+    //else if (_positionSourceDataset->getGuiName() == "SubCortex_Xenium-CJ23")
+    //{
+    //    qDebug() << "Load avg expression for test dataset";
+    //    file.open("marm_Cluster_v4_metacell_onlyNumber.csv"); // in this file column:gene symbol, row:cluster alias
+    //}
+    //else {
+    //    qDebug() << "Load avg expression for ABC Atlas";
+    //    file.open("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
+    //}
+
+
+
+    QString filePath = QFileDialog::getOpenFileName(
+        nullptr,
+        "Select Average Expression CSV File",
+        "",
+        "CSV Files (*.csv);;All Files (*)"
+    );
+
+    if (filePath.isEmpty()) {
+        qDebug() << "No file selected. Aborting.";
+        return; 
     }
-    else if (_positionSourceDataset->getGuiName() == "SubCortex_Xenium-CJ23")
-    {
-        qDebug() << "Load avg expression for test dataset";
-        file.open("marm_Cluster_v4_metacell_onlyNumber.csv"); // in this file column:gene symbol, row:cluster alias
-    }
-    else {
-        qDebug() << "Load avg expression for ABC Atlas";
-        file.open("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
-    }
+
+    file.open(filePath.toStdString());
 
     if (!file.is_open()) {
         qDebug() << "GeneSurferPlugin::loadAvgExpressionABCAtlas Error: Could not open the avg expr file.";
         return;
     }
+
 
     _clusterNamesAvgExpr.clear();
     _geneNamesAvgExpr.clear();
