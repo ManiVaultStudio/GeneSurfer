@@ -693,6 +693,13 @@ void GeneSurferPlugin::loadAvgExpression() {
     qDebug() << "ONLY FOR ABCAtlas";
 
     loadAvgExpressionABCAtlas();// TO DO: hard coded only for ABC Atlas
+
+    if (!_avgExprDataset.isValid()) // skip if it's not valid
+    {
+        qDebug() << "loadAvgExpression aborted: _avgExprDataset is not valid";
+        return;
+    }
+
     loadLabelsFromSTDatasetABCAtlas();
 
     _avgExprDatasetExists = true;
@@ -1561,8 +1568,6 @@ void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
     //    file.open("precomputed_stats_ABC_revision_230821_alias_symbol.csv"); // in this file column:gene symbol, row:cluster alias
     //}
 
-
-
     QString filePath = QFileDialog::getOpenFileName(
         nullptr,
         "Select Average Expression CSV File",
@@ -1686,6 +1691,8 @@ void GeneSurferPlugin::loadAvgExpressionABCAtlas() {
 void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
     // this is loading label from ST dataset!!!
     // Different from loading from singlecell datset!!!
+
+
     QString labelDatasetName;
     /*if (_positionSourceDataset->getGuiName() == "SEAAD_MTG_MERFISH") {
         qDebug() << "Load labels for SEAAD dataset";
@@ -1764,7 +1771,6 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas() {
             "None of the scRNA-seq clusters were found in the selected ST label dataset."
         );
     }
-
 
     /*qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetABCAtlas(): _cellLabels size: " << _cellLabels.size();
     qDebug() << "_cellLabels[0]" << _cellLabels[0];*/
