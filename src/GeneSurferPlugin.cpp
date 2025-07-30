@@ -1646,7 +1646,8 @@ void GeneSurferPlugin::loadAvgExpressionFromFile() {
     }
 
     // store the evg expression matrix as a dataset
-    size_t totalElements = numClusters * numGenes; // total number of data points
+    size_t totalElements = static_cast<size_t>(numClusters) * static_cast<size_t>(numGenes);
+
     std::vector<float> allData;
     allData.reserve(totalElements);
     for (const auto& row : matrixData) {
