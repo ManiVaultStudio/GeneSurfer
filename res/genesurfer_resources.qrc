@@ -2,8 +2,9 @@
     <qresource prefix="gene_surfer">
         <file>chart/bar_chart.html</file>
         <file>chart/bar_chart.tools.js</file>
+		<file>chart/d3.v4.js</file>
     </qresource>
-    <qresource prefix="gene_surfer">
+    <qresource prefix="gene_surfer">  
         <file>js_libs/qwebchannel.tools.js</file>
    </qresource>
 </RCC>
