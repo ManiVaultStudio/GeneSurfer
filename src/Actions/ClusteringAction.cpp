@@ -18,9 +18,10 @@ ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
     _numClusterAction.setToolTip("Number of clusters");
     _numGenesThresholdAction.setToolTip("Number of filtered genes");
 
-    // hide the slider
+    // hide the slider, only show the spinbox
     _numClusterAction.setDefaultWidgetFlags(IntegralAction::SpinBox);
     _numGenesThresholdAction.setDefaultWidgetFlags(IntegralAction::SpinBox);
+
 
     auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
     if (geneSurferPlugin == nullptr)
@@ -30,9 +31,22 @@ ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
             geneSurferPlugin->updateNumCluster();
      });
 
-    connect(&_numGenesThresholdAction, &IntegralAction::valueChanged, [this, geneSurferPlugin](float val) {
-        geneSurferPlugin->updateCorrThreshold();
+
+    // Debounce timer for the number of genes threshold action
+    _NRangeDebounceTimer.setSingleShot(true);
+
+    connect(&_numGenesThresholdAction,
+        &IntegralAction::valueChanged,
+        this,
+        [this]() { _NRangeDebounceTimer.start(300); });
+
+    connect(&_NRangeDebounceTimer, &QTimer::timeout, this, [this, geneSurferPlugin]() {
+        geneSurferPlugin->updateCorrThreshold(); 
         });
+
+    //connect(&_numGenesThresholdAction, &IntegralAction::valueChanged, [this, geneSurferPlugin](float val) {
+    //    geneSurferPlugin->updateCorrThreshold();
+    //    });
 
     connect(&geneSurferPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
         _numGenesThresholdAction.setMaximum(geneSurferPlugin->getPositionSourceDataset()->getDimensionsPickerAction().getEnabledDimensions().size());

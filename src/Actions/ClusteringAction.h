@@ -1,6 +1,7 @@
 #pragma once
 #include <actions/VerticalGroupAction.h>
 #include <actions/IntegralAction.h>
+#include <QTimer>
 
 using namespace mv::gui;
 
@@ -49,6 +50,8 @@ public: // Action getters
 private:
     IntegralAction          _numClusterAction;        /** number of cluster action */
     IntegralAction          _numGenesThresholdAction;        /** number of gene threshold action */
+
+    QTimer _NRangeDebounceTimer;
 };
 
 Q_DECLARE_METATYPE(ClusteringAction)
