@@ -8,7 +8,7 @@ using namespace mv::gui;
 
 SingleCellModeAction::SingleCellModeAction(QObject* parent, const QString& title) :
     WidgetAction(parent, title),
-    _singleCellOptionAction(this, "Use scRNA-seq genes", false),
+    _singleCellOptionAction(this, "Use averages", false),
     _computeAvgExpressionAction(this, "Compute average expression"),
     _loadAvgExpressionAction(this, "Load average expression"),
     _labelDatasetPickerAction(this, "Label for mapping")
@@ -16,7 +16,7 @@ SingleCellModeAction::SingleCellModeAction(QObject* parent, const QString& title
     setIcon(mv::util::StyledIcon("braille"));//"eye", "braille", "database", "chart-area"
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
 
-    _singleCellOptionAction.setToolTip("Single Cell Option");
+    _singleCellOptionAction.setToolTip("Projection Option");
     _computeAvgExpressionAction.setToolTip("Compute average expression");
     _loadAvgExpressionAction.setToolTip("Load average expression");
     _labelDatasetPickerAction.setToolTip("Label Dataset used for mapping to ST");
@@ -61,7 +61,7 @@ void SingleCellModeAction::initialize(GeneSurferPlugin* geneSurferPlugin)
 SingleCellModeAction::Widget::Widget(QWidget* parent, SingleCellModeAction* singleCellModeAction, const std::int32_t& widgetFlags) :
     WidgetActionWidget(parent, singleCellModeAction, widgetFlags)
 {
-    setToolTip("Single Cell Mode settings");
+    setToolTip("Projection Mode settings");
     //setStyleSheet("QToolButton { width: 36px; height: 36px; qproperty-iconSize: 18px; }");
 
     auto layout = new QGridLayout();

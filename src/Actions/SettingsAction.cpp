@@ -15,7 +15,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _positionAction(this, "Position"),
     _dimensionSelectionAction(this, "Gene searching"),
     _pointPlotAction(this, "Point Plot"),
-    _singleCellModeAction(this, "Single Cell Mode"),
+    _singleCellModeAction(this, "Projection Mode"),
     _clusteringAction(this, "Cluster Settings"),
     _sectionAction(this, "Section selection"),
     _correlationModeAction(this, "Gene filtering"),
