@@ -18,6 +18,10 @@ ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
     _numClusterAction.setToolTip("Number of clusters");
     _numGenesThresholdAction.setToolTip("Number of filtered genes");
 
+    // hide the slider
+    _numClusterAction.setDefaultWidgetFlags(IntegralAction::SpinBox);
+    _numGenesThresholdAction.setDefaultWidgetFlags(IntegralAction::SpinBox);
+
     auto geneSurferPlugin = dynamic_cast<GeneSurferPlugin*>(parent->parent());
     if (geneSurferPlugin == nullptr)
         return;
