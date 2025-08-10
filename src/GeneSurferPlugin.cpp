@@ -1354,7 +1354,8 @@ void GeneSurferPlugin::updateScatterPointSize()
 
 void GeneSurferPlugin::updateFilterLabel()
 {
-    _filterLabel->setText("Filter genes by:" + _corrFilter.getCorrFilterTypeAsString());
+    //_filterLabel->setText("Filter genes by:" + _corrFilter.getCorrFilterTypeAsString());
+    _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
 }
 
 
