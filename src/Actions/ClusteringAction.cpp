@@ -6,7 +6,8 @@ using namespace mv::gui;
 ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
     VerticalGroupAction(parent, title),
     _numClusterAction(this, "numClusters", 1, 6, 3),
-    _numGenesThresholdAction(this, "numFilteredGenes", 1, 100, 50)
+    //_numGenesThresholdAction(this, "numFilteredGenes", 1, 100, 50)
+    _numGenesThresholdAction(this, "numFilteredDims", 1, 100, 50)
 {
     setToolTip("Clustering settings");
     setIcon(mv::util::StyledIcon("th-large"));
@@ -16,7 +17,8 @@ ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
     addAction(&_numGenesThresholdAction);
 
     _numClusterAction.setToolTip("Number of clusters");
-    _numGenesThresholdAction.setToolTip("Number of filtered genes");
+    //_numGenesThresholdAction.setToolTip("Number of filtered genes");
+    _numGenesThresholdAction.setToolTip("Number of filtered dimensions");
 
     // hide the slider, only show the spinbox
     _numClusterAction.setDefaultWidgetFlags(IntegralAction::SpinBox);

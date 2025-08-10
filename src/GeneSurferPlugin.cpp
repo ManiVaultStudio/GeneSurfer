@@ -139,7 +139,8 @@ void GeneSurferPlugin::init()
     QFont sansFont("Helvetica [Cronyx]", 18);
     _filterLabel->setFont(sansFont);   
     _filterLabel->setGeometry(10, 10, 400, 30);
-    _filterLabel->setText("Filter genes by:" + _corrFilter.getCorrFilterTypeAsString());
+    //_filterLabel->setText("Filter genes by:" + _corrFilter.getCorrFilterTypeAsString());
+    _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
     
     _tableWidget = new MyTableWidget();
 
@@ -459,7 +460,8 @@ void GeneSurferPlugin::convertDataAndUpdateChart()
 
         int clusterLabel = _dimNameToClusterLabel[genePair.first];
         entry["categoryColor"] = plotlyT10Palette[clusterLabel % plotlyT10Palette.size()];
-        entry["cluster"] = "Gene cluster " + QString::number(clusterLabel);
+        //entry["cluster"] = "Gene cluster " + QString::number(clusterLabel);
+        entry["cluster"] = "Dimension cluster " + QString::number(clusterLabel);
 
         payload.push_back(entry);
     }
@@ -1047,7 +1049,8 @@ void GeneSurferPlugin::updateSelection()
     for (const auto& pair : _numGenesInCluster) {
         QString clusterIdx = QString::number(pair.first);
         QString numGenesInThisCluster = QString::number(pair.second);
-        _scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " genes)");
+        //_scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " genes)");
+        _scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " dims)");
     }
 
     convertDataAndUpdateChart();

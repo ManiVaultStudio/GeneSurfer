@@ -5,7 +5,8 @@ using namespace mv::gui;
 
 DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QString& title) :
     GroupAction(parent, title),
-    _dimensionAction(this, "Gene")
+    //_dimensionAction(this, "Gene")
+    _dimensionAction(this, "Dim")
 {
     setIcon(mv::util::StyledIcon("search"));
     setLabelSizingType(LabelSizingType::Auto);
