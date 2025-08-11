@@ -99,9 +99,6 @@ public:
     /** Update the color of _dimView */
     void updateShowDimension();
 
-    /** Work-around for dimensionPicker*/
-    void setDimensionNamesForDimensionPicker();
-
     /** Update the selection of mouse in GradientViewer */
     void updateSelection();
 
