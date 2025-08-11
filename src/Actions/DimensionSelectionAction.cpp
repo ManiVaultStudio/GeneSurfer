@@ -19,33 +19,36 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
     if (geneSurferPlugin == nullptr)
         return;
 
-    connect(&_dimensionAction, &GenePickerAction::currentDimensionIndexChanged, [this, geneSurferPlugin](const std::uint32_t& currentDimensionIndex) {
+    connect(&_dimensionAction, &DimensionPickerAction::currentDimensionIndexChanged, [this, geneSurferPlugin](const std::uint32_t& currentDimensionIndex) {
         if (geneSurferPlugin->isDataInitialized() && _dimensionAction.getCurrentDimensionIndex() != -1) {
             geneSurferPlugin->updateShowDimension();
         }
         });
 
     connect(&geneSurferPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
-        auto sortedGeneNames = geneSurferPlugin->getPositionSourceDataset()->getDimensionNames();
+        //auto sortedGeneNames = geneSurferPlugin->getPositionSourceDataset()->getDimensionNames();
 
-        std::sort(sortedGeneNames.begin(), sortedGeneNames.end(), [](const QString& a, const QString& b) {
-            // Compare alphabetically first
-            int minLength = std::min(a.length(), b.length());
-            for (int i = 0; i < minLength; i++) {
-                if (a[i] != b[i]) {
-                    return a[i] < b[i];
-                }
-            }
-            // If one is a prefix of the other, or they are identical up to the minLength, sort by length
-            return a.length() < b.length();
-         });
+        //std::sort(sortedGeneNames.begin(), sortedGeneNames.end(), [](const QString& a, const QString& b) {
+        //    // Compare alphabetically first
+        //    int minLength = std::min(a.length(), b.length());
+        //    for (int i = 0; i < minLength; i++) {
+        //        if (a[i] != b[i]) {
+        //            return a[i] < b[i];
+        //        }
+        //    }
+        //    // If one is a prefix of the other, or they are identical up to the minLength, sort by length
+        //    return a.length() < b.length();
+        // });
 
-        QStringList sortedGeneNamesList;
-        for (const auto& str : sortedGeneNames) {
-            sortedGeneNamesList.append(str);
-        }
+        //QStringList sortedGeneNamesList;
+        //for (const auto& str : sortedGeneNames) {
+        //    sortedGeneNamesList.append(str);
+        //}
 
-        _dimensionAction.setDimensionNames(sortedGeneNamesList);
+        //_dimensionAction.setDimensionNames(sortedGeneNamesList);
+        //_dimensionAction.setCurrentDimensionIndex(-1);
+
+        _dimensionAction.setPointsDataset(geneSurferPlugin->getPositionSourceDataset());
         _dimensionAction.setCurrentDimensionIndex(-1);
         });
 

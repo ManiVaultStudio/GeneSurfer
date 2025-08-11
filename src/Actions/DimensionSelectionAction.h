@@ -1,6 +1,7 @@
 #pragma once
 #include <actions/GroupAction.h>
-#include "GenePickerAction.h"
+//#include "GenePickerAction.h"
+#include <PointData/DimensionPickerAction.h>
 
 using namespace mv::gui;
 
@@ -43,10 +44,10 @@ public: // Serialization
 
 public: // Action getters
 
-    GenePickerAction& getDimensionAction() { return _dimensionAction; }
+    DimensionPickerAction& getDimensionAction() { return _dimensionAction; }
 
 private:
-    GenePickerAction   _dimensionAction;           /** modified ver. dimension picker action */
+    DimensionPickerAction   _dimensionAction;           /** modified ver. dimension picker action */
 
 };
 
