@@ -1723,6 +1723,7 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetFromFile() {
 
 void GeneSurferPlugin::countLabelDistribution() 
 {
+
     std::unordered_map<QString, int> clusterPointCounts;
 
     for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
@@ -1866,8 +1867,8 @@ void GeneSurferPlugin::clusterGenes()
             qDebug() << " Mean of corrFilteredGene.row(0) : " << corrFilteredGene.row(0).mean();*/
 
             // test without weighting
-            Eigen::MatrixXf corrFilteredGeneTEST(filteredDimNames.size(), filteredDimNames.size());
-            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGeneTEST);
+            //Eigen::MatrixXf corrFilteredGeneTEST(filteredDimNames.size(), filteredDimNames.size());
+            //_corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGeneTEST);
 
             // compare the two correlation matrices
             /*std::cout << "Mean of corrFilteredGene: " << corrFilteredGene.mean() << std::endl;
@@ -2591,6 +2592,7 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
     else 
     {
         auto selection = _positionDataset->getSelection<Points>();
+
         if (!_sliceDataset.isValid())
            _computeSubset.updateSelectedData(_positionDataset, selection, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
         else
