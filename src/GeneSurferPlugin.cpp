@@ -1377,7 +1377,8 @@ void GeneSurferPlugin::updateScatterColors()
         for (int i = 0; i < _nclust; i++)
         {
             std::vector<float> dimV = _colorScalars[i];
-            _scatterViews[i]->setScalars(dimV, selection[0]);// TO DO: hard-coded the idx of point // selection not working?
+            //_scatterViews[i]->setScalars(dimV, selection[0]);// TO DO: hard-coded the idx of point // selection not working?
+            _scatterViews[i]->setScalars(dimV, 1);
         }
     }
     else {
@@ -1406,7 +1407,8 @@ void GeneSurferPlugin::updateScatterColors()
                     //break; // TO DO: remove this break statement
                 }
             }
-            _scatterViews[j]->setScalars(viewScalars, selection[0]);
+            //_scatterViews[j]->setScalars(viewScalars, selection[0]); // TODO: check if this is needed
+            _scatterViews[j]->setScalars(viewScalars, 1);
         }
     }
 }
