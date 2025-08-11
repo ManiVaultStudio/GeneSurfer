@@ -2598,6 +2598,12 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
     else 
     {
         auto selection = _positionDataset->getSelection<Points>();
+        // if selection is empty, no need to update the selected data
+        if (selection->indices.size() == 0)
+        {
+            qDebug() << "GeneSurferPlugin::fromVariantMap(): selection is empty, no need to update the selected data";
+            return;
+        }
 
         if (!_sliceDataset.isValid())
            _computeSubset.updateSelectedData(_positionDataset, selection, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
