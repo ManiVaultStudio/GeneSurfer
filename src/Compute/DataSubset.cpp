@@ -184,11 +184,13 @@ void DataSubset::computeSubsetDataAvgExpr(const DataMatrix& dataMatrix, const st
 {
     subsetDataMatrix.resize(clusterNames.size(), dataMatrix.cols());
 
+#pragma omp parallel for
     for (int i = 0; i < clusterNames.size(); ++i) {
         QString clusterName = clusterNames[i];
 
         auto it = clusterToRowMap.find(clusterName);
         if (it == clusterToRowMap.end()) {
+            #pragma omp critical
             qDebug() << "Error: clusterName " << clusterName << " not found in _clusterAliasToRowMap";
             continue;
         }
