@@ -1073,7 +1073,7 @@ void GeneSurferPlugin::updateSelection()
         if (dimensionDataset.isValid())
         {
             dimensionDataset->extractDataForDimension(dimSpatial, 0);
-            qDebug() << "dimSpatial size: " << dimSpatial.size();
+            //qDebug() << "dimSpatial size: " << dimSpatial.size();
         }
         else
         { 
@@ -1097,12 +1097,11 @@ void GeneSurferPlugin::updateSelection()
             dimAvg.push_back(averageDim);
 
         }
-        qDebug() << "dimAvg size: " << dimAvg.size();
-
+        //qDebug() << "dimAvg size: " << dimAvg.size();
         
         // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _corrGeneVector);// without weighting
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _countsSubset, _corrGeneVector);// with weighting
-        qDebug() << "_corrGeneVector size: " << _corrGeneVector.size();
+        //qDebug() << "_corrGeneVector size: " << _corrGeneVector.size();
     }
     
 
