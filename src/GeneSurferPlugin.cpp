@@ -1076,13 +1076,15 @@ void GeneSurferPlugin::updateSelection()
             qDebug() << "dimSpatial size: " << dimSpatial.size();
         }
         else
+        { 
             qDebug() << "ERROR: no valid Mapped RNA dataset found!";
-        
+            return;
+        }
         
         for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
             int ptIndex = _sortedFloodIndices[index];
             if (ptIndex >= dimSpatial.size())
-                qDebug() << "ERROR! ptIndex " << ptIndex << " >= zPositions.size() " << dimSpatial.size();
+                qDebug() << "ERROR! ptIndex " << ptIndex << " >= dimSpatial.size() " << dimSpatial.size();
             QString label = _cellLabels[ptIndex];
             clusterDimSums[label] += dimSpatial[ptIndex];
         }
