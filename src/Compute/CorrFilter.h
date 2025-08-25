@@ -13,7 +13,8 @@ namespace corrFilter
         SPATIALZ,//anterior-posterior in ABC Atlas
         SPATIALY,//dorsal-ventral in ABC Atlas
         DIFF,
-        MORAN
+        MORAN,
+        DIMENSION// corr with a specific dimension, etc. a ST/RNA gene
     };
 
     class SpatialCorr

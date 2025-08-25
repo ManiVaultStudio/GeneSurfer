@@ -1034,6 +1034,52 @@ void GeneSurferPlugin::updateSelection()
         // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _corrGeneVector);// without weighting
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _countsSubset, _corrGeneVector);// with weighting
     }
+    // -------------- with a gene(dimension) --------------
+    // TODO: only for 3D + singlecell right now
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION) {
+        qDebug() << "Compute filtering: 3D + SingleCell + Dimension";
+        std::vector<float> dimAvg;
+
+        // TEST: hard code a gene name
+        QString selectedGene = "PPP1R1B";
+        int selectedGeneIndex = -1;
+        for (int i = 0; i < _enabledDimNames.size(); ++i) {
+            if (_enabledDimNames[i] == selectedGene) {
+                selectedGeneIndex = i;
+                break;
+            }
+        }
+        qDebug() << selectedGene << "selectedGeneIndex: " << selectedGeneIndex;
+
+        // compute the average expression of the selected gene in _positionSourceDataset across clusters in subset
+        std::unordered_map<QString, float> clusterDimSums;
+        std::vector<float> dimSpatial;
+        _positionSourceDataset->extractDataForDimension(dimSpatial, selectedGeneIndex); 
+        
+
+        for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
+            int ptIndex = _sortedFloodIndices[index];
+            if (ptIndex >= dimSpatial.size())
+                qDebug() << "ERROR! ptIndex " << ptIndex << " >= zPositions.size() " << dimSpatial.size();
+            QString label = _cellLabels[ptIndex];
+            clusterDimSums[label] += dimSpatial[ptIndex];
+        }
+
+        for (int i = 0; i < _clustersToKeep.size(); ++i) {
+            QString label = _clustersToKeep[i];
+            int count = _countsMap[label];
+
+            float averageDim = (count > 0) ? static_cast<float>(clusterDimSums[label]) / count : 0.0f;
+            dimAvg.push_back(averageDim);
+
+        }
+        qDebug() << "dimAvg size: " << dimAvg.size();
+
+        
+        // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _corrGeneVector);// without weighting
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _countsSubset, _corrGeneVector);// with weighting
+        qDebug() << "_corrGeneVector size: " << _corrGeneVector.size();
+    }
     
 
     ////////////////////
