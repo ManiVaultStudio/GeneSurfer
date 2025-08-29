@@ -1036,6 +1036,24 @@ void GeneSurferPlugin::updateSelection()
     }
     // -------------- with a gene(dimension) --------------
     // TODO: only for 3D + singlecell right now
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    {
+        qDebug() << "Compute filtering: 2D + ST + Dimension";
+        qDebug() << "ERROR: not implemented yet";
+        return;
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    {
+        qDebug() << "Compute filtering: 3D + ST + Dimension";
+        qDebug() << "ERROR: not implemented yet";
+        return;
+    }
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    {
+        qDebug() << "Compute filtering: 2D + SingleCell + Dimension";
+        qDebug() << "ERROR: not implemented yet";
+        return;
+    }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION) {
         qDebug() << "Compute filtering: 3D + SingleCell + Dimension";
         std::vector<float> dimAvg;
