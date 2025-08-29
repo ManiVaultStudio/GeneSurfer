@@ -1061,22 +1061,6 @@ void GeneSurferPlugin::updateSelection()
         std::unordered_map<QString, float> clusterDimSums;
         std::vector<float> dimSpatial;
 
-        // TEST: hard code a gene name from _positionSourceDataset -----------------------------------------------------
-        //QString selectedGene = "PPP1R1B";
-        //int selectedGeneIndex = -1;
-        //for (int i = 0; i < _enabledDimNames.size(); ++i) {
-        //    if (_enabledDimNames[i] == selectedGene) {
-        //        selectedGeneIndex = i;
-        //        break;
-        //    }
-        //}
-        //qDebug() << selectedGene << "selectedGeneIndex: " << selectedGeneIndex;
-
-        //// compute the average expression of the selected gene in _positionSourceDataset across clusters in subset
-        //_positionSourceDataset->extractDataForDimension(dimSpatial, selectedGeneIndex); 
-        //qDebug() << "dimSpatial size: " << dimSpatial.size();
-        // TEST: hard code a gene name from _positionSourceDataset -----------------------------------------------------
-
         // TEST: use mapped RNA dataset to get the dimension data ----------------------------------------------------
         Dataset<Points> dimensionDataset;
         for (const auto& data : mv::data().getAllDatasets())
