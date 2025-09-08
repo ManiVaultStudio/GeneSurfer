@@ -1876,7 +1876,7 @@ void GeneSurferPlugin::clusterGenes()
 
     // create a vector of pairs (absolute correlation value, index)
     std::vector<std::pair<float, int>> pairs(_corrGeneVector.size());
-    for (size_t i = 0; i < _corrGeneVector.size(); ++i) {
+    for (int i = 0; i < _corrGeneVector.size(); ++i) {
         pairs[i] = std::make_pair(std::abs(_corrGeneVector[i]), i);
     }
 
