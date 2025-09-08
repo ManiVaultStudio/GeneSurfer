@@ -87,9 +87,20 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _tertiaryToolbarAction(this, "TertiaryToolbar"),
     _selectedDimIndex(-1),
     _selectedClusterIndex(-1), // -1 means no view selected
-    _colorMapAction(this, "Color map", "RdYlBu")
+    _colorMapAction(this, "Color map", "RdYlBu"),
+    _saveToCsvAction(&getWidget(), "Save As...")
 
 {
+    { // save to CSV
+        _saveToCsvAction.setIcon(mv::util::StyledIcon("file-csv"));
+        _saveToCsvAction.setShortcut(tr("Ctrl+S"));
+        _saveToCsvAction.setShortcutContext(Qt::WidgetWithChildrenShortcut);
+
+        connect(&_saveToCsvAction, &TriggerAction::triggered, this, [this]() -> void {
+            saveDataToCsvAction();
+            });
+    }
+
     _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 2, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
@@ -133,6 +144,8 @@ void GeneSurferPlugin::init()
     _chartWidget = new ChartWidget(this);
     _chartWidget->setPage(":gene_surfer/chart/bar_chart.html", "qrc:/gene_surfer/chart/");
     _chartWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+
+    _chartWidget->addAction(&_saveToCsvAction);
 
     // Add label for filtering on top of the barchart
     _filterLabel = new QLabel(_chartWidget);
@@ -476,6 +489,56 @@ void GeneSurferPlugin::convertDataAndUpdateChart()
 
     qDebug() << "GeneSurferPlugin::convertDataAndUpdateChart: Send data from Qt cpp to D3 js";
     emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payloadMap);
+}
+
+void GeneSurferPlugin::saveDataToCsvAction()
+{
+    qDebug() << "test";
+
+    // Prepare the sorted list - FIXME: duplicate code with convertDataAndUpdateChart()
+    std::vector<std::pair<QString, float>> filteredAndSortedGenes;
+    for (size_t i = 0; i < _enabledDimNames.size(); ++i) {
+        if (_dimNameToClusterLabel.find(_enabledDimNames[i]) != _dimNameToClusterLabel.end()) {
+            filteredAndSortedGenes.emplace_back(_enabledDimNames[i], _corrGeneVector[i]);
+        }
+    }
+
+    std::sort(filteredAndSortedGenes.begin(), filteredAndSortedGenes.end(),
+        [](const std::pair<QString, float>& a, const std::pair<QString, float>& b) {
+            return a.second > b.second; // descending
+        });
+
+    QString fileName = QFileDialog::getSaveFileName(
+        nullptr, "Save Gene Correlations", "", "CSV files (*.csv);;All files (*.*)");
+    if (fileName.isEmpty())
+        return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qDebug() << "Could not open file for writing";
+        return;
+    }
+
+    QTextStream out(&file);
+
+    QString queryGene = "TEST";// FIXME: get the actual query gene name
+    out << "Query gene:," << queryGene << "\n";
+
+    // Column headers
+    out << "Dimension,Correlation\n";
+
+    // Write rows (one line per gene)
+    for (const auto& genePair : filteredAndSortedGenes) {
+        const QString& geneName = genePair.first;
+        float corrValue = genePair.second;
+
+        out << geneName << ","
+            << corrValue << "\n";
+    }
+
+    file.close();
+    qDebug() << "Correlations exported to" << fileName;
+
 }
 
 void GeneSurferPlugin::publishSelection(const QString& selection)
