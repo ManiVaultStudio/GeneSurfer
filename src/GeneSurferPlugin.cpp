@@ -493,8 +493,6 @@ void GeneSurferPlugin::convertDataAndUpdateChart()
 
 void GeneSurferPlugin::saveDataToCsvAction()
 {
-    qDebug() << "test";
-
     // Prepare the sorted list - FIXME: duplicate code with convertDataAndUpdateChart()
     std::vector<std::pair<QString, float>> filteredAndSortedGenes;
     for (size_t i = 0; i < _enabledDimNames.size(); ++i) {
@@ -524,7 +522,7 @@ void GeneSurferPlugin::saveDataToCsvAction()
     // Write header information
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF)
     {
-        out << "Filter type: DIFF\n";
+        out << "Filter type: DIFF (normed to [0-1] for plotting)\n";
     }
     else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
     {
@@ -565,12 +563,19 @@ void GeneSurferPlugin::saveDataToCsvAction()
         {
             qDebug() << "ERROR: no valid Mapped RNA dataset found!";
         }
-        out << "Query gene: " << queryGene << "\n";
+        out << "Query gene: " << queryGene << ",";
+
+        // Write the number of selected points
+        out << "Number of selected points: " << _sortedFloodIndices.size() << "\n";
     }
 
-
-    // Column headers
-    out << "Dimension,Correlation\n";
+    // Write column headers
+    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
+        out << "Dimension,Diff\n";
+    }
+    else {
+        out << "Dimension,Correlation\n";
+    }
 
     // Write rows (one line per gene)
     for (const auto& genePair : filteredAndSortedGenes) {
