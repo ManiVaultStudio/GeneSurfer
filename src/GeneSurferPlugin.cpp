@@ -521,8 +521,53 @@ void GeneSurferPlugin::saveDataToCsvAction()
 
     QTextStream out(&file);
 
-    QString queryGene = "TEST";// FIXME: get the actual query gene name
-    out << "Query gene:," << queryGene << "\n";
+    // Write header information
+    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF)
+    {
+        out << "Filter type: DIFF\n";
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+    {
+        out << "Filter type: Moran's I\n";
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ)
+    {
+        out << "Filter type: SPATIALZ\n";
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY)
+    {
+        out << "Filter type: SPATIALY\n";
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    {
+        out << "Filter type: DIMENSION,";    
+
+        // for dimension filter, also output the selected dimension name
+        // FIXME: currently only work for identifying correspondence from a RNA-seq gene to ATAC dimension
+        // FIXME: duplicate code with updateSelection()
+        Dataset<Points> dimensionDataset;
+        for (const auto& data : mv::data().getAllDatasets())
+        {
+            if (data->getGuiName() == "Mapped RNA dataset")
+            {
+                dimensionDataset = data;
+                //qDebug() << "Found Mapped RNA dataset";
+                break;
+            }
+        }
+        QString queryGene;
+        if (dimensionDataset.isValid())
+        {
+            queryGene = dimensionDataset->getDimensionNames()[0];
+            qDebug() << "Query gene in Mapped RNA dataset: " << queryGene;
+        }
+        else
+        {
+            qDebug() << "ERROR: no valid Mapped RNA dataset found!";
+        }
+        out << "Query gene: " << queryGene << "\n";
+    }
+
 
     // Column headers
     out << "Dimension,Correlation\n";
