@@ -135,6 +135,8 @@ namespace corrFilter
             return "Spatial Y";
         case CorrFilterType::DIMENSION:
             return "Dimension";
+        case CorrFilterType::ATACtoRNA:
+            return "ATAC to RNA";
         default: 
             return "Unknown";
         }

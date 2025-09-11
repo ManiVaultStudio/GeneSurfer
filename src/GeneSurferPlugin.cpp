@@ -1117,6 +1117,7 @@ void GeneSurferPlugin::updateSelection()
         //_corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _corrGeneVector);// without weighting
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _countsSubset, _corrGeneVector);// with weighting
     }
+
     // -------------- Spatial y --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
         qDebug() << "Compute filtering: 2D + ST + SpatialCorrY";
@@ -1147,7 +1148,8 @@ void GeneSurferPlugin::updateSelection()
         // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _corrGeneVector);// without weighting
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _countsSubset, _corrGeneVector);// with weighting
     }
-    // -------------- with a gene(dimension) --------------
+
+    // -------------- RNA-seq gene to ATAC (RNA-seq as seed, identify similar peaks) --------------
     // TODO: only for 3D + singlecell right now
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
     {
@@ -1218,7 +1220,18 @@ void GeneSurferPlugin::updateSelection()
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _countsSubset, _corrGeneVector);// with weighting
         //qDebug() << "_corrGeneVector size: " << _corrGeneVector.size();
     }
-    
+
+    // // -------------- ATAC to RNA-seq genes (ATAC peak as seed, identify similar RNA-seq genes) --------------
+    // TODO: only for 3D + singlecell right now
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
+     
+        qDebug() << "TEST: ATAC to RNA";
+
+        // get the vector of a specific ATAC-seq peak
+
+
+
+    };
 
     ////////////////////
     // Clustering //
@@ -2800,6 +2813,22 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
     _selectedClusterIndex = variantMap["SelectedClusterIndex"].toInt();
     updateClick();
 
+
+    // TODO: delete
+    // generate a cluster dataset for _clusterNamesAvgExpr and attach it to parent dataset _avgExprDataset 
+    /*Dataset<Clusters> clusterDataset = mv::data().createDataset<Clusters>("Cluster", "Clusters", _avgExprDataset);
+    QVector<Cluster> clusters;
+    for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
+        Cluster cluster;
+        cluster.setName(_clusterNamesAvgExpr[i]);
+        std::vector<uint32_t> indices = { static_cast<uint32_t>(i) };
+        cluster.setIndices(indices);
+        clusters.push_back(cluster);
+    }
+    clusterDataset->setClusters(clusters);
+    mv::events().notifyDatasetAdded(clusterDataset);
+    mv::events().notifyDatasetDataChanged(clusterDataset);
+    qDebug() << "GeneSurferPlugin::fromVariantMap: clusterDataset created with " << clusters.size() << " clusters";*/
 
     _loadingFromProject = false;
 
