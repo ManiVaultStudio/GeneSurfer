@@ -541,7 +541,6 @@ void GeneSurferPlugin::saveDataToCsvAction()
         out << "Filter type: DIMENSION,";
 
         // for dimension filter, also output the selected dimension name
-        // FIXME: currently only work for identifying correspondence from a RNA-seq gene to ATAC dimension
         // FIXME: duplicate code with updateSelection()
         Dataset<Points> dimensionDataset;
         for (const auto& data : mv::data().getAllDatasets())
@@ -564,6 +563,37 @@ void GeneSurferPlugin::saveDataToCsvAction()
             qDebug() << "ERROR: no valid Mapped RNA dataset found!";
         }
         out << "Query gene: " << queryGene << ",";
+
+        // Write the number of selected points
+        out << "Number of selected points: " << _sortedFloodIndices.size() << "\n";
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA)
+    {
+        out << "Filter type: ATACtoRNA,";
+
+        // for ATACtoRNA filter, also output the selected ATAC name
+        // FIXME: duplicate code with updateSelection()
+        Dataset<Points> dimensionDataset;
+        for (const auto& data : mv::data().getAllDatasets())
+        {
+            if (data->getGuiName() == "Mapped ATAC dataset")
+            {
+                dimensionDataset = data;
+                //qDebug() << "Found Mapped RNA dataset";
+                break;
+            }
+        }
+        QString queryGene;
+        if (dimensionDataset.isValid())
+        {
+            queryGene = dimensionDataset->getDimensionNames()[0];
+            qDebug() << "Query gene in Mapped ATAC dataset: " << queryGene;
+        }
+        else
+        {
+            qDebug() << "ERROR: no valid Mapped ATAC dataset found!";
+        }
+        out << "Query ATAC: " << queryGene << ",";
 
         // Write the number of selected points
         out << "Number of selected points: " << _sortedFloodIndices.size() << "\n";
