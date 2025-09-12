@@ -11,7 +11,8 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _diffAction(this, "Filter by diff"),
     _moranAction(this, "Filter by Moran's I"),
     _spatialCorrelationZAction(this, "Filter by Spatial Correlation Z"),
-    _spatialCorrelationYAction(this, "Filter by Spatial Correlation Y")
+    _spatialCorrelationYAction(this, "Filter by Spatial Correlation Y"),
+    _dimensionCorrelationAction(this, "Filter by Dimension Correlation")
 {
     setIcon(mv::util::StyledIcon("filter"));
     setToolTip("Gene filtering Mode");
@@ -22,11 +23,13 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     addAction(&_moranAction);
     addAction(&_spatialCorrelationZAction);
     addAction(&_spatialCorrelationYAction);
+    addAction(&_dimensionCorrelationAction);
 
     _diffAction.setToolTip("Diff mode");
     _moranAction.setToolTip("Moran's I mode");
     _spatialCorrelationZAction.setToolTip("Spatial correlation mode Z");
     _spatialCorrelationYAction.setToolTip("Spatial correlation mode Y");
+    _dimensionCorrelationAction.setToolTip("Dimension correlation mode");
 
     if (_geneSurferPlugin == nullptr)
         return;
@@ -53,6 +56,12 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
 
     connect(&_spatialCorrelationYAction, &TriggerAction::triggered, [this, &corrFilter]() {
         corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALY);
+        _geneSurferPlugin->updateFilterLabel();
+        _geneSurferPlugin->updateSelection();
+        });
+
+    connect(&_dimensionCorrelationAction, &TriggerAction::triggered, [this, &corrFilter]() {
+        corrFilter.setFilterType(corrFilter::CorrFilterType::DIMENSION);
         _geneSurferPlugin->updateFilterLabel();
         _geneSurferPlugin->updateSelection();
         });
@@ -106,6 +115,8 @@ void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
         corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALZ);
     else if (variantMap["FilterMode"] == "Spatial Y")
         corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALY);
+    else if (variantMap["FilterMode"] == "Dimension")
+        corrFilter.setFilterType(corrFilter::CorrFilterType::DIMENSION);
     _geneSurferPlugin->updateFilterLabel();
 }
 

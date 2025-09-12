@@ -87,9 +87,20 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _tertiaryToolbarAction(this, "TertiaryToolbar"),
     _selectedDimIndex(-1),
     _selectedClusterIndex(-1), // -1 means no view selected
-    _colorMapAction(this, "Color map", "RdYlBu")
+    _colorMapAction(this, "Color map", "RdYlBu"),
+    _saveToCsvAction(&getWidget(), "Save As...")
 
 {
+    { // save to CSV
+        _saveToCsvAction.setIcon(mv::util::StyledIcon("file-csv"));
+        _saveToCsvAction.setShortcut(tr("Ctrl+S"));
+        _saveToCsvAction.setShortcutContext(Qt::WidgetWithChildrenShortcut);
+
+        connect(&_saveToCsvAction, &TriggerAction::triggered, this, [this]() -> void {
+            saveDataToCsvAction();
+            });
+    }
+
     _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 2, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
@@ -133,6 +144,8 @@ void GeneSurferPlugin::init()
     _chartWidget = new ChartWidget(this);
     _chartWidget->setPage(":gene_surfer/chart/bar_chart.html", "qrc:/gene_surfer/chart/");
     _chartWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+
+    _chartWidget->addAction(&_saveToCsvAction);
 
     // Add label for filtering on top of the barchart
     _filterLabel = new QLabel(_chartWidget);
@@ -476,6 +489,106 @@ void GeneSurferPlugin::convertDataAndUpdateChart()
 
     qDebug() << "GeneSurferPlugin::convertDataAndUpdateChart: Send data from Qt cpp to D3 js";
     emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payloadMap);
+}
+
+void GeneSurferPlugin::saveDataToCsvAction()
+{
+    // Prepare the sorted list - FIXME: duplicate code with convertDataAndUpdateChart()
+    std::vector<std::pair<QString, float>> filteredAndSortedGenes;
+    for (size_t i = 0; i < _enabledDimNames.size(); ++i) {
+        if (_dimNameToClusterLabel.find(_enabledDimNames[i]) != _dimNameToClusterLabel.end()) {
+            filteredAndSortedGenes.emplace_back(_enabledDimNames[i], _corrGeneVector[i]);
+        }
+    }
+
+    std::sort(filteredAndSortedGenes.begin(), filteredAndSortedGenes.end(),
+        [](const std::pair<QString, float>& a, const std::pair<QString, float>& b) {
+            return a.second > b.second; // descending
+        });
+
+    QString fileName = QFileDialog::getSaveFileName(
+        nullptr, "Save Gene Correlations", "", "CSV files (*.csv);;All files (*.*)");
+    if (fileName.isEmpty())
+        return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qDebug() << "Could not open file for writing";
+        return;
+    }
+
+    QTextStream out(&file);
+
+    // Write header information
+    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF)
+    {
+        out << "Filter type: DIFF (normed to [0-1] for plotting)\n";
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
+    {
+        out << "Filter type: Moran's I\n";
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ)
+    {
+        out << "Filter type: SPATIALZ\n";
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY)
+    {
+        out << "Filter type: SPATIALY\n";
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    {
+        out << "Filter type: DIMENSION,";    
+
+        // for dimension filter, also output the selected dimension name
+        // FIXME: currently only work for identifying correspondence from a RNA-seq gene to ATAC dimension
+        // FIXME: duplicate code with updateSelection()
+        Dataset<Points> dimensionDataset;
+        for (const auto& data : mv::data().getAllDatasets())
+        {
+            if (data->getGuiName() == "Mapped RNA dataset")
+            {
+                dimensionDataset = data;
+                //qDebug() << "Found Mapped RNA dataset";
+                break;
+            }
+        }
+        QString queryGene;
+        if (dimensionDataset.isValid())
+        {
+            queryGene = dimensionDataset->getDimensionNames()[0];
+            qDebug() << "Query gene in Mapped RNA dataset: " << queryGene;
+        }
+        else
+        {
+            qDebug() << "ERROR: no valid Mapped RNA dataset found!";
+        }
+        out << "Query gene: " << queryGene << ",";
+
+        // Write the number of selected points
+        out << "Number of selected points: " << _sortedFloodIndices.size() << "\n";
+    }
+
+    // Write column headers
+    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
+        out << "Dimension,Diff\n";
+    }
+    else {
+        out << "Dimension,Correlation\n";
+    }
+
+    // Write rows (one line per gene)
+    for (const auto& genePair : filteredAndSortedGenes) {
+        const QString& geneName = genePair.first;
+        float corrValue = genePair.second;
+
+        out << geneName << ","
+            << corrValue << "\n";
+    }
+
+    file.close();
+    qDebug() << "Correlations exported to" << fileName;
+
 }
 
 void GeneSurferPlugin::publishSelection(const QString& selection)
@@ -1033,6 +1146,77 @@ void GeneSurferPlugin::updateSelection()
         computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
         // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _corrGeneVector);// without weighting
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _countsSubset, _corrGeneVector);// with weighting
+    }
+    // -------------- with a gene(dimension) --------------
+    // TODO: only for 3D + singlecell right now
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    {
+        qDebug() << "Compute filtering: 2D + ST + Dimension";
+        qDebug() << "ERROR: not implemented yet";
+        return;
+    }
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    {
+        qDebug() << "Compute filtering: 3D + ST + Dimension";
+        qDebug() << "ERROR: not implemented yet";
+        return;
+    }
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    {
+        qDebug() << "Compute filtering: 2D + SingleCell + Dimension";
+        qDebug() << "ERROR: not implemented yet";
+        return;
+    }
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION) {
+        qDebug() << "Compute filtering: 3D + SingleCell + Dimension";
+        std::vector<float> dimAvg;
+
+        std::unordered_map<QString, float> clusterDimSums;
+        std::vector<float> dimSpatial;
+
+        // TEST: use mapped RNA dataset to get the dimension data ----------------------------------------------------
+        Dataset<Points> dimensionDataset;
+        for (const auto& data : mv::data().getAllDatasets())
+        {
+            if (data->getGuiName() == "Mapped RNA dataset") 
+            {
+                    dimensionDataset = data;
+                    qDebug() << "Found Mapped RNA dataset";
+                    break;
+            }
+        }
+        if (dimensionDataset.isValid())
+        {
+            dimensionDataset->extractDataForDimension(dimSpatial, 0);
+            //qDebug() << "dimSpatial size: " << dimSpatial.size();
+        }
+        else
+        { 
+            qDebug() << "ERROR: no valid Mapped RNA dataset found!";
+            return;
+        }
+        
+        for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
+            int ptIndex = _sortedFloodIndices[index];
+            if (ptIndex >= dimSpatial.size())
+                qDebug() << "ERROR! ptIndex " << ptIndex << " >= dimSpatial.size() " << dimSpatial.size();
+            QString label = _cellLabels[ptIndex];
+            clusterDimSums[label] += dimSpatial[ptIndex];
+        }
+
+        for (int i = 0; i < _clustersToKeep.size(); ++i) {
+            QString label = _clustersToKeep[i];
+            int count = _countsMap[label];
+
+            float averageDim = (count > 0) ? static_cast<float>(clusterDimSums[label]) / count : 0.0f;
+            dimAvg.push_back(averageDim);
+
+        }
+        //qDebug() << "dimAvg size: " << dimAvg.size();
+        
+        // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _corrGeneVector);// without weighting
+        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _countsSubset, _corrGeneVector);// with weighting
+        //qDebug() << "_corrGeneVector size: " << _corrGeneVector.size();
     }
     
 
@@ -1805,7 +1989,7 @@ void GeneSurferPlugin::clusterGenes()
 
     // create a vector of pairs (absolute correlation value, index)
     std::vector<std::pair<float, int>> pairs(_corrGeneVector.size());
-    for (size_t i = 0; i < _corrGeneVector.size(); ++i) {
+    for (int i = 0; i < _corrGeneVector.size(); ++i) {
         pairs[i] = std::make_pair(std::abs(_corrGeneVector[i]), i);
     }
 

@@ -180,6 +180,8 @@ private:
     /** compute the mean floodfill wave numbers by each annotation label in the floodfill*/
     void computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg);
 
+    void saveDataToCsvAction();// save barchart rank to a csv file
+
 private:
 
     DataStorage                        _dataStore;
@@ -260,6 +262,8 @@ private:
     QString                            _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
     QString                            _currentEnrichmentAPI = "gProfiler"; // current enrichment API, initialized to gProfiler
     bool                               _selectedByFlood = false; // false: selected by floodfill, true: selected by selection
+
+    TriggerAction                      _saveToCsvAction;         // Action to save barchart rank to a csv file
 
 public:
     bool isDataInitialized() { return _dataInitialized; }
