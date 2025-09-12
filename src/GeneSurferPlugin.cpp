@@ -1472,18 +1472,18 @@ void GeneSurferPlugin::updateSingleCellOption() {
     qDebug() << "GeneSurferPlugin::updateSingleCellOption(): start... ";
 
     _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().isChecked() ? _isSingleCell = true : _isSingleCell = false;
-    //qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _isSingleCell: " << _isSingleCell;
+    qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _isSingleCell: " << _isSingleCell;
 
     if (_isSingleCell) {
-        //qDebug() << "Using Single Cell";
+        qDebug() << "Using Single Cell";
 
         if (_avgExpr.size() == 0) {
-            /*qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr is empty";
+            qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr is empty";
             qDebug() << "_loadingFromProject = " << _loadingFromProject;
-            qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();*/
+            qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
 
             if (_avgExprDataset.isValid()) {
-                //qDebug() << "_avgExprDataset is valid...";
+                qDebug() << "_avgExprDataset is valid...";
                 switch (_avgExprStatus)
                 {
                 case AvgExpressionStatus::NONE:
@@ -1529,6 +1529,19 @@ void GeneSurferPlugin::updateSingleCellOption() {
             else {
                 return;
             }
+        }
+        else {
+            // _avgExpr is already loaded or computed
+            // in case switch from ATACtoRNA, only update _clusterAliasToRowMap and loadLabelsFromSTDatasetFromFile()
+            qDebug() << "_geneNamesAvgExpr size: " << _geneNamesAvgExpr.size();
+            qDebug() << "_clusterNamesAvgExpr size: " << _clusterNamesAvgExpr.size() << " _clusterNamesAvgExpr[0]: " << _clusterNamesAvgExpr[0];
+
+            _clusterAliasToRowMap.clear();
+            for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
+                _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
+            }
+            qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+            loadLabelsFromSTDatasetFromFile();
         }
 
         _settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_avgExprDataset);
@@ -1741,6 +1754,18 @@ void GeneSurferPlugin::updateRNAData()
         else {
             return;
         }
+    }
+    else {
+        // _avgExprRNA is already loaded or computed
+        // in case switch from DIMENSION, only update _clusterAliasToRowMap and loadLabelsFromSTDatasetFromFile()
+
+        _clusterAliasToRowMap.clear();
+        for (int i = 0; i < _clusterNamesAvgExprRNA.size(); ++i) {
+            _clusterAliasToRowMap[_clusterNamesAvgExprRNA[i]] = i;
+
+        }
+        qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+        loadLabelsFromSTDatasetFromFileForRNA();
     }
 
     _settingsAction.getDimensionSelectionAction().getDimensionAction().setPointsDataset(_avgExprDatasetRNA);
