@@ -14,7 +14,7 @@ namespace corrFilter
         SPATIALY,//dorsal-ventral in ABC Atlas
         DIFF,
         MORAN,
-        DIMENSION,// corr with a specific RNA gene
+        RNAtoATAC,// corr with a specific RNA gene to ATAC peaks
         ATACtoRNA // corr from a specific ATAC peak to RNA genes
     };
 

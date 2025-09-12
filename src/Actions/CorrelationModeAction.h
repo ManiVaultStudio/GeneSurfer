@@ -54,7 +54,7 @@ private:
     TriggerAction       _spatialCorrelationZAction;     // experiment
     TriggerAction       _spatialCorrelationYAction;     // experiment
 
-    TriggerAction       _dimensionCorrelationAction;
+    TriggerAction       _rnaToATACCorrelationAction;
     TriggerAction       _atacToRNACorrelationAction;
 
     //friend class mv::AbstractActionsManager;

@@ -536,11 +536,11 @@ void GeneSurferPlugin::saveDataToCsvAction()
     {
         out << "Filter type: SPATIALY\n";
     }
-    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
-        out << "Filter type: DIMENSION,";
+        out << "Filter type: RNAtoATAC,";
 
-        // for dimension filter, also output the selected dimension name
+        // for RNAtoATAC filter, also output the selected RNA-seq gene symbol
         // FIXME: duplicate code with updateSelection()
         Dataset<Points> dimensionDataset;
         for (const auto& data : mv::data().getAllDatasets())
@@ -1195,25 +1195,25 @@ void GeneSurferPlugin::updateSelection()
 
     // -------------- RNA-seq gene to ATAC (RNA-seq as seed, identify similar peaks) --------------
     // TODO: only for 3D + singlecell right now
-    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
         qDebug() << "Compute filtering: 2D + ST + Dimension";
         qDebug() << "ERROR: not implemented yet";
         return;
     }
-    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
         qDebug() << "Compute filtering: 3D + ST + Dimension";
         qDebug() << "ERROR: not implemented yet";
         return;
     }
-    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION)
+    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
         qDebug() << "Compute filtering: 2D + SingleCell + Dimension";
         qDebug() << "ERROR: not implemented yet";
         return;
     }
-    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION) {
+    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC) {
         qDebug() << "Compute filtering: 3D + SingleCell + Dimension";
 
         std::vector<float> dimAvg;
@@ -1631,7 +1631,7 @@ void GeneSurferPlugin::updateFilterLabel()
         qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = true";
         updateRNAData();
     }
-    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::DIMENSION) {
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC) {
         _ATACtoRNA = false;
         qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = false";
         updateSingleCellOption();
