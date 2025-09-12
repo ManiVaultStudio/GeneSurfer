@@ -1580,6 +1580,8 @@ void GeneSurferPlugin::updateFilterLabel()
     //_filterLabel->setText("Filter genes by:" + _corrFilter.getCorrFilterTypeAsString());
     _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
 
+    _selectedDimIndex = -1; // reset to no selection
+
     // TEST FIXME: generalize
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
         _ATACtoRNA = true;
@@ -2944,6 +2946,11 @@ void GeneSurferPlugin::onTableClicked(int row, int column) {
 void GeneSurferPlugin::updateClick() {
     if (_selectedClusterIndex == -1) {
         qDebug() << "Warning! updateClick(): _selectedClusterIndex is -1, no view is selected";
+        return;
+    }
+
+    if (_selectedDimIndex == -1) {
+        qDebug() << "Warning! updateClick(): _selectedDimIndex is -1, no dim is selected";
         return;
     }
 
