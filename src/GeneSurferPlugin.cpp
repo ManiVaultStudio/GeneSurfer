@@ -1682,7 +1682,6 @@ void GeneSurferPlugin::updateFilterLabel()
                     mv::gui::DatasetPickerAction* colorDatasetPickerValueAction2 = findActionByPath<DatasetPickerAction>(plugin, "Settings/Datasets/Color");
                     colorDatasetPickerValueAction2->setCurrentDataset(_clusterScalars);
                 }
-
             }
         }
     }
@@ -2898,7 +2897,13 @@ void GeneSurferPlugin::computeFloodedClusterScalarsSingleCell(const std::vector<
 void GeneSurferPlugin::updateClusterScalarOutput(const std::vector<float>& scalars)
 {
     _clusterScalars->setData<float>(scalars.data(), scalars.size(), 1);
+    if (_selectedClusterIndex == 6)
+        _clusterScalars->setDimensionNames({ _selectedDimName });
+    else
+        _clusterScalars->setDimensionNames({ "selectedCluster" });
+
     events().notifyDatasetDataChanged(_clusterScalars);
+    //events().notifyDatasetDataDimensionsChanged(_clusterScalars);
     //qDebug() << "GeneSurferPlugin::updateClusterScalarOutput(): finished";
 }
 
