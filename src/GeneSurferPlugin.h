@@ -280,6 +280,7 @@ private:
     AvgExpressionStatus                _avgExprStatusRNA = AvgExpressionStatus::LOADED;
     std::vector<QString>               _clusterNamesAvgExprRNA;     // From avg expr single cell data, should be same order as each row in dataset?
     Eigen::VectorXf                    _countsAllRNA;               // counts for each label within the entire dataset - same order as avgExprRNA row
+    QString                            _queryDimensionForATACRNA; // seed used in searching RNA-ATAC correspondence
 
     TriggerAction                      _saveToCsvAction;         // Action to save barchart rank to a csv file
 

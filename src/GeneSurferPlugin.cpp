@@ -149,14 +149,21 @@ void GeneSurferPlugin::init()
 
     // Add label for filtering on top of the barchart
     _filterLabel = new QLabel(_chartWidget);
-    QFont sansFont("Helvetica [Cronyx]", 18);
+    QFont sansFont("Helvetica [Cronyx]", 12);
     _filterLabel->setFont(sansFont);
-    _filterLabel->setGeometry(10, 10, 400, 30);
-    //_filterLabel->setText("Filter genes by:" + _corrFilter.getCorrFilterTypeAsString());
-    _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
+    _filterLabel->setGeometry(10, 10, 600, 30);
+    //_filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
+
+    // also show query dimension for ATAC<->RNA
+    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA || _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
+    {
+        _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString()+ " seed: " + _queryDimensionForATACRNA);
+    }
+    else
+        _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
+    
 
     _tableWidget = new MyTableWidget();
-
 
     auto widget = _secondaryToolbarAction.createWidget(&getWidget());
     widget->setMinimumWidth(10);// Fix the width of the secondary toolbar for splitter to work properly
@@ -542,27 +549,28 @@ void GeneSurferPlugin::saveDataToCsvAction()
 
         // for RNAtoATAC filter, also output the selected RNA-seq gene symbol
         // FIXME: duplicate code with updateSelection()
-        Dataset<Points> dimensionDataset;
-        for (const auto& data : mv::data().getAllDatasets())
-        {
-            if (data->getGuiName() == "Mapped RNA dataset")
-            {
-                dimensionDataset = data;
-                //qDebug() << "Found Mapped RNA dataset";
-                break;
-            }
-        }
-        QString queryGene;
-        if (dimensionDataset.isValid())
-        {
-            queryGene = dimensionDataset->getDimensionNames()[0];
-            qDebug() << "Query gene in Mapped RNA dataset: " << queryGene;
-        }
-        else
-        {
-            qDebug() << "ERROR: no valid Mapped RNA dataset found!";
-        }
-        out << "Query gene: " << queryGene << ",";
+        //Dataset<Points> dimensionDataset;
+        //for (const auto& data : mv::data().getAllDatasets())
+        //{
+        //    if (data->getGuiName() == "Mapped RNA dataset")
+        //    {
+        //        dimensionDataset = data;
+        //        //qDebug() << "Found Mapped RNA dataset";
+        //        break;
+        //    }
+        //}
+        //QString queryGene;
+        //if (dimensionDataset.isValid())
+        //{
+        //    queryGene = dimensionDataset->getDimensionNames()[0];
+        //    qDebug() << "Query gene in Mapped RNA dataset: " << queryGene;
+        //}
+        //else
+        //{
+        //    qDebug() << "ERROR: no valid Mapped RNA dataset found!";
+        //}
+        qDebug() << "Current query dimension before saving" << _queryDimensionForATACRNA;
+        out << "Query gene: " << _queryDimensionForATACRNA << ",";
 
         // Write the number of selected points
         out << "Number of selected points: " << _sortedFloodIndices.size() << "\n";
@@ -573,27 +581,28 @@ void GeneSurferPlugin::saveDataToCsvAction()
 
         // for ATACtoRNA filter, also output the selected ATAC name
         // FIXME: duplicate code with updateSelection()
-        Dataset<Points> dimensionDataset;
-        for (const auto& data : mv::data().getAllDatasets())
-        {
-            if (data->getGuiName() == "Mapped ATAC dataset")
-            {
-                dimensionDataset = data;
-                //qDebug() << "Found Mapped RNA dataset";
-                break;
-            }
-        }
-        QString queryGene;
-        if (dimensionDataset.isValid())
-        {
-            queryGene = dimensionDataset->getDimensionNames()[0];
-            qDebug() << "Query gene in Mapped ATAC dataset: " << queryGene;
-        }
-        else
-        {
-            qDebug() << "ERROR: no valid Mapped ATAC dataset found!";
-        }
-        out << "Query ATAC: " << queryGene << ",";
+        //Dataset<Points> dimensionDataset;
+        //for (const auto& data : mv::data().getAllDatasets())
+        //{
+        //    if (data->getGuiName() == "Mapped ATAC dataset")
+        //    {
+        //        dimensionDataset = data;
+        //        //qDebug() << "Found Mapped RNA dataset";
+        //        break;
+        //    }
+        //}
+        //QString queryGene;
+        //if (dimensionDataset.isValid())
+        //{
+        //    queryGene = dimensionDataset->getDimensionNames()[0];
+        //    qDebug() << "Query gene in Mapped ATAC dataset: " << queryGene;
+        //}
+        //else
+        //{
+        //    qDebug() << "ERROR: no valid Mapped ATAC dataset found!";
+        //}
+        qDebug() << "Current query dimension before saving" << _queryDimensionForATACRNA;
+        out << "Query ATAC: " << _queryDimensionForATACRNA << ",";
 
         // Write the number of selected points
         out << "Number of selected points: " << _sortedFloodIndices.size() << "\n";
@@ -1237,6 +1246,8 @@ void GeneSurferPlugin::updateSelection()
             dimensionDataset->extractDataForDimension(dimSpatial, 0);
             //qDebug() << "dimSpatial size: " << dimSpatial.size();
             qDebug() << "Current dimension of mapped RNA dataset " << dimensionDataset->getDimensionNames()[0];
+            _queryDimensionForATACRNA = dimensionDataset->getDimensionNames()[0];
+            _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
         }
         else
         {
@@ -1294,6 +1305,8 @@ void GeneSurferPlugin::updateSelection()
             dimensionDataset->extractDataForDimension(dimSpatial, 0);
             qDebug() << "dimSpatial size: " << dimSpatial.size();
             qDebug() << "Current dimension of mapped ATAC dataset " << dimensionDataset->getDimensionNames()[0];
+            _queryDimensionForATACRNA = dimensionDataset->getDimensionNames()[0];
+            _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
         }
         else
         {
@@ -1620,8 +1633,13 @@ void GeneSurferPlugin::updateScatterPointSize()
 
 void GeneSurferPlugin::updateFilterLabel()
 {
-    //_filterLabel->setText("Filter genes by:" + _corrFilter.getCorrFilterTypeAsString());
-    _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
+    //_filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
+    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA || _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
+    {
+        _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
+    }
+    else
+        _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
 
     _selectedDimIndex = -1; // reset to no selection
 
