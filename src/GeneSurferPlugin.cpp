@@ -1642,6 +1642,7 @@ void GeneSurferPlugin::updateFilterLabel()
         _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
 
     _selectedDimIndex = -1; // reset to no selection
+    // TODO: clear the selected view
 
     // TEST FIXME: generalize
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
@@ -1656,7 +1657,8 @@ void GeneSurferPlugin::updateFilterLabel()
     }
     else {
         _ATACtoRNA = false;
-        qDebug() << "updateFilterLabel(): NOT IMPLEMENTED";
+        qDebug() << "updateFilterLabel(): go back to ATAC-seq data";
+        updateSingleCellOption();
         // TODO FIXME, implement for other modes switch 
     }
 }
