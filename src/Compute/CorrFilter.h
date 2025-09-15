@@ -13,7 +13,9 @@ namespace corrFilter
         SPATIALZ,//anterior-posterior in ABC Atlas
         SPATIALY,//dorsal-ventral in ABC Atlas
         DIFF,
-        MORAN
+        MORAN,
+        RNAtoATAC,// corr with a specific RNA gene to ATAC peaks
+        ATACtoRNA // corr from a specific ATAC peak to RNA genes
     };
 
     class SpatialCorr

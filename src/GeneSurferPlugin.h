@@ -180,6 +180,15 @@ private:
     /** compute the mean floodfill wave numbers by each annotation label in the floodfill*/
     void computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg);
 
+    void saveDataToCsvAction();// save barchart rank to a csv file
+
+    // FIXME: temp test for searching ATAC->RNA correspondence
+    void updateRNAData();
+
+    void loadLabelsFromSTDatasetFromFileForRNA();
+
+    void matchLabelInSubsetForRNA();
+
 private:
 
     DataStorage                        _dataStore;
@@ -246,7 +255,7 @@ private:
     QMap<QString, QStringList>         _simplifiedToIndexGeneMapping; // Map for simplified gene names to extra indexed gene names - for duplicate gene symbols 
     std::vector<QString>               _clusterNamesAvgExpr;     // From avg expr single cell data
     std::unordered_map<QString, int>   _clusterAliasToRowMap;    // Map label (QString) to row index in _avgExpr
-    std::vector<QString>               _cellLabels;              // Labels for each point
+    std::vector<QString>               _cellLabels;              // Labels for each point in ST
     std::unordered_map<QString, int>   _countsMap;               // Count distribution of labels WITHIN floodfill
     std::vector<QString>               _clustersToKeep;          // clusters to keep for avg expression - same order as subset row - cluster alias name 
     Eigen::VectorXf                    _countsSubset;            // counts for each label within the subset - same order as subset row
@@ -260,6 +269,20 @@ private:
     QString                            _selectedDimName = "NoneSelected"; // selected dimension name of _selectedDimIndex
     QString                            _currentEnrichmentAPI = "gProfiler"; // current enrichment API, initialized to gProfiler
     bool                               _selectedByFlood = false; // false: selected by floodfill, true: selected by selection
+
+    // For directional searching between ATAC-seq and RNA-seq data
+    bool                               _ATACtoRNA = false;          // whether to match the labels from ATAC-seq to RNA-seq data
+    mv::Dataset<Points>                _avgExprDatasetRNA;          // RNA-seq Point dataset for average expression of each cluster
+    Eigen::MatrixXf                    _avgExprRNA;                 // Average expression of each cluster
+    //Eigen::MatrixXf                    _subsetDataAvgOriRNA;        // Subset of average expression of each cluster - NOT weighted 
+    std::vector<QString>               _geneNamesAvgExprRNA;        // From avg expr single cell data    
+    bool                               _avgExprDatasetExistsRNA = false; // TODO: better naming
+    AvgExpressionStatus                _avgExprStatusRNA = AvgExpressionStatus::LOADED;
+    std::vector<QString>               _clusterNamesAvgExprRNA;     // From avg expr single cell data, should be same order as each row in dataset?
+    Eigen::VectorXf                    _countsAllRNA;               // counts for each label within the entire dataset - same order as avgExprRNA row
+    QString                            _queryDimensionForATACRNA; // seed used in searching RNA-ATAC correspondence
+
+    TriggerAction                      _saveToCsvAction;         // Action to save barchart rank to a csv file
 
 public:
     bool isDataInitialized() { return _dataInitialized; }
