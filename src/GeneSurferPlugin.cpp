@@ -65,6 +65,11 @@ namespace
             }
         }
     }
+
+    template<typename ActionType>
+    ActionType* findActionByPath(mv::plugin::Plugin* plugin, const QString& path) {
+        return dynamic_cast<ActionType*>(plugin->findChildByPath(path));
+    }
 }
 
 GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
@@ -1635,31 +1640,90 @@ void GeneSurferPlugin::updateFilterLabel()
 {
     //_filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA || _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
-    {
         _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
-    }
     else
         _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
 
     _selectedDimIndex = -1; // reset to no selection
     // TODO: clear the selected view
 
-    // TEST FIXME: generalize
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
         _ATACtoRNA = true;
         qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = true";
         updateRNAData();
-    }
-    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC) {
-        _ATACtoRNA = false;
-        qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = false";
-        updateSingleCellOption();
+
+        Dataset<Points> mappedATACDataset;
+        for (const auto& data : mv::data().getAllDatasets())
+        {
+            if (data->getGuiName() == "Mapped ATAC dataset")
+            {
+                mappedATACDataset = data;
+                break;
+            }
+        }
+
+        QString scatterplotNameATAC = "Scatterplot ATAC";// TODO: hardcoded name
+        QString scatterplotNameRNA = "Scatterplot RNA";
+
+        auto scatterplotViewFactory = mv::plugins().getPluginFactory("Scatterplot View");
+        if (scatterplotViewFactory)
+        {
+            for (auto plugin : mv::plugins().getPluginsByFactory(scatterplotViewFactory))
+            {
+                // set the ATAC scatterplot color to the mapped ATAC dataset
+                if (plugin->getGuiName() == scatterplotNameATAC)
+                {
+                    mv::gui::DatasetPickerAction* colorDatasetPickerValueAction1 = findActionByPath<DatasetPickerAction>(plugin, "Settings/Datasets/Color");
+                    colorDatasetPickerValueAction1->setCurrentDataset(mappedATACDataset);
+                }
+                // set the RNA scatterplot color to the scalars, because current mode is ATAC to RNA
+                if (plugin->getGuiName() == scatterplotNameRNA)
+                {
+                    mv::gui::DatasetPickerAction* colorDatasetPickerValueAction2 = findActionByPath<DatasetPickerAction>(plugin, "Settings/Datasets/Color");
+                    colorDatasetPickerValueAction2->setCurrentDataset(_clusterScalars);
+                }
+
+            }
+        }
     }
     else {
         _ATACtoRNA = false;
-        qDebug() << "updateFilterLabel(): go back to ATAC-seq data";
+        qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = false";
         updateSingleCellOption();
-        // TODO FIXME, implement for other modes switch 
+
+        // set colors for scatterplots 
+        Dataset<Points> mappedRNADataset;
+        for (const auto& data : mv::data().getAllDatasets())
+        {
+            if (data->getGuiName() == "Mapped RNA dataset")
+            {
+                mappedRNADataset = data;
+                break;
+            }
+        }
+
+        QString scatterplotNameATAC = "Scatterplot ATAC";// TODO: hardcoded name
+        QString scatterplotNameRNA = "Scatterplot RNA";
+
+        auto scatterplotViewFactory = mv::plugins().getPluginFactory("Scatterplot View");
+        if (scatterplotViewFactory)
+        {
+            for (auto plugin : mv::plugins().getPluginsByFactory(scatterplotViewFactory))
+            {
+                // set the ATAC scatterplot color to the scalrs, because current mode is RNA to ATAC
+                if (plugin->getGuiName() == scatterplotNameATAC)
+                {
+                    mv::gui::DatasetPickerAction* colorDatasetPickerValueAction1 = findActionByPath<DatasetPickerAction>(plugin, "Settings/Datasets/Color");
+                    colorDatasetPickerValueAction1->setCurrentDataset(_clusterScalars);
+                }
+                // set the RNA scatterplot color to the mapped RNA dataset
+                if (plugin->getGuiName() == scatterplotNameRNA)
+                {
+                    mv::gui::DatasetPickerAction* colorDatasetPickerValueAction2 = findActionByPath<DatasetPickerAction>(plugin, "Settings/Datasets/Color");
+                    colorDatasetPickerValueAction2->setCurrentDataset(mappedRNADataset);
+                }
+            }
+        }
     }
 }
 
