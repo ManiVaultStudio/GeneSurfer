@@ -1644,9 +1644,18 @@ void GeneSurferPlugin::updateFilterLabel()
     else
         _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
 
-    _selectedDimIndex = -1; // reset to no selection
     // TODO: clear the selected view
 
+    _selectedDimIndex = -1; // reset to no selection
+
+    // Clear selected dim in scalars dataset
+    if (_clusterScalars.isValid())
+    {
+        _selectedClusterIndex = -1;
+        std::vector<float> allZeros(_numPoints, 0.0f);
+        updateClusterScalarOutput(allZeros);
+    }   
+    
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
         _ATACtoRNA = true;
         qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = true";
@@ -1681,6 +1690,29 @@ void GeneSurferPlugin::updateFilterLabel()
                 {
                     mv::gui::DatasetPickerAction* colorDatasetPickerValueAction2 = findActionByPath<DatasetPickerAction>(plugin, "Settings/Datasets/Color");
                     colorDatasetPickerValueAction2->setCurrentDataset(_clusterScalars);
+                }
+            }
+        }
+
+        QString controllerATAC = "ATAC Controller";// TODO: hardcoded name
+        QString controllerRNA = "RNA Controller";
+
+        auto ATACControllerViewPluginFactory = mv::plugins().getPluginFactory("ATACController View");
+        if (ATACControllerViewPluginFactory)
+        {
+            for (auto plugin : mv::plugins().getPluginsByFactory(ATACControllerViewPluginFactory))
+            {
+                // set point dataset in ATAC controller to the mapped ATAC dataset
+                if (plugin->getGuiName() == controllerATAC)
+                {
+                    mv::gui::DatasetPickerAction* pointDatasetPickerValueAction1 = findActionByPath<DatasetPickerAction>(plugin, "ATACControllerViewPlugin/Data Options/Point dataset");
+                    pointDatasetPickerValueAction1->setCurrentDataset(mappedATACDataset);
+                }
+                // set the RNA scatterplot color to the scalars, because current mode is ATAC to RNA
+                if (plugin->getGuiName() == controllerRNA)
+                {
+                    mv::gui::DatasetPickerAction*pointDatasetPickerValueAction2 = findActionByPath<DatasetPickerAction>(plugin, "ATACControllerViewPlugin/Data Options/Point dataset");
+                    pointDatasetPickerValueAction2->setCurrentDataset(_clusterScalars);
                 }
             }
         }
@@ -1720,6 +1752,29 @@ void GeneSurferPlugin::updateFilterLabel()
                 {
                     mv::gui::DatasetPickerAction* colorDatasetPickerValueAction2 = findActionByPath<DatasetPickerAction>(plugin, "Settings/Datasets/Color");
                     colorDatasetPickerValueAction2->setCurrentDataset(mappedRNADataset);
+                }
+            }
+        }
+
+        QString controllerATAC = "ATAC Controller";// TODO: hardcoded name
+        QString controllerRNA = "RNA Controller";
+
+        auto ATACControllerViewPluginFactory = mv::plugins().getPluginFactory("ATACController View");
+        if (ATACControllerViewPluginFactory)
+        {
+            for (auto plugin : mv::plugins().getPluginsByFactory(ATACControllerViewPluginFactory))
+            {
+                // set point dataset in ATAC controller to the mapped ATAC dataset
+                if (plugin->getGuiName() == controllerATAC)
+                {
+                    mv::gui::DatasetPickerAction* pointDatasetPickerValueAction1 = findActionByPath<DatasetPickerAction>(plugin, "ATACControllerViewPlugin/Data Options/Point dataset");
+                    pointDatasetPickerValueAction1->setCurrentDataset(_clusterScalars);
+                }
+                // set the RNA scatterplot color to the scalars, because current mode is ATAC to RNA
+                if (plugin->getGuiName() == controllerRNA)
+                {
+                    mv::gui::DatasetPickerAction* pointDatasetPickerValueAction2 = findActionByPath<DatasetPickerAction>(plugin, "ATACControllerViewPlugin/Data Options/Point dataset");
+                    pointDatasetPickerValueAction2->setCurrentDataset(mappedRNADataset);
                 }
             }
         }
@@ -2899,8 +2954,10 @@ void GeneSurferPlugin::updateClusterScalarOutput(const std::vector<float>& scala
     _clusterScalars->setData<float>(scalars.data(), scalars.size(), 1);
     if (_selectedClusterIndex == 6)
         _clusterScalars->setDimensionNames({ _selectedDimName });
+    else if (_selectedClusterIndex == -1)
+        _clusterScalars->setDimensionNames({ "NoneSelected" });
     else
-        _clusterScalars->setDimensionNames({ "selectedCluster" });
+        _clusterScalars->setDimensionNames({ "SelectedCluster" });
 
     events().notifyDatasetDataChanged(_clusterScalars);
     //events().notifyDatasetDataDimensionsChanged(_clusterScalars);
