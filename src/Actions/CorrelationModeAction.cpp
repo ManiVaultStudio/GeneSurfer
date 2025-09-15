@@ -12,7 +12,8 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _moranAction(this, "Filter by Moran's I"),
     _spatialCorrelationZAction(this, "Filter by Spatial Correlation Z"),
     _spatialCorrelationYAction(this, "Filter by Spatial Correlation Y"),
-    _dimensionCorrelationAction(this, "Filter by Dimension Correlation")
+    _rnaToATACCorrelationAction(this, "Filter by corr with a RNA gene"),
+    _atacToRNACorrelationAction(this, "Filter by corr with a ATAC peak")
 {
     setIcon(mv::util::StyledIcon("filter"));
     setToolTip("Gene filtering Mode");
@@ -23,13 +24,15 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     addAction(&_moranAction);
     addAction(&_spatialCorrelationZAction);
     addAction(&_spatialCorrelationYAction);
-    addAction(&_dimensionCorrelationAction);
+    addAction(&_rnaToATACCorrelationAction);
+    addAction(&_atacToRNACorrelationAction);
 
     _diffAction.setToolTip("Diff mode");
     _moranAction.setToolTip("Moran's I mode");
     _spatialCorrelationZAction.setToolTip("Spatial correlation mode Z");
     _spatialCorrelationYAction.setToolTip("Spatial correlation mode Y");
-    _dimensionCorrelationAction.setToolTip("Dimension correlation mode");
+    _rnaToATACCorrelationAction.setToolTip("RNA to ATAC correlation mode");
+    _atacToRNACorrelationAction.setToolTip("ATAC to RNA correlation mode");
 
     if (_geneSurferPlugin == nullptr)
         return;
@@ -60,11 +63,17 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
         _geneSurferPlugin->updateSelection();
         });
 
-    connect(&_dimensionCorrelationAction, &TriggerAction::triggered, [this, &corrFilter]() {
-        corrFilter.setFilterType(corrFilter::CorrFilterType::DIMENSION);
+    connect(&_rnaToATACCorrelationAction, &TriggerAction::triggered, [this, &corrFilter]() {
+        corrFilter.setFilterType(corrFilter::CorrFilterType::RNAtoATAC);
         _geneSurferPlugin->updateFilterLabel();
         _geneSurferPlugin->updateSelection();
         });
+
+    connect(&_atacToRNACorrelationAction, &TriggerAction::triggered, [this, &corrFilter]() {
+        corrFilter.setFilterType(corrFilter::CorrFilterType::ATACtoRNA);
+        _geneSurferPlugin->updateFilterLabel();
+        _geneSurferPlugin->updateSelection();
+     });
    
 }
 
@@ -115,8 +124,10 @@ void CorrelationModeAction::fromVariantMap(const QVariantMap& variantMap)
         corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALZ);
     else if (variantMap["FilterMode"] == "Spatial Y")
         corrFilter.setFilterType(corrFilter::CorrFilterType::SPATIALY);
-    else if (variantMap["FilterMode"] == "Dimension")
-        corrFilter.setFilterType(corrFilter::CorrFilterType::DIMENSION);
+    else if (variantMap["FilterMode"] == "RNA to ATAC")
+        corrFilter.setFilterType(corrFilter::CorrFilterType::RNAtoATAC);
+    else if (variantMap["FilterMode"] == "ATAC to RNA")
+        corrFilter.setFilterType(corrFilter::CorrFilterType::ATACtoRNA);
     _geneSurferPlugin->updateFilterLabel();
 }
 

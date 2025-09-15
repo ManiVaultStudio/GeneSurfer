@@ -126,7 +126,7 @@ function drawChart(data, type) {
 
     var tooltip = svg.append("text")
         .attr("class", "tooltip")
-        .style("font-size", "20px")
+        .style("font-size", "12px")
         .style("font-family", "Arial")
         .attr("text-anchor", "middle")
         .attr("alignment-baseline", "middle")
@@ -245,7 +245,7 @@ function drawChart(data, type) {
         .append("text")
         .attr("x", width - 300 + size * 1.2) // position the text
         .attr("y", function (d, i) { return i * (size + 5) + (size / 2) })
-        .style("font-size", "20px")
+        .style("font-size", "12px")
         .style("font-family", "Arial")
         .style("fill", function (d) { return colorScale(d) })
         .text(function (d) { return d })
@@ -288,7 +288,7 @@ function highlightBars(dimensions) {
                     .text(d.Gene)
                     .attr("fill", "black")
                     .attr("font-family", "Arial")
-                    .attr("font-size", "10px")
+                    .attr("font-size", "12px")
 
             });
     });

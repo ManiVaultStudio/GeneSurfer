@@ -267,10 +267,12 @@ void ScatterView::paintGL()
         painter.endNativePainting();
 
         QFont font = painter.font();
-        font.setPointSize(font.pointSize() * 2);
+        //font.setPointSize(font.pointSize() * 2);
+        font.setPointSize(font.pointSize() * 1.5);
         painter.setFont(font);
         painter.setPen(QPen(Qt::white));
-        painter.drawText(12, 30, _projectionName);
+        //painter.drawText(12, 30, _projectionName);
+        painter.drawText(12, 20, _projectionName);
 
         Matrix3f orthoM = createProjectionMatrix(_dataBounds);
 
