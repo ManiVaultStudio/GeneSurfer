@@ -1347,8 +1347,39 @@ void GeneSurferPlugin::updateSelection()
     ////////////////////
     // Clustering //
     ////////////////////
-    clusterGenes();
-    qDebug() << "updateSelection(): data clustered";
+    //clusterGenes(); // TODO: remove clustering step
+    //qDebug() << "updateSelection(): data clustered";
+
+    // Keep the results struture without clustering
+    std::vector<std::pair<float, int>> pairs(_corrGeneVector.size());
+    for (size_t i = 0; i < _corrGeneVector.size(); ++i) {
+        pairs[i] = std::make_pair(std::abs(_corrGeneVector[i]), i);
+    }
+    std::nth_element(pairs.begin(), pairs.begin() + _numGenesThreshold, pairs.end(), std::greater<>());
+
+    std::vector<QString> filteredDimNames;
+    std::vector<int> filteredDimIndices;
+    for (int i = 0; i < _numGenesThreshold; ++i) {
+        filteredDimNames.push_back(_enabledDimNames[pairs[i].second]);
+        filteredDimIndices.push_back(pairs[i].second);
+    }
+
+    _dimNameToClusterLabel.clear();
+    int sameLabel = 0;
+    for (const auto& name : filteredDimNames) {
+        _dimNameToClusterLabel[name] = sameLabel;
+    }
+
+    _numGenesInCluster.clear();
+    _numGenesInCluster[sameLabel] = static_cast<int>(filteredDimNames.size());
+
+    std::vector<int> sameLabels(filteredDimNames.size(), sameLabel);
+    if (_isSingleCell != true) {
+        computeFloodedClusterScalars(filteredDimIndices, sameLabels.data());
+    }
+    else {
+        computeFloodedClusterScalarsSingleCell(filteredDimIndices, sameLabels.data());
+    }
 
 
     ////////////////////
