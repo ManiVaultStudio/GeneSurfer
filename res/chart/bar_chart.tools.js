@@ -26,7 +26,7 @@ function drawChart(data, type) {
     // If the widget provides a height, we use it; otherwise fall back to rows*20.
     var svgWidth = 400;
     var svgHeight = 900;
-
+  
     var margin = { top: 30, right: 30, bottom: 30, left: 30 },
         width = svgWidth - margin.left - margin.right,
         height = svgHeight - margin.top - margin.bottom;
@@ -82,9 +82,18 @@ function drawChart(data, type) {
         .attr("transform", "translate(0," + height + ")")
         .call(d3.axisBottom(x));
 
-    // Left categorical axis (hide ticks/labels, keep only the spine if you like)
-    svg.append("g")
-        .call(d3.axisLeft(y).tickFormat("").tickSize(0));
+    // Left categorical axis (hide ticks/labels)
+    //svg.append("g")
+    //    .call(d3.axisLeft(y).tickFormat("").tickSize(0));
+
+    // always draw axis line at x=0
+    svg.append("line")
+        .attr("x1", x(0))
+        .attr("x2", x(0))
+        .attr("y1", 0)
+        .attr("y2", height)
+        .attr("stroke", "black")
+        .attr("stroke-width", 1);
 
     // --- ZERO LINE at x=0  ---
     if (x.domain()[0] < 0 && x.domain()[1] > 0) {
