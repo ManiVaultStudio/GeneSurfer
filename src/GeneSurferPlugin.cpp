@@ -106,7 +106,7 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
             });
     }
 
-    //_primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);// TODO: remove ClusteringAction
+    _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);// TODO: remove ClusteringAction
     _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 2, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction());
@@ -1623,24 +1623,24 @@ void GeneSurferPlugin::updateSingleCellOption() {
 void GeneSurferPlugin::updateNumCluster()
 {
     // TODO: Remove, _scatterViews are no longer needed
-    int newNCluster = _settingsAction.getClusteringAction().getNumClusterAction().getValue();
-    if (newNCluster < _nclust) {
-        int diff = _nclust - newNCluster;
-        for (int i = newNCluster; i < _nclust; i++) {
-            _scatterViews[i]->clearData();
-        }
-    }
-    _nclust = newNCluster;
+    //int newNCluster = _settingsAction.getClusteringAction().getNumClusterAction().getValue();
+    //if (newNCluster < _nclust) {
+    //    int diff = _nclust - newNCluster;
+    //    for (int i = newNCluster; i < _nclust; i++) {
+    //        _scatterViews[i]->clearData();
+    //    }
+    //}
+    //_nclust = newNCluster;
 
-    // cannot be changed before plotting
-    if (_isFloodIndex.empty()) {
-        qDebug() << "GeneSurferPlugin::updateNumCluster(): _isFloodIndex is empty";
-        return;
-    }
+    //// cannot be changed before plotting
+    //if (_isFloodIndex.empty()) {
+    //    qDebug() << "GeneSurferPlugin::updateNumCluster(): _isFloodIndex is empty";
+    //    return;
+    //}
 
-    updateViewData(_positions);
-    updateScatterPointSize();
-    updateSelection();
+    //updateViewData(_positions);
+    //updateScatterPointSize();
+    //updateSelection();
 }
 
 void GeneSurferPlugin::updateCorrThreshold() {
