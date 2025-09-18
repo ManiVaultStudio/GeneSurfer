@@ -117,17 +117,19 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _tertiaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);
     _tertiaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
 
-    for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
-    {
-        _scatterViews[i] = new ScatterView(this);
-    }
+    // // TODO: Remove, _scatterViews are no longer needed
+    //for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
+    //{
+    //    _scatterViews[i] = new ScatterView(this);
+    //}
 
     _dimView = new ScatterView(this);
 
-    for (int i = 0; i < 6; i++) {//TO DO: hard code max 6 scatterViews
-        connect(_scatterViews[i], &ScatterView::initialized, this, [this, i]() {_scatterViews[i]->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
-        connect(_scatterViews[i], &ScatterView::viewSelected, this, [this, i]() { _selectedClusterIndex = i; updateClick(); });
-    }
+    // TODO: Remove, _scatterViews are no longer needed
+    //for (int i = 0; i < 6; i++) {//TO DO: hard code max 6 scatterViews
+    //    connect(_scatterViews[i], &ScatterView::initialized, this, [this, i]() {_scatterViews[i]->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
+    //    connect(_scatterViews[i], &ScatterView::viewSelected, this, [this, i]() { _selectedClusterIndex = i; updateClick(); });
+    //}
 
     connect(_dimView, &ScatterView::initialized, this, [this]() {_dimView->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
     connect(_dimView, &ScatterView::viewSelected, this, [this]() { _selectedClusterIndex = 6; updateClick(); });
@@ -140,7 +142,7 @@ void GeneSurferPlugin::init()
     // Create layout
     auto layout = new QVBoxLayout();
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(_primaryToolbarAction.createWidget(&getWidget()));
+    layout->addWidget(_primaryToolbarAction.createWidget(&getWidget()), 1);
 
     // Create the splitter for the barchart and tableDimLayout
     QSplitter* splitterChartTable = new QSplitter(Qt::Horizontal, &getWidget());
@@ -188,27 +190,27 @@ void GeneSurferPlugin::init()
     splitterChartTable->setStretchFactor(1, 40);
     splitterChartTable->setChildrenCollapsible(false);
 
-    layout->addWidget(splitterChartTable, 50);// same stretch factor as clusterViewMainLayout
+    layout->addWidget(splitterChartTable, 100);// same stretch factor as clusterViewMainLayout
 
 
-    auto clusterViewMainLayout = new QVBoxLayout();
-    clusterViewMainLayout->setContentsMargins(6, 6, 6, 6);
+    //auto clusterViewMainLayout = new QVBoxLayout();
+    //clusterViewMainLayout->setContentsMargins(6, 6, 6, 6);
 
-    auto clusterViewRow1 = new QHBoxLayout();
-    for (int i = 0; i < 3; i++) {//TO DO: initialize 3 sactter plots
-        clusterViewRow1->addWidget(_scatterViews[i], 50);
-    }
-    clusterViewMainLayout->addLayout(clusterViewRow1);
+    //auto clusterViewRow1 = new QHBoxLayout();
+    //for (int i = 0; i < 3; i++) {//TO DO: initialize 3 sactter plots
+    //    clusterViewRow1->addWidget(_scatterViews[i], 50);
+    //}
+    //clusterViewMainLayout->addLayout(clusterViewRow1);
 
-    auto clusterViewRow2 = new QHBoxLayout();
-    for (int i = 3; i < 6; i++) {//TO DO: initialize 3 sactter plots
-        clusterViewRow2->addWidget(_scatterViews[i], 50);
-    }
-    clusterViewMainLayout->addLayout(clusterViewRow2);
+    //auto clusterViewRow2 = new QHBoxLayout();
+    //for (int i = 3; i < 6; i++) {//TO DO: initialize 3 sactter plots
+    //    clusterViewRow2->addWidget(_scatterViews[i], 50);
+    //}
+    //clusterViewMainLayout->addLayout(clusterViewRow2);
 
-    layout->addWidget(_tertiaryToolbarAction.createWidget(&getWidget()));
+    layout->addWidget(_tertiaryToolbarAction.createWidget(&getWidget()), 1);
 
-    layout->addLayout(clusterViewMainLayout, 50);// same stretch factor as splitter
+    //layout->addLayout(clusterViewMainLayout, 50);// same stretch factor as splitter
 
     // Apply the layout
     getWidget().setLayout(layout);
@@ -716,9 +718,9 @@ void GeneSurferPlugin::updateViewData(std::vector<Vector2f>& positions) {
 
     // TO DO: can save some time here only computing data bounds once
     // pass the 2d points to the scatter plot widget
-    for (int i = 0; i < _nclust; i++) {// TO DO: hard code max 6 scatterViews
-        _scatterViews[i]->setData(&positions);
-    }
+    //for (int i = 0; i < _nclust; i++) {// TO DO: hard code max 6 scatterViews
+    //    _scatterViews[i]->setData(&positions);
+    //}
 
     _dimView->setData(&positions);
 
@@ -1352,15 +1354,16 @@ void GeneSurferPlugin::updateSelection()
     ////////////////////
     // Update Plots //
     ////////////////////
-    for (const auto& pair : _numGenesInCluster) {
-        QString clusterIdx = QString::number(pair.first);
-        QString numGenesInThisCluster = QString::number(pair.second);
-        //_scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " genes)");
-        _scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " dims)");
-    }
+    // TODO: Remove scatter plots that are no longer needed
+    //for (const auto& pair : _numGenesInCluster) {
+    //    QString clusterIdx = QString::number(pair.first);
+    //    QString numGenesInThisCluster = QString::number(pair.second);
+    //    //_scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " genes)");
+    //    _scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " dims)");
+    //}
 
     convertDataAndUpdateChart();
-    updateScatterColors();
+    //updateScatterColors();// TODO: Remove, _scatterViews are no longer needed
     updateScatterOpacity();
 
     /*auto end = std::chrono::high_resolution_clock::now();
@@ -1596,6 +1599,7 @@ void GeneSurferPlugin::updateSingleCellOption() {
 
 void GeneSurferPlugin::updateNumCluster()
 {
+    // TODO: Remove, _scatterViews are no longer needed
     int newNCluster = _settingsAction.getClusteringAction().getNumClusterAction().getValue();
     if (newNCluster < _nclust) {
         int diff = _nclust - newNCluster;
@@ -1630,9 +1634,10 @@ void GeneSurferPlugin::updateCorrThreshold() {
 
 void GeneSurferPlugin::updateScatterPointSize()
 {
-    for (int i = 0; i < _nclust; i++) {
+    // TODO: Remove, _scatterViews are no longer needed
+    /*for (int i = 0; i < _nclust; i++) {
         _scatterViews[i]->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
-    }
+    }*/
     _dimView->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
 }
 
@@ -1938,11 +1943,11 @@ void GeneSurferPlugin::updateScatterOpacity()
         for (int i = 0; i < _isFloodIndex.size(); ++i) {
             opacityScalars[i] = _isFloodIndex[i] ? 1.0f : defaultOpacity;
         }
-
-        for (int i = 0; i < _nclust; i++)
+        // TODO: Remove, _scatterViews are no longer needed
+       /* for (int i = 0; i < _nclust; i++)
         {
             _scatterViews[i]->setPointOpacityScalars(opacityScalars);
-        }
+        }*/
         _dimView->setPointOpacityScalars(opacityScalars);
     }
     else {
@@ -1954,22 +1959,24 @@ void GeneSurferPlugin::updateScatterOpacity()
             opacityScalars[i] = _isFloodOnSlice[i] ? 1.0f : defaultOpacity;
         }
 
-        for (int i = 0; i < _nclust; i++)
+        // TODO: Remove, _scatterViews are no longer needed
+        /*for (int i = 0; i < _nclust; i++)
         {
             _scatterViews[i]->setPointOpacityScalars(opacityScalars);
-        }
+        }*/
         _dimView->setPointOpacityScalars(opacityScalars);
     }
 }
 
 void GeneSurferPlugin::updateScatterColors()
 {
+    // TODO: Remove, _scatterViews are no longer needed
     if (!_positionDataset.isValid())
         return;
 
     // Clear clicked frame - _scatterViews
     if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
-        _scatterViews[_selectedClusterIndex]->selectView(false);
+        _scatterViews[_selectedClusterIndex]->selectView(false); 
         _selectedClusterIndex = -1;// reset the selected cluster index to -1
         //qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
     }
@@ -3161,39 +3168,41 @@ void GeneSurferPlugin::updateClick() {
     }
 
     // clear clicked frames
-    for (int i = 0; i < 6; i++) {// TO DO: hard coded for the current layout
-        _scatterViews[i]->selectView(false);
-    }
+    // // TODO: Remove, _scatterViews are no longer needed
+    //for (int i = 0; i < 6; i++) {// TO DO: hard coded for the current layout
+    //    _scatterViews[i]->selectView(false);
+    //}
     _dimView->selectView(false);
 
-    ScatterView* selectedView = nullptr;
+    // TODO: Remove, _scatterViews are no longer needed
+    /*ScatterView* selectedView = nullptr;
     for (int i = 0; i < _nclust; i++) {
         if (_selectedClusterIndex == i) {
             selectedView = _scatterViews[i];
         }
-    }
+    }*/
 
-    if (selectedView != nullptr)
-    {
-        // one of the scatterViews is selected
-        selectedView->selectView(true);
-        getFuntionalEnrichment();
-
-        // TO DO: seperate the enrichment analysis part and the update scalars part
-        std::vector<float> dimV = _colorScalars[_selectedClusterIndex]; // TO DO: get the dimV for 3D
-
-        // assign the lowest value to the non-flooded cells
-        float minValue = *std::min_element(dimV.begin(), dimV.end());
-#pragma omp parallel for
-        for (int i = 0; i < _numPoints; ++i) {
-            if (!_isFloodIndex[i]) {
-                dimV[i] = minValue;
-            }
-        }
-        normalizeVector(dimV);
-        updateClusterScalarOutput(dimV);
-    }
-    else {
+//    if (selectedView != nullptr)
+//    {
+//        // one of the scatterViews is selected
+//        selectedView->selectView(true);
+//        getFuntionalEnrichment();
+//
+//        // TO DO: seperate the enrichment analysis part and the update scalars part
+//        std::vector<float> dimV = _colorScalars[_selectedClusterIndex]; // TO DO: get the dimV for 3D
+//
+//        // assign the lowest value to the non-flooded cells
+//        float minValue = *std::min_element(dimV.begin(), dimV.end());
+//#pragma omp parallel for
+//        for (int i = 0; i < _numPoints; ++i) {
+//            if (!_isFloodIndex[i]) {
+//                dimV[i] = minValue;
+//            }
+//        }
+//        normalizeVector(dimV);
+//        updateClusterScalarOutput(dimV);
+//    }
+//    else {
         // dimView is selected
         if (_selectedClusterIndex == 6) {// TO DO: hard coded for the current layout
             _dimView->selectView(true);
@@ -3222,32 +3231,10 @@ void GeneSurferPlugin::updateClick() {
                 dimV.assign(dimValue.data(), dimValue.data() + dimValue.size());
             }
 
-            // May 2 - check the scalar values within selection
-            /*std::vector<float> dimVSelection;
-            for (int i = 0; i < _sortedFloodIndices.size(); i++) {
-                dimVSelection.push_back(dimV[_sortedFloodIndices[i]]);
-            }*/
-
-            /*qDebug() << "dimVSelection max: " << *std::max_element(dimVSelection.begin(), dimVSelection.end());
-            qDebug() << "dimVSelection min: " << *std::min_element(dimVSelection.begin(), dimVSelection.end());
-            qDebug() << "dimVSelection mean: " << std::accumulate(dimVSelection.begin(), dimVSelection.end(), 0.0) / dimVSelection.size();*/
-            // compare to the original dimV
-            /*qDebug() << "dimV max: " << *std::max_element(dimV.begin(), dimV.end());
-            qDebug() << "dimV min: " << *std::min_element(dimV.begin(), dimV.end());
-            qDebug() << "dimV mean: " << std::accumulate(dimV.begin(), dimV.end(), 0.0) / dimV.size();*/
-            // temporarily only show the selection in VolumeViewer and normalize within selection
-            /*std::vector<float> dimVTEST(dimV.size(), 0.0f);
-            for (int i = 0; i < _sortedFloodIndices.size(); i++) {
-                dimVTEST[_sortedFloodIndices[i]] = dimV[_sortedFloodIndices[i]];
-            }
-            dimV = dimVTEST;*/
-            // end of May 2
-
-
             normalizeVector(dimV);
             updateClusterScalarOutput(dimV);
         }
-    }
+    //}
 }
 
 void GeneSurferPlugin::updateSlice(int sliceIndex) {
@@ -3290,7 +3277,7 @@ void GeneSurferPlugin::updateSlice(int sliceIndex) {
     }
 
     updateScatterOpacity();
-    updateScatterColors();
+    // updateScatterColors(); // TODO: Remove, _scatterViews are no longer needed
 
     if (_selectedDimName != "NoneSelected")
         updateDimView(_selectedDimName);
