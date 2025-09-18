@@ -81,7 +81,7 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _positions(),
     _positionSourceDataset(),
     _numPoints(0),
-    _colorScalars(_nclust, std::vector<float>(_numPoints, 0.0f)),
+    //_colorScalars(_nclust, std::vector<float>(_numPoints, 0.0f)),
     _chartWidget(nullptr),
     _tableWidget(nullptr),
     _client(nullptr),
@@ -1372,14 +1372,6 @@ void GeneSurferPlugin::updateSelection()
 
     _numGenesInCluster.clear();
     _numGenesInCluster[sameLabel] = static_cast<int>(filteredDimNames.size());
-
-    std::vector<int> sameLabels(filteredDimNames.size(), sameLabel);
-    if (_isSingleCell != true) {
-        computeFloodedClusterScalars(filteredDimIndices, sameLabels.data());
-    }
-    else {
-        computeFloodedClusterScalarsSingleCell(filteredDimIndices, sameLabels.data());
-    }
 
 
     ////////////////////
@@ -2785,6 +2777,7 @@ void GeneSurferPlugin::clusterGenes()
 
 void GeneSurferPlugin::computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
 {
+    // TODO: Remove, not used anymore
     // Compute mean expression for each cluster
     // for the entire spaial map
 
@@ -2878,6 +2871,7 @@ void GeneSurferPlugin::computeEntireClusterScalars(const std::vector<int> filter
 
 void GeneSurferPlugin::computeFloodedClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
 {
+    // TODO: Remove, not used anymore
     // Compute mean expression for each cluster
     // only for flooded cells, others are filled with the lowest value
     _colorScalars.clear();
@@ -2933,6 +2927,7 @@ void GeneSurferPlugin::computeFloodedClusterScalars(const std::vector<int> filte
 }
 
 void GeneSurferPlugin::computeFloodedClusterScalarsSingleCell(const std::vector<int> filteredDimIndices, const int* labels) {
+    // TODO: Remove, not used anymore
     // Compute mean expression for each cluster
     // only for flooded cells, others are filled with the lowest value
     _colorScalars.clear();
