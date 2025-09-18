@@ -106,12 +106,12 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
             });
     }
 
-    _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);
+    //_primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);// TODO: remove ClusteringAction
     _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 2, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction());
 
-    _secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
+    //_secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());// TODO: remove EnrichmentAction
 
     _tertiaryToolbarAction.addAction(&_settingsAction.getSectionAction(), 1, GroupAction::Horizontal);
     _tertiaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);
@@ -1352,7 +1352,7 @@ void GeneSurferPlugin::updateSelection()
 
     // Keep the results struture without clustering
     std::vector<std::pair<float, int>> pairs(_corrGeneVector.size());
-    for (size_t i = 0; i < _corrGeneVector.size(); ++i) {
+    for (int i = 0; i < _corrGeneVector.size(); ++i) {
         pairs[i] = std::make_pair(std::abs(_corrGeneVector[i]), i);
     }
     std::nth_element(pairs.begin(), pairs.begin() + _numGenesThreshold, pairs.end(), std::greater<>());
