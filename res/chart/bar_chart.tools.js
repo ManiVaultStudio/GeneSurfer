@@ -24,7 +24,7 @@ function drawChart(data, type) {
     // --- size: match the widget (container) ---
     const container = document.querySelector("div#container");
     // If the widget provides a height, we use it; otherwise fall back to rows*20.
-    var svgWidth = 400;
+    var svgWidth = 300;
     var svgHeight = 900;
   
     var margin = { top: 30, right: 30, bottom: 30, left: 30 },
