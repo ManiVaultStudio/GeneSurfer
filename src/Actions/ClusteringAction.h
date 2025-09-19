@@ -44,11 +44,11 @@ public: // Serialization
 
 public: // Action getters
 
-   IntegralAction& getNumClusterAction() { return _numClusterAction; }
+   //IntegralAction& getNumClusterAction() { return _numClusterAction; }
    IntegralAction& getNumGenesThresholdAction() { return _numGenesThresholdAction; }
 
 private:
-    IntegralAction          _numClusterAction;        /** number of cluster action */
+    //IntegralAction          _numClusterAction;        /** number of cluster action */
     IntegralAction          _numGenesThresholdAction;        /** number of gene threshold action */
 
     QTimer _NRangeDebounceTimer;

@@ -76,15 +76,15 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     ViewPlugin(factory),
     _nclust(3),
     _positionDataset(),
-    _scatterViews(6 + 1, nullptr),// TO DO: hard code max 6 scatterViews
-    _dimView(nullptr),
+    //_scatterViews(6 + 1, nullptr),// TO DO: hard code max 6 scatterViews
+    //_dimView(nullptr),
     _positions(),
     _positionSourceDataset(),
     _numPoints(0),
-    _colorScalars(_nclust, std::vector<float>(_numPoints, 0.0f)),
+    //_colorScalars(_nclust, std::vector<float>(_numPoints, 0.0f)),
     _chartWidget(nullptr),
-    _tableWidget(nullptr),
-    _client(nullptr),
+    //_tableWidget(nullptr),
+    //_client(nullptr),
     _dropWidget(nullptr),
     _settingsAction(this, "Settings Action"),
     _primaryToolbarAction(this, "PrimaryToolbar"),
@@ -106,31 +106,33 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
             });
     }
 
-    _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);
+    _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);// TODO: remove ClusteringAction
     _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 2, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction());
 
-    _secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());
+    //_secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());// TODO: remove EnrichmentAction
 
-    _tertiaryToolbarAction.addAction(&_settingsAction.getSectionAction(), 1, GroupAction::Horizontal);
-    _tertiaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);
-    _tertiaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
+    //_tertiaryToolbarAction.addAction(&_settingsAction.getSectionAction(), 1, GroupAction::Horizontal);
+    //_tertiaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);// TODO: remove PositionAction
+    //_tertiaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
 
-    for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
-    {
-        _scatterViews[i] = new ScatterView(this);
-    }
+    // // TODO: Remove, _scatterViews are no longer needed
+    //for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
+    //{
+    //    _scatterViews[i] = new ScatterView(this);
+    //}
 
-    _dimView = new ScatterView(this);
+    //_dimView = new ScatterView(this);
 
-    for (int i = 0; i < 6; i++) {//TO DO: hard code max 6 scatterViews
-        connect(_scatterViews[i], &ScatterView::initialized, this, [this, i]() {_scatterViews[i]->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
-        connect(_scatterViews[i], &ScatterView::viewSelected, this, [this, i]() { _selectedClusterIndex = i; updateClick(); });
-    }
+    // TODO: Remove, _scatterViews are no longer needed
+    //for (int i = 0; i < 6; i++) {//TO DO: hard code max 6 scatterViews
+    //    connect(_scatterViews[i], &ScatterView::initialized, this, [this, i]() {_scatterViews[i]->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
+    //    connect(_scatterViews[i], &ScatterView::viewSelected, this, [this, i]() { _selectedClusterIndex = i; updateClick(); });
+    //}
 
-    connect(_dimView, &ScatterView::initialized, this, [this]() {_dimView->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
-    connect(_dimView, &ScatterView::viewSelected, this, [this]() { _selectedClusterIndex = 6; updateClick(); });
+    //connect(_dimView, &ScatterView::initialized, this, [this]() {_dimView->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
+    //connect(_dimView, &ScatterView::viewSelected, this, [this]() { _selectedClusterIndex = 6; updateClick(); });
 }
 
 void GeneSurferPlugin::init()
@@ -140,10 +142,10 @@ void GeneSurferPlugin::init()
     // Create layout
     auto layout = new QVBoxLayout();
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(_primaryToolbarAction.createWidget(&getWidget()));
+    layout->addWidget(_primaryToolbarAction.createWidget(&getWidget()), 1);
 
     // Create the splitter for the barchart and tableDimLayout
-    QSplitter* splitterChartTable = new QSplitter(Qt::Horizontal, &getWidget());
+    //QSplitter* splitterChartTable = new QSplitter(Qt::Horizontal, &getWidget());
 
     // Create barchart widget and set html contents of webpage 
     _chartWidget = new ChartWidget(this);
@@ -168,47 +170,47 @@ void GeneSurferPlugin::init()
         _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
     
 
-    _tableWidget = new MyTableWidget();
+    //_tableWidget = new MyTableWidget();// TODO: remove _tableWidget, not needed anymore
 
-    auto widget = _secondaryToolbarAction.createWidget(&getWidget());
-    widget->setMinimumWidth(10);// Fix the width of the secondary toolbar for splitter to work properly
+    //auto widget = _secondaryToolbarAction.createWidget(&getWidget());
+    //widget->setMinimumWidth(10);// Fix the width of the secondary toolbar for splitter to work properly
 
     // Container widget for table and dim view
-    QWidget* tableDimWidget = new QWidget();
-    auto tableDimLayout = new QVBoxLayout(tableDimWidget);
-    tableDimLayout->addWidget(widget);
-    tableDimLayout->addWidget(_tableWidget, 50);
-    tableDimLayout->addWidget(_dimView, 50);
+    //QWidget* tableDimWidget = new QWidget();
+    //auto tableDimLayout = new QVBoxLayout(tableDimWidget);
+    //tableDimLayout->addWidget(widget);
+    //tableDimLayout->addWidget(_tableWidget, 50);
+    //tableDimLayout->addWidget(_dimView);
     //tableDimWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
     // Add widgets to splitter, set stretch factors and add splitter to layout
-    splitterChartTable->addWidget(_chartWidget);
-    splitterChartTable->addWidget(tableDimWidget);
-    splitterChartTable->setStretchFactor(0, 60);
-    splitterChartTable->setStretchFactor(1, 40);
-    splitterChartTable->setChildrenCollapsible(false);
+    //splitterChartTable->addWidget(_chartWidget);
+    //splitterChartTable->addWidget(tableDimWidget);
+    //splitterChartTable->setStretchFactor(0, 60);
+    //splitterChartTable->setStretchFactor(1, 40);
+    //splitterChartTable->setChildrenCollapsible(false);
 
-    layout->addWidget(splitterChartTable, 50);// same stretch factor as clusterViewMainLayout
+    //layout->addWidget(splitterChartTable, 100);// same stretch factor as clusterViewMainLayout
+    layout->addWidget(_chartWidget, 100);
 
+    //auto clusterViewMainLayout = new QVBoxLayout();
+    //clusterViewMainLayout->setContentsMargins(6, 6, 6, 6);
 
-    auto clusterViewMainLayout = new QVBoxLayout();
-    clusterViewMainLayout->setContentsMargins(6, 6, 6, 6);
+    //auto clusterViewRow1 = new QHBoxLayout();
+    //for (int i = 0; i < 3; i++) {//TO DO: initialize 3 sactter plots
+    //    clusterViewRow1->addWidget(_scatterViews[i], 50);
+    //}
+    //clusterViewMainLayout->addLayout(clusterViewRow1);
 
-    auto clusterViewRow1 = new QHBoxLayout();
-    for (int i = 0; i < 3; i++) {//TO DO: initialize 3 sactter plots
-        clusterViewRow1->addWidget(_scatterViews[i], 50);
-    }
-    clusterViewMainLayout->addLayout(clusterViewRow1);
+    //auto clusterViewRow2 = new QHBoxLayout();
+    //for (int i = 3; i < 6; i++) {//TO DO: initialize 3 sactter plots
+    //    clusterViewRow2->addWidget(_scatterViews[i], 50);
+    //}
+    //clusterViewMainLayout->addLayout(clusterViewRow2);
 
-    auto clusterViewRow2 = new QHBoxLayout();
-    for (int i = 3; i < 6; i++) {//TO DO: initialize 3 sactter plots
-        clusterViewRow2->addWidget(_scatterViews[i], 50);
-    }
-    clusterViewMainLayout->addLayout(clusterViewRow2);
+    //layout->addWidget(_tertiaryToolbarAction.createWidget(&getWidget()), 1);
 
-    layout->addWidget(_tertiaryToolbarAction.createWidget(&getWidget()));
-
-    layout->addLayout(clusterViewMainLayout, 50);// same stretch factor as splitter
+    //layout->addLayout(clusterViewMainLayout, 50);// same stretch factor as splitter
 
     // Apply the layout
     getWidget().setLayout(layout);
@@ -364,11 +366,11 @@ void GeneSurferPlugin::init()
         updateSelection();
         });
 
-    _client = new EnrichmentAnalysis(this);
+   /* _client = new EnrichmentAnalysis(this);
     connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &GeneSurferPlugin::updateEnrichmentTable);
-    connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &GeneSurferPlugin::noDataEnrichmentTable);
+    connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &GeneSurferPlugin::noDataEnrichmentTable);*/
 
-    connect(_tableWidget, &QTableWidget::cellClicked, this, &GeneSurferPlugin::onTableClicked); // on table clicked
+    //connect(_tableWidget, &QTableWidget::cellClicked, this, &GeneSurferPlugin::onTableClicked); // on table clicked
 }
 
 void GeneSurferPlugin::loadData(const mv::Datasets& datasets)
@@ -716,11 +718,11 @@ void GeneSurferPlugin::updateViewData(std::vector<Vector2f>& positions) {
 
     // TO DO: can save some time here only computing data bounds once
     // pass the 2d points to the scatter plot widget
-    for (int i = 0; i < _nclust; i++) {// TO DO: hard code max 6 scatterViews
-        _scatterViews[i]->setData(&positions);
-    }
+    //for (int i = 0; i < _nclust; i++) {// TO DO: hard code max 6 scatterViews
+    //    _scatterViews[i]->setData(&positions);
+    //}
 
-    _dimView->setData(&positions);
+    //_dimView->setData(&positions);
 
 }
 
@@ -1017,7 +1019,7 @@ void GeneSurferPlugin::updateEnrichmentSpecies()
 void GeneSurferPlugin::updateSelection()
 {
     // clear table content
-    _tableWidget->clearContents();
+    //_tableWidget->clearContents();
 
     if (!_positionDataset.isValid())
         return;
@@ -1345,23 +1347,47 @@ void GeneSurferPlugin::updateSelection()
     ////////////////////
     // Clustering //
     ////////////////////
-    clusterGenes();
-    qDebug() << "updateSelection(): data clustered";
+    //clusterGenes(); // TODO: remove clustering step
+    //qDebug() << "updateSelection(): data clustered";
+
+    // Keep the results struture without clustering
+    std::vector<std::pair<float, int>> pairs(_corrGeneVector.size());
+    for (int i = 0; i < _corrGeneVector.size(); ++i) {
+        pairs[i] = std::make_pair(std::abs(_corrGeneVector[i]), i);
+    }
+    std::nth_element(pairs.begin(), pairs.begin() + _numGenesThreshold, pairs.end(), std::greater<>());
+
+    std::vector<QString> filteredDimNames;
+    std::vector<int> filteredDimIndices;
+    for (int i = 0; i < _numGenesThreshold; ++i) {
+        filteredDimNames.push_back(_enabledDimNames[pairs[i].second]);
+        filteredDimIndices.push_back(pairs[i].second);
+    }
+
+    _dimNameToClusterLabel.clear();
+    int sameLabel = 0;
+    for (const auto& name : filteredDimNames) {
+        _dimNameToClusterLabel[name] = sameLabel;
+    }
+
+    _numGenesInCluster.clear();
+    _numGenesInCluster[sameLabel] = static_cast<int>(filteredDimNames.size());
 
 
     ////////////////////
     // Update Plots //
     ////////////////////
-    for (const auto& pair : _numGenesInCluster) {
-        QString clusterIdx = QString::number(pair.first);
-        QString numGenesInThisCluster = QString::number(pair.second);
-        //_scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " genes)");
-        _scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " dims)");
-    }
+    // TODO: Remove scatter plots that are no longer needed
+    //for (const auto& pair : _numGenesInCluster) {
+    //    QString clusterIdx = QString::number(pair.first);
+    //    QString numGenesInThisCluster = QString::number(pair.second);
+    //    //_scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " genes)");
+    //    _scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " dims)");
+    //}
 
     convertDataAndUpdateChart();
-    updateScatterColors();
-    updateScatterOpacity();
+    //updateScatterColors();// TODO: Remove, _scatterViews are no longer needed
+    //updateScatterOpacity();// TODO: Remove,
 
     /*auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
@@ -1596,24 +1622,25 @@ void GeneSurferPlugin::updateSingleCellOption() {
 
 void GeneSurferPlugin::updateNumCluster()
 {
-    int newNCluster = _settingsAction.getClusteringAction().getNumClusterAction().getValue();
-    if (newNCluster < _nclust) {
-        int diff = _nclust - newNCluster;
-        for (int i = newNCluster; i < _nclust; i++) {
-            _scatterViews[i]->clearData();
-        }
-    }
-    _nclust = newNCluster;
+    // TODO: Remove, _scatterViews are no longer needed
+    //int newNCluster = _settingsAction.getClusteringAction().getNumClusterAction().getValue();
+    //if (newNCluster < _nclust) {
+    //    int diff = _nclust - newNCluster;
+    //    for (int i = newNCluster; i < _nclust; i++) {
+    //        _scatterViews[i]->clearData();
+    //    }
+    //}
+    //_nclust = newNCluster;
 
-    // cannot be changed before plotting
-    if (_isFloodIndex.empty()) {
-        qDebug() << "GeneSurferPlugin::updateNumCluster(): _isFloodIndex is empty";
-        return;
-    }
+    //// cannot be changed before plotting
+    //if (_isFloodIndex.empty()) {
+    //    qDebug() << "GeneSurferPlugin::updateNumCluster(): _isFloodIndex is empty";
+    //    return;
+    //}
 
-    updateViewData(_positions);
-    updateScatterPointSize();
-    updateSelection();
+    //updateViewData(_positions);
+    //updateScatterPointSize();
+    //updateSelection();
 }
 
 void GeneSurferPlugin::updateCorrThreshold() {
@@ -1630,10 +1657,11 @@ void GeneSurferPlugin::updateCorrThreshold() {
 
 void GeneSurferPlugin::updateScatterPointSize()
 {
-    for (int i = 0; i < _nclust; i++) {
+    // TODO: Remove, _scatterViews are no longer needed
+    /*for (int i = 0; i < _nclust; i++) {
         _scatterViews[i]->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
-    }
-    _dimView->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
+    }*/
+    //_dimView->setSourcePointSize(_settingsAction.getPointPlotAction().getPointSizeAction().getValue());
 }
 
 void GeneSurferPlugin::updateFilterLabel()
@@ -1651,7 +1679,7 @@ void GeneSurferPlugin::updateFilterLabel()
     // Clear selected dim in scalars dataset
     if (_clusterScalars.isValid())
     {
-        _selectedClusterIndex = -1;
+        //_selectedClusterIndex = -1;
         std::vector<float> allZeros(_numPoints, 0.0f);
         updateClusterScalarOutput(allZeros);
     }   
@@ -1938,11 +1966,11 @@ void GeneSurferPlugin::updateScatterOpacity()
         for (int i = 0; i < _isFloodIndex.size(); ++i) {
             opacityScalars[i] = _isFloodIndex[i] ? 1.0f : defaultOpacity;
         }
-
-        for (int i = 0; i < _nclust; i++)
+        // TODO: Remove, _scatterViews are no longer needed
+       /* for (int i = 0; i < _nclust; i++)
         {
             _scatterViews[i]->setPointOpacityScalars(opacityScalars);
-        }
+        }*/
         _dimView->setPointOpacityScalars(opacityScalars);
     }
     else {
@@ -1954,22 +1982,24 @@ void GeneSurferPlugin::updateScatterOpacity()
             opacityScalars[i] = _isFloodOnSlice[i] ? 1.0f : defaultOpacity;
         }
 
-        for (int i = 0; i < _nclust; i++)
+        // TODO: Remove, _scatterViews are no longer needed
+        /*for (int i = 0; i < _nclust; i++)
         {
             _scatterViews[i]->setPointOpacityScalars(opacityScalars);
-        }
+        }*/
         _dimView->setPointOpacityScalars(opacityScalars);
     }
 }
 
 void GeneSurferPlugin::updateScatterColors()
 {
+    // TODO: Remove, _scatterViews are no longer needed
     if (!_positionDataset.isValid())
         return;
 
     // Clear clicked frame - _scatterViews
     if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
-        _scatterViews[_selectedClusterIndex]->selectView(false);
+        _scatterViews[_selectedClusterIndex]->selectView(false); 
         _selectedClusterIndex = -1;// reset the selected cluster index to -1
         //qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
     }
@@ -2020,14 +2050,14 @@ void GeneSurferPlugin::updateScatterColors()
 void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
 {
     // Clear clicked frame - _dimView
-    if (_selectedClusterIndex == 6) {
-        _dimView->selectView(false);
-        _selectedClusterIndex = -1;// reset the selected cluster index to -1
-        //qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
-    }
+    //if (_selectedClusterIndex == 6) {
+    //    //_dimView->selectView(false);
+    //    _selectedClusterIndex = -1;// reset the selected cluster index to -1
+    //    //qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
+    //}
 
     QString dimName = selectedDimName;
-    _dimView->setProjectionName("Selected: " + selectedDimName);
+    //_dimView->setProjectionName("Selected: " + selectedDimName);
 
     Eigen::VectorXf dimValues;
     std::vector<float> dimV;
@@ -2052,6 +2082,8 @@ void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
         _positionSourceDataset->extractDataForDimension(dimV, _selectedDimIndex);// align with _positionSourceDataset
     }
     else {
+        Eigen::VectorXf avgValue;
+
         for (int i = 0; i < _enabledDimNames.size(); ++i) {
             if (_enabledDimNames[i] == selectedDimName) {
                 _selectedDimIndex = i;
@@ -2066,58 +2098,70 @@ void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
             return;
         }
         if (_ATACtoRNA)
-            dimValues = _avgExprRNA(Eigen::all, _selectedDimIndex);
+            avgValue = _avgExprRNA(Eigen::all, _selectedDimIndex);
         else
-            dimValues = _avgExpr(Eigen::all, _selectedDimIndex);
+            avgValue = _avgExpr(Eigen::all, _selectedDimIndex);
 
+        //populate the avg expr values to all ST points
+        dimValues.resize(_numPoints);
+#pragma omp parallel for
+        for (int i = 0; i < _numPoints; ++i) {
+            QString label = _cellLabels[i]; // Get the cluster alias label name of the cell
+            dimValues[i] = avgValue(_clusterAliasToRowMap[label]);
+        }
         dimV.assign(dimValues.data(), dimValues.data() + dimValues.size());
     }
 
-
-    if (!_sliceDataset.isValid()) {
-        // 2D dataset
-        if (_isSingleCell != true) {
-            // ST data
-            _dimView->setScalars(dimV, 1);// TO DO: hard-coded the idx of point
-        }
-        else {
-            // singlecell data - assign _avgExpr values to ST points
-
-            std::vector<float> viewScalars(_numPoints);
-            for (size_t i = 0; i < _numPoints; ++i) {
-                QString label = _cellLabels[i]; // Get the cluster alias label name of the cell
-                viewScalars[i] = dimV[_clusterAliasToRowMap[label]];
-            }
-
-            _dimView->setScalars(viewScalars, 1);// TO DO: hard-coded the idx of point
-
-        }
+    normalizeVector(dimV);
+    updateClusterScalarOutput(dimV);
 
 
-    }
-    else {
-        // 3D dataset
-        std::vector<float> viewScalars(_onSliceIndices.size());
 
-        if (_isSingleCell != true) {
-            // ST data     
-            for (int i = 0; i < _onSliceIndices.size(); i++)
-            {
-                viewScalars[i] = dimV[_onSliceIndices[i]];
-            }
-        }
-        else {
-            // singlecell data - assign _avgExpr values to ST points
 
-            for (size_t i = 0; i < _onSliceIndices.size(); ++i) {
-                int cellIndex = _onSliceIndices[i]; // Get the actual cell index
-                QString label = _cellLabels[cellIndex]; // Get the cluster alias label name of the cell
-                viewScalars[i] = dimV[_clusterAliasToRowMap[label]];
-            }
-        }
-        _dimView->setScalars(viewScalars, 1);// TO DO: hard-coded the idx of point
+    //if (!_sliceDataset.isValid()) {
+    //    // 2D dataset
+    //    if (_isSingleCell != true) {
+    //        // ST data
+    //        _dimView->setScalars(dimV, 1);// TO DO: hard-coded the idx of point
+    //    }
+    //    else {
+    //        // singlecell data - assign _avgExpr values to ST points
 
-    }
+    //        std::vector<float> viewScalars(_numPoints);
+    //        for (size_t i = 0; i < _numPoints; ++i) {
+    //            QString label = _cellLabels[i]; // Get the cluster alias label name of the cell
+    //            viewScalars[i] = dimV[_clusterAliasToRowMap[label]];
+    //        }
+
+    //        _dimView->setScalars(viewScalars, 1);// TO DO: hard-coded the idx of point
+
+    //    }
+
+
+    //}
+    //else {
+    //    // 3D dataset
+    //    std::vector<float> viewScalars(_onSliceIndices.size());
+
+    //    if (_isSingleCell != true) {
+    //        // ST data     
+    //        for (int i = 0; i < _onSliceIndices.size(); i++)
+    //        {
+    //            viewScalars[i] = dimV[_onSliceIndices[i]];
+    //        }
+    //    }
+    //    else {
+    //        // singlecell data - assign _avgExpr values to ST points
+
+    //        for (size_t i = 0; i < _onSliceIndices.size(); ++i) {
+    //            int cellIndex = _onSliceIndices[i]; // Get the actual cell index
+    //            QString label = _cellLabels[cellIndex]; // Get the cluster alias label name of the cell
+    //            viewScalars[i] = dimV[_clusterAliasToRowMap[label]];
+    //        }
+    //    }
+    //    _dimView->setScalars(viewScalars, 1);// TO DO: hard-coded the idx of point
+
+    //}
 
 }
 
@@ -2747,6 +2791,7 @@ void GeneSurferPlugin::clusterGenes()
 
 void GeneSurferPlugin::computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
 {
+    // TODO: Remove, not used anymore
     // Compute mean expression for each cluster
     // for the entire spaial map
 
@@ -2840,6 +2885,7 @@ void GeneSurferPlugin::computeEntireClusterScalars(const std::vector<int> filter
 
 void GeneSurferPlugin::computeFloodedClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
 {
+    // TODO: Remove, not used anymore
     // Compute mean expression for each cluster
     // only for flooded cells, others are filled with the lowest value
     _colorScalars.clear();
@@ -2895,6 +2941,7 @@ void GeneSurferPlugin::computeFloodedClusterScalars(const std::vector<int> filte
 }
 
 void GeneSurferPlugin::computeFloodedClusterScalarsSingleCell(const std::vector<int> filteredDimIndices, const int* labels) {
+    // TODO: Remove, not used anymore
     // Compute mean expression for each cluster
     // only for flooded cells, others are filled with the lowest value
     _colorScalars.clear();
@@ -2951,13 +2998,25 @@ void GeneSurferPlugin::computeFloodedClusterScalarsSingleCell(const std::vector<
 
 void GeneSurferPlugin::updateClusterScalarOutput(const std::vector<float>& scalars)
 {
+    if (!_clusterScalars.isValid())
+    {
+        qDebug() << "updateClusterScalarOutput() _clusterScalars is not valid.";
+        return;
+    }
+
     _clusterScalars->setData<float>(scalars.data(), scalars.size(), 1);
-    if (_selectedClusterIndex == 6)
+    
+    if (_selectedDimIndex == -1)
+        _clusterScalars->setDimensionNames({ "NoneSelected" });
+    else 
+        _clusterScalars->setDimensionNames({ _selectedDimName });
+
+    /*if (_selectedClusterIndex == 6)
         _clusterScalars->setDimensionNames({ _selectedDimName });
     else if (_selectedClusterIndex == -1)
         _clusterScalars->setDimensionNames({ "NoneSelected" });
     else
-        _clusterScalars->setDimensionNames({ "SelectedCluster" });
+        _clusterScalars->setDimensionNames({ "SelectedCluster" });*/
 
     events().notifyDatasetDataChanged(_clusterScalars);
     //events().notifyDatasetDataDimensionsChanged(_clusterScalars);
@@ -2966,185 +3025,190 @@ void GeneSurferPlugin::updateClusterScalarOutput(const std::vector<float>& scala
 
 void GeneSurferPlugin::getFuntionalEnrichment()
 {
-    QStringList geneNamesInCluster;
-    _simplifiedToIndexGeneMapping.clear();
-    for (const auto& pair : _dimNameToClusterLabel) {
-        if (pair.second == _selectedClusterIndex) {
-            QString geneName = pair.first;
-            QString simplifiedGeneName = geneName;// copy for potential modification
-
-            // check if gene name contains an _copy index - for modified duplicate gene symbols in ABC Atlas
-            int index = geneName.lastIndexOf("_copy");
-            if (index != -1) {
-                simplifiedGeneName = geneName.left(index);// remove the index
-                _simplifiedToIndexGeneMapping[simplifiedGeneName].append(geneName);
-            }
-
-            geneNamesInCluster.append(simplifiedGeneName);
-        }
-    }
-
-    // output _simplifiedToIndexGeneMapping if not empty
-    if (!_simplifiedToIndexGeneMapping.empty()) {
-        for (auto it = _simplifiedToIndexGeneMapping.constBegin(); it != _simplifiedToIndexGeneMapping.constEnd(); ++it) {
-            qDebug() << it.key() << ":";
-            for (const QString& value : it.value()) {
-                qDebug() << value;
-            }
-        }
-    }
-
-    if (!geneNamesInCluster.isEmpty()) {
-
-        if (_currentEnrichmentAPI == "ToppGene") {
-            // ToppGene
-            _client->lookupSymbolsToppGene(geneNamesInCluster);
-        }
-
-        if (_currentEnrichmentAPI == "gProfiler") {
-            // gProfiler
-            QStringList backgroundGeneNames;
-            if (_isSingleCell != true) {
-                for (const auto& name : _enabledDimNames) {
-                    backgroundGeneNames.append(name);
-                }
-                //qDebug() << "getFuntionalEnrichment(): ST mode, with background";
-            }
-            else {
-                // in single cell mode, background is empty
-                //qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
-            }
-            //qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
-            _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames, _currentEnrichmentSpecies);
-        }
-
-        //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);
-    }
-
-    // output the gene names
-    for (int i = 0; i < geneNamesInCluster.size(); i++) {
-        QString item = geneNamesInCluster[i];
-        if (i == 0)
-            std::cout << "Genes in this cluster: " << item.toUtf8().constData() << " ";
-        else
-            std::cout << item.toUtf8().constData() << " ";
-    }
-    std::cout << std::endl;
+//    // TODO: Remove, not used anymore
+//    QStringList geneNamesInCluster;
+//    _simplifiedToIndexGeneMapping.clear();
+//    for (const auto& pair : _dimNameToClusterLabel) {
+//        if (pair.second == _selectedClusterIndex) {
+//            QString geneName = pair.first;
+//            QString simplifiedGeneName = geneName;// copy for potential modification
+//
+//            // check if gene name contains an _copy index - for modified duplicate gene symbols in ABC Atlas
+//            int index = geneName.lastIndexOf("_copy");
+//            if (index != -1) {
+//                simplifiedGeneName = geneName.left(index);// remove the index
+//                _simplifiedToIndexGeneMapping[simplifiedGeneName].append(geneName);
+//            }
+//
+//            geneNamesInCluster.append(simplifiedGeneName);
+//        }
+//    }
+//
+//    // output _simplifiedToIndexGeneMapping if not empty
+//    if (!_simplifiedToIndexGeneMapping.empty()) {
+//        for (auto it = _simplifiedToIndexGeneMapping.constBegin(); it != _simplifiedToIndexGeneMapping.constEnd(); ++it) {
+//            qDebug() << it.key() << ":";
+//            for (const QString& value : it.value()) {
+//                qDebug() << value;
+//            }
+//        }
+//    }
+//
+//    if (!geneNamesInCluster.isEmpty()) {
+//
+//        if (_currentEnrichmentAPI == "ToppGene") {
+//            // ToppGene
+//            _client->lookupSymbolsToppGene(geneNamesInCluster);
+//        }
+//
+//        if (_currentEnrichmentAPI == "gProfiler") {
+//            // gProfiler
+//            QStringList backgroundGeneNames;
+//            if (_isSingleCell != true) {
+//                for (const auto& name : _enabledDimNames) {
+//                    backgroundGeneNames.append(name);
+//                }
+//                //qDebug() << "getFuntionalEnrichment(): ST mode, with background";
+//            }
+//            else {
+//                // in single cell mode, background is empty
+//                //qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
+//            }
+//            //qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
+//            _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames, _currentEnrichmentSpecies);
+//        }
+//
+//        //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);
+//    }
+//
+//    // output the gene names
+//    for (int i = 0; i < geneNamesInCluster.size(); i++) {
+//        QString item = geneNamesInCluster[i];
+//        if (i == 0)
+//            std::cout << "Genes in this cluster: " << item.toUtf8().constData() << " ";
+//        else
+//            std::cout << item.toUtf8().constData() << " ";
+//    }
+//    std::cout << std::endl;
 }
 
 void GeneSurferPlugin::updateEnrichmentTable(const QVariantList& data) {
-    //qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): start";
-
-    _enrichmentResult = data;
-
-    /*for (const QVariant& item : data) {
-        QVariantMap dataMap = item.toMap();
-        for (auto key : dataMap.keys()) {
-            qDebug() << key << ":" << dataMap[key].toString();
-        }
-    }*/
-
-    // automatically extracting headers from the keys of the first item
-    QStringList headers;
-    QList<QString> keys = data.first().toMap().keys();
-    for (int i = 0; i < keys.size(); ++i) {
-        headers.append(keys[i]);
-    }
-
-    _tableWidget->clearContents();
-    _tableWidget->setRowCount(data.size());
-    _tableWidget->setColumnCount(keys.size());
-
-    _tableWidget->setHorizontalHeaderLabels(headers);
-
-    // automatically populate the table with data
-    for (int row = 0; row < data.size(); ++row) {
-        QVariantMap dataMap = data.at(row).toMap();
-
-        for (int col = 0; col < headers.size(); ++col) {
-            QString key = headers.at(col);
-            QTableWidgetItem* tableItem = new QTableWidgetItem(dataMap[key].toString());
-            _tableWidget->setItem(row, col, tableItem);
-        }
-    }
-
-    //_tableWidget->resizeRowsToContents();
-    _tableWidget->resizeColumnsToContents();
-
-    _tableWidget->show();
-
-    qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): finished";
+//    // TODO: Remove, not used anymore
+//    //qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): start";
+//
+//    _enrichmentResult = data;
+//
+//    /*for (const QVariant& item : data) {
+//        QVariantMap dataMap = item.toMap();
+//        for (auto key : dataMap.keys()) {
+//            qDebug() << key << ":" << dataMap[key].toString();
+//        }
+//    }*/
+//
+//    // automatically extracting headers from the keys of the first item
+//    QStringList headers;
+//    QList<QString> keys = data.first().toMap().keys();
+//    for (int i = 0; i < keys.size(); ++i) {
+//        headers.append(keys[i]);
+//    }
+//
+//    _tableWidget->clearContents();
+//    _tableWidget->setRowCount(data.size());
+//    _tableWidget->setColumnCount(keys.size());
+//
+//    _tableWidget->setHorizontalHeaderLabels(headers);
+//
+//    // automatically populate the table with data
+//    for (int row = 0; row < data.size(); ++row) {
+//        QVariantMap dataMap = data.at(row).toMap();
+//
+//        for (int col = 0; col < headers.size(); ++col) {
+//            QString key = headers.at(col);
+//            QTableWidgetItem* tableItem = new QTableWidgetItem(dataMap[key].toString());
+//            _tableWidget->setItem(row, col, tableItem);
+//        }
+//    }
+//
+//    //_tableWidget->resizeRowsToContents();
+//    _tableWidget->resizeColumnsToContents();
+//
+//    _tableWidget->show();
+//
+//    qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): finished";
 }
 
 void GeneSurferPlugin::noDataEnrichmentTable() {
-    _tableWidget->clearContents();
-    _tableWidget->setRowCount(1);
-    _tableWidget->setColumnCount(1);
-
-    QStringList header = { "Message" };
-    _tableWidget->setHorizontalHeaderLabels(header);
-    QTableWidgetItem* item = new QTableWidgetItem("No enrichment analysis result available.");
-
-    _tableWidget->setItem(0, 0, item);
-    _tableWidget->resizeColumnsToContents();
+//    // TODO: Remove, not used anymore
+//    _tableWidget->clearContents();
+//    _tableWidget->setRowCount(1);
+//    _tableWidget->setColumnCount(1);
+//
+//    QStringList header = { "Message" };
+//    _tableWidget->setHorizontalHeaderLabels(header);
+//    QTableWidgetItem* item = new QTableWidgetItem("No enrichment analysis result available.");
+//
+//    _tableWidget->setItem(0, 0, item);
+//    _tableWidget->resizeColumnsToContents();
 }
 
 void GeneSurferPlugin::onTableClicked(int row, int column) {
-    //qDebug() << "Cell clicked in row:" << row << "column:" << column;
-
-    // get gene symbols of the selected row
-    QVariantMap selectedItemMap = _enrichmentResult[row].toMap();
-    QString geneSymbols = selectedItemMap["Symbol"].toString();
-    //qDebug() << "Gene symbols in the selected item:" << geneSymbols;
-
-    QStringList geneSymbolList = geneSymbols.split(",");
-
-    // match the gene symbols with the gene names in the cluster - gene symbols returned from toppGene are all capitals
-    QVariantList geneNamesForHighlighting;
-    for (const QString& symbol : geneSymbolList) {
-
-        QString searchGeneSymbol;
-
-
-        // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all upper case
-        if (_currentEnrichmentAPI == "ToppGene") {
-
-            // first check if the gene symbol is already in the same format as the data
-            if (_enabledDimNames[0][1].isUpper()) // check if the second letter is uppercase
-            {
-                searchGeneSymbol = symbol;
-            }
-            else
-            {
-                searchGeneSymbol = symbol.toLower(); // convert to lower case
-                searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
-            }
-        }
-
-        // gProfiler
-        if (_currentEnrichmentAPI == "gProfiler") {
-            searchGeneSymbol = symbol; // TO DO: check if the gene symbols are already in the correct format
-        }
-
-        // Attempt to find original, indexed gene names using the reverse mapping
-        QStringList originalGeneNames = _simplifiedToIndexGeneMapping.value(searchGeneSymbol);
-
-        if (!originalGeneNames.isEmpty()) {
-            //qDebug() << "Original gene names found for symbol" << searchGeneSymbol << ":" << originalGeneNames;
-            // original, indexed versions exist, add them for highlighting
-            for (const QString& originalGeneName : originalGeneNames) {
-                geneNamesForHighlighting.append(QVariant(originalGeneName));
-            }
-        }
-        else {
-            // no indexed version found, use the modified search symbol
-            geneNamesForHighlighting.append(QVariant(searchGeneSymbol));
-        }
-    }
-    emit _chartWidget->getCommunicationObject().qt_js_highlightInJS(geneNamesForHighlighting);
+//    // TODO: Remove, not used anymore
+//    //qDebug() << "Cell clicked in row:" << row << "column:" << column;
+//
+//    // get gene symbols of the selected row
+//    QVariantMap selectedItemMap = _enrichmentResult[row].toMap();
+//    QString geneSymbols = selectedItemMap["Symbol"].toString();
+//    //qDebug() << "Gene symbols in the selected item:" << geneSymbols;
+//
+//    QStringList geneSymbolList = geneSymbols.split(",");
+//
+//    // match the gene symbols with the gene names in the cluster - gene symbols returned from toppGene are all capitals
+//    QVariantList geneNamesForHighlighting;
+//    for (const QString& symbol : geneSymbolList) {
+//
+//        QString searchGeneSymbol;
+//
+//
+//        // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all upper case
+//        if (_currentEnrichmentAPI == "ToppGene") {
+//
+//            // first check if the gene symbol is already in the same format as the data
+//            if (_enabledDimNames[0][1].isUpper()) // check if the second letter is uppercase
+//            {
+//                searchGeneSymbol = symbol;
+//            }
+//            else
+//            {
+//                searchGeneSymbol = symbol.toLower(); // convert to lower case
+//                searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
+//            }
+//        }
+//
+//        // gProfiler
+//        if (_currentEnrichmentAPI == "gProfiler") {
+//            searchGeneSymbol = symbol; // TO DO: check if the gene symbols are already in the correct format
+//        }
+//
+//        // Attempt to find original, indexed gene names using the reverse mapping
+//        QStringList originalGeneNames = _simplifiedToIndexGeneMapping.value(searchGeneSymbol);
+//
+//        if (!originalGeneNames.isEmpty()) {
+//            //qDebug() << "Original gene names found for symbol" << searchGeneSymbol << ":" << originalGeneNames;
+//            // original, indexed versions exist, add them for highlighting
+//            for (const QString& originalGeneName : originalGeneNames) {
+//                geneNamesForHighlighting.append(QVariant(originalGeneName));
+//            }
+//        }
+//        else {
+//            // no indexed version found, use the modified search symbol
+//            geneNamesForHighlighting.append(QVariant(searchGeneSymbol));
+//        }
+//    }
+//    emit _chartWidget->getCommunicationObject().qt_js_highlightInJS(geneNamesForHighlighting);
 }
 
 void GeneSurferPlugin::updateClick() {
+    // TODO: Remove
     if (_selectedClusterIndex == -1) {
         qDebug() << "Warning! updateClick(): _selectedClusterIndex is -1, no view is selected";
         return;
@@ -3161,93 +3225,73 @@ void GeneSurferPlugin::updateClick() {
     }
 
     // clear clicked frames
-    for (int i = 0; i < 6; i++) {// TO DO: hard coded for the current layout
-        _scatterViews[i]->selectView(false);
-    }
+    // // TODO: Remove, _scatterViews are no longer needed
+    //for (int i = 0; i < 6; i++) {// TO DO: hard coded for the current layout
+    //    _scatterViews[i]->selectView(false);
+    //}
     _dimView->selectView(false);
 
-    ScatterView* selectedView = nullptr;
+    // TODO: Remove, _scatterViews are no longer needed
+    /*ScatterView* selectedView = nullptr;
     for (int i = 0; i < _nclust; i++) {
         if (_selectedClusterIndex == i) {
             selectedView = _scatterViews[i];
         }
-    }
+    }*/
 
-    if (selectedView != nullptr)
-    {
-        // one of the scatterViews is selected
-        selectedView->selectView(true);
-        getFuntionalEnrichment();
-
-        // TO DO: seperate the enrichment analysis part and the update scalars part
-        std::vector<float> dimV = _colorScalars[_selectedClusterIndex]; // TO DO: get the dimV for 3D
-
-        // assign the lowest value to the non-flooded cells
-        float minValue = *std::min_element(dimV.begin(), dimV.end());
-#pragma omp parallel for
-        for (int i = 0; i < _numPoints; ++i) {
-            if (!_isFloodIndex[i]) {
-                dimV[i] = minValue;
-            }
-        }
-        normalizeVector(dimV);
-        updateClusterScalarOutput(dimV);
-    }
-    else {
+//    if (selectedView != nullptr)
+//    {
+//        // one of the scatterViews is selected
+//        selectedView->selectView(true);
+//        getFuntionalEnrichment();
+//
+//        // TO DO: seperate the enrichment analysis part and the update scalars part
+//        std::vector<float> dimV = _colorScalars[_selectedClusterIndex]; // TO DO: get the dimV for 3D
+//
+//        // assign the lowest value to the non-flooded cells
+//        float minValue = *std::min_element(dimV.begin(), dimV.end());
+//#pragma omp parallel for
+//        for (int i = 0; i < _numPoints; ++i) {
+//            if (!_isFloodIndex[i]) {
+//                dimV[i] = minValue;
+//            }
+//        }
+//        normalizeVector(dimV);
+//        updateClusterScalarOutput(dimV);
+//    }
+//    else {
         // dimView is selected
-        if (_selectedClusterIndex == 6) {// TO DO: hard coded for the current layout
-            _dimView->selectView(true);
-
-            Eigen::VectorXf dimValue;
-            std::vector<float> dimV;
-            if (!_isSingleCell) {
-                //dimValue = _dataStore.getBaseData()(Eigen::all, _selectedDimIndex); //align with _enabledDimNames
-                _positionSourceDataset->extractDataForDimension(dimV, _selectedDimIndex);// align with _positionSourceDataset
-            }
-            else {
-                // for singlecell option
-                Eigen::VectorXf avgValue;
-                if (_ATACtoRNA)
-                    avgValue = _avgExprRNA(Eigen::all, _selectedDimIndex);
-                else
-                    avgValue = _avgExpr(Eigen::all, _selectedDimIndex);
-
-                //populate the avg expr values to all ST points
-                dimValue.resize(_numPoints);
-#pragma omp parallel for
-                for (int i = 0; i < _numPoints; ++i) {
-                    QString label = _cellLabels[i]; // Get the cluster alias label name of the cell
-                    dimValue[i] = avgValue(_clusterAliasToRowMap[label]);
-                }
-                dimV.assign(dimValue.data(), dimValue.data() + dimValue.size());
-            }
-
-            // May 2 - check the scalar values within selection
-            /*std::vector<float> dimVSelection;
-            for (int i = 0; i < _sortedFloodIndices.size(); i++) {
-                dimVSelection.push_back(dimV[_sortedFloodIndices[i]]);
-            }*/
-
-            /*qDebug() << "dimVSelection max: " << *std::max_element(dimVSelection.begin(), dimVSelection.end());
-            qDebug() << "dimVSelection min: " << *std::min_element(dimVSelection.begin(), dimVSelection.end());
-            qDebug() << "dimVSelection mean: " << std::accumulate(dimVSelection.begin(), dimVSelection.end(), 0.0) / dimVSelection.size();*/
-            // compare to the original dimV
-            /*qDebug() << "dimV max: " << *std::max_element(dimV.begin(), dimV.end());
-            qDebug() << "dimV min: " << *std::min_element(dimV.begin(), dimV.end());
-            qDebug() << "dimV mean: " << std::accumulate(dimV.begin(), dimV.end(), 0.0) / dimV.size();*/
-            // temporarily only show the selection in VolumeViewer and normalize within selection
-            /*std::vector<float> dimVTEST(dimV.size(), 0.0f);
-            for (int i = 0; i < _sortedFloodIndices.size(); i++) {
-                dimVTEST[_sortedFloodIndices[i]] = dimV[_sortedFloodIndices[i]];
-            }
-            dimV = dimVTEST;*/
-            // end of May 2
-
-
-            normalizeVector(dimV);
-            updateClusterScalarOutput(dimV);
-        }
-    }
+//        if (_selectedClusterIndex == 6) {// TO DO: hard coded for the current layout
+//            _dimView->selectView(true);
+//
+//            Eigen::VectorXf dimValue;
+//            std::vector<float> dimV;
+//            if (!_isSingleCell) {
+//                //dimValue = _dataStore.getBaseData()(Eigen::all, _selectedDimIndex); //align with _enabledDimNames
+//                _positionSourceDataset->extractDataForDimension(dimV, _selectedDimIndex);// align with _positionSourceDataset
+//            }
+//            else {
+//                // for singlecell option
+//                Eigen::VectorXf avgValue;
+//                if (_ATACtoRNA)
+//                    avgValue = _avgExprRNA(Eigen::all, _selectedDimIndex);
+//                else
+//                    avgValue = _avgExpr(Eigen::all, _selectedDimIndex);
+//
+//                //populate the avg expr values to all ST points
+//                dimValue.resize(_numPoints);
+//#pragma omp parallel for
+//                for (int i = 0; i < _numPoints; ++i) {
+//                    QString label = _cellLabels[i]; // Get the cluster alias label name of the cell
+//                    dimValue[i] = avgValue(_clusterAliasToRowMap[label]);
+//                }
+//                dimV.assign(dimValue.data(), dimValue.data() + dimValue.size());
+//            }
+//
+//            normalizeVector(dimV);
+//            updateClusterScalarOutput(dimV);
+//        }
+    //}
 }
 
 void GeneSurferPlugin::updateSlice(int sliceIndex) {
@@ -3274,7 +3318,7 @@ void GeneSurferPlugin::updateSlice(int sliceIndex) {
     _onSliceIndices = indices;
 
     _dataStore.createDataView(indices);
-    updateSelectedDim();
+    updateSelectedDim(); // TODO: check if this would still work if actions are removed
 
     // update floodfill mask on 2D
     if (_isFloodIndex.empty()) {
@@ -3289,8 +3333,8 @@ void GeneSurferPlugin::updateSlice(int sliceIndex) {
         }
     }
 
-    updateScatterOpacity();
-    updateScatterColors();
+    //updateScatterOpacity();
+    // updateScatterColors(); // TODO: Remove, _scatterViews are no longer needed
 
     if (_selectedDimName != "NoneSelected")
         updateDimView(_selectedDimName);
@@ -3373,8 +3417,8 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
     }
 
     // load the selected view
-    _selectedClusterIndex = variantMap["SelectedClusterIndex"].toInt();
-    updateClick();
+    //_selectedClusterIndex = variantMap["SelectedClusterIndex"].toInt();
+    //updateClick();
 
 
     // TODO: delete

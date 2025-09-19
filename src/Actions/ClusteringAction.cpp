@@ -5,7 +5,7 @@ using namespace mv::gui;
 
 ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
     VerticalGroupAction(parent, title),
-    _numClusterAction(this, "numClusters", 1, 6, 3),
+    //_numClusterAction(this, "numClusters", 1, 6, 3),
     //_numGenesThresholdAction(this, "numFilteredGenes", 1, 100, 50)
     _numGenesThresholdAction(this, "numFilteredDims", 1, 100, 50)
 {
@@ -13,15 +13,15 @@ ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
     setIcon(mv::util::StyledIcon("th-large"));
     setLabelSizingType(LabelSizingType::Auto);
 
-    addAction(&_numClusterAction);
+    //addAction(&_numClusterAction);
     addAction(&_numGenesThresholdAction);
 
-    _numClusterAction.setToolTip("Number of clusters");
+    //_numClusterAction.setToolTip("Number of clusters");
     //_numGenesThresholdAction.setToolTip("Number of filtered genes");
     _numGenesThresholdAction.setToolTip("Number of filtered dimensions");
 
     // hide the slider, only show the spinbox
-    _numClusterAction.setDefaultWidgetFlags(IntegralAction::SpinBox);
+    //_numClusterAction.setDefaultWidgetFlags(IntegralAction::SpinBox);
     _numGenesThresholdAction.setDefaultWidgetFlags(IntegralAction::SpinBox);
 
 
@@ -29,9 +29,9 @@ ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
     if (geneSurferPlugin == nullptr)
         return;
 
-    connect(&_numClusterAction, &IntegralAction::valueChanged, [this, geneSurferPlugin](int32_t val) {
+   /* connect(&_numClusterAction, &IntegralAction::valueChanged, [this, geneSurferPlugin](int32_t val) {
             geneSurferPlugin->updateNumCluster();
-     });
+     });*/
 
 
     // Debounce timer for the number of genes threshold action
@@ -60,7 +60,7 @@ void ClusteringAction::fromVariantMap(const QVariantMap& variantMap)
 {
     VerticalGroupAction::fromVariantMap(variantMap);
 
-    _numClusterAction.fromParentVariantMap(variantMap);
+    //_numClusterAction.fromParentVariantMap(variantMap);
     _numGenesThresholdAction.fromParentVariantMap(variantMap);
 }
 
@@ -68,7 +68,7 @@ QVariantMap ClusteringAction::toVariantMap() const
 {
     auto variantMap = VerticalGroupAction::toVariantMap();
 
-    _numClusterAction.insertIntoVariantMap(variantMap);
+    //_numClusterAction.insertIntoVariantMap(variantMap);
     _numGenesThresholdAction.insertIntoVariantMap(variantMap);
 
     return variantMap;
