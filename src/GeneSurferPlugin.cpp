@@ -113,7 +113,7 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
 
     //_secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());// TODO: remove EnrichmentAction
 
-    _tertiaryToolbarAction.addAction(&_settingsAction.getSectionAction(), 1, GroupAction::Horizontal);
+    //_tertiaryToolbarAction.addAction(&_settingsAction.getSectionAction(), 1, GroupAction::Horizontal);
     //_tertiaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);// TODO: remove PositionAction
     //_tertiaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
 
@@ -192,8 +192,6 @@ void GeneSurferPlugin::init()
 
     //layout->addWidget(splitterChartTable, 100);// same stretch factor as clusterViewMainLayout
     layout->addWidget(_chartWidget, 100);
-    layout->addWidget(_secondaryToolbarAction.createWidget(&getWidget()), 1);
-
 
     //auto clusterViewMainLayout = new QVBoxLayout();
     //clusterViewMainLayout->setContentsMargins(6, 6, 6, 6);
@@ -210,7 +208,7 @@ void GeneSurferPlugin::init()
     //}
     //clusterViewMainLayout->addLayout(clusterViewRow2);
 
-    layout->addWidget(_tertiaryToolbarAction.createWidget(&getWidget()), 1);
+    //layout->addWidget(_tertiaryToolbarAction.createWidget(&getWidget()), 1);
 
     //layout->addLayout(clusterViewMainLayout, 50);// same stretch factor as splitter
 
