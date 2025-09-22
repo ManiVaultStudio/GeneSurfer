@@ -1393,6 +1393,12 @@ void GeneSurferPlugin::updateSelection()
     //updateScatterColors();// TODO: Remove, _scatterViews are no longer needed
     //updateScatterOpacity();// TODO: Remove, 
 
+    // unselect the selection, to show no selection on scatter plot. 
+    // problem: will not be able to highlight the selected cells on the scatter plot anymore
+    /*std::vector<std::uint32_t> emptySelection;
+    _positionDataset->setSelectionIndices(emptySelection);
+    events().notifyDatasetDataSelectionChanged(_positionDataset);*/
+
    
     /*auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
@@ -1951,7 +1957,6 @@ void GeneSurferPlugin::updateRNAData()
 
     updateSelection();
 }
-
 
 void GeneSurferPlugin::updateScatterOpacity()
 {
