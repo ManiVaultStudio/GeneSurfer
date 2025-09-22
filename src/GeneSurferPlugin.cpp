@@ -91,7 +91,7 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _secondaryToolbarAction(this, "SecondaryToolbar"),
     _tertiaryToolbarAction(this, "TertiaryToolbar"),
     _selectedDimIndex(-1),
-    _selectedClusterIndex(-1), // -1 means no view selected
+    //_selectedClusterIndex(-1), // -1 means no view selected
     _colorMapAction(this, "Color map", "RdYlBu"),
     _saveToCsvAction(&getWidget(), "Save As...")
 
@@ -499,6 +499,10 @@ void GeneSurferPlugin::convertDataAndUpdateChart()
         payloadMap["FilterType"] = "Moran";
     else
         payloadMap["FilterType"] = "Others";
+
+    // automatically update scalars to the top dimension
+    _selectedDimName = filteredAndSortedGenes.back().first; // the last one has the highest correlation
+    updateDimView(_selectedDimName);
 
 
     qDebug() << "GeneSurferPlugin::convertDataAndUpdateChart: Send data from Qt cpp to D3 js";
@@ -1043,7 +1047,7 @@ void GeneSurferPlugin::updateSelection()
             _computeSubset.computeSubsetDataAvgExpr(_avgExprRNA, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
             _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
             _subsetData3D = _subsetDataAvgOri;
-            qDebug() << "_subsetData3D.size " << _subsetDataAvgOri.rows() << _subsetDataAvgOri.cols();
+            //qDebug() << "_subsetData3D.size " << _subsetDataAvgOri.rows() << _subsetDataAvgOri.cols();
         }
     }
     else {
@@ -1310,7 +1314,7 @@ void GeneSurferPlugin::updateSelection()
         if (dimensionDataset.isValid())
         {
             dimensionDataset->extractDataForDimension(dimSpatial, 0);
-            qDebug() << "dimSpatial size: " << dimSpatial.size();
+            //qDebug() << "dimSpatial size: " << dimSpatial.size();
             qDebug() << "Current dimension of mapped ATAC dataset " << dimensionDataset->getDimensionNames()[0];
             _queryDimensionForATACRNA = dimensionDataset->getDimensionNames()[0];
             _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
@@ -1387,8 +1391,15 @@ void GeneSurferPlugin::updateSelection()
 
     convertDataAndUpdateChart();
     //updateScatterColors();// TODO: Remove, _scatterViews are no longer needed
-    //updateScatterOpacity();// TODO: Remove,
+    //updateScatterOpacity();// TODO: Remove, 
 
+    // unselect the selection, to show no selection on scatter plot. 
+    // problem: will not be able to highlight the selected cells on the scatter plot anymore
+    /*std::vector<std::uint32_t> emptySelection;
+    _positionDataset->setSelectionIndices(emptySelection);
+    events().notifyDatasetDataSelectionChanged(_positionDataset);*/
+
+   
     /*auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "updateSelection() Elapsed time: " << elapsed.count() << " ms\n";*/
@@ -1889,7 +1900,7 @@ void GeneSurferPlugin::updateRNAData()
                         qDebug() << "ERROR!!!!!updateRNAData() ptIndices.size() != 1";// should not happen
                     }
                 }
-                qDebug() << "RNA clusterToRowMap.size() = " << clusterToRowMap.size();
+                //qDebug() << "RNA clusterToRowMap.size() = " << clusterToRowMap.size();
 
                 _clusterNamesAvgExprRNA.clear();
                 _clusterNamesAvgExprRNA.resize(clusterToRowMap.size());
@@ -1900,17 +1911,17 @@ void GeneSurferPlugin::updateRNAData()
                 }
 
                 // manual check
-                for (int i = 0; i < 15; ++i)
+                /*for (int i = 0; i < 15; ++i)
                 {
                     QString clusterName = _clusterNamesAvgExprRNA[i];
                     qDebug() << "cluster " << i << " name: " << clusterName;
-                }
+                }*/
 
                 _clusterAliasToRowMap.clear();
                 for (int i = 0; i < _clusterNamesAvgExprRNA.size(); ++i) {
                     _clusterAliasToRowMap[_clusterNamesAvgExprRNA[i]] = i;
                 }
-                qDebug() << "_clusterAliasToRowMap.size = " << _clusterAliasToRowMap.size();
+                //qDebug() << "_clusterAliasToRowMap.size = " << _clusterAliasToRowMap.size();
 
                 loadLabelsFromSTDatasetFromFileForRNA();
 
@@ -1930,7 +1941,7 @@ void GeneSurferPlugin::updateRNAData()
             _clusterAliasToRowMap[_clusterNamesAvgExprRNA[i]] = i;
 
         }
-        qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+        //qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
         loadLabelsFromSTDatasetFromFileForRNA();
     }
 
@@ -1939,14 +1950,13 @@ void GeneSurferPlugin::updateRNAData()
     // update _enabledDimNames
     _enabledDimNames.clear();
     _enabledDimNames = _geneNamesAvgExprRNA;
-    qDebug() << "_enabledDimNames size: " << _enabledDimNames.size() << _enabledDimNames[0] << _enabledDimNames[1] << _enabledDimNames[2];
+    //qDebug() << "_enabledDimNames size: " << _enabledDimNames.size() << _enabledDimNames[0] << _enabledDimNames[1] << _enabledDimNames[2];
 
     // update max number of genes in _numGenesThresholdAction
     _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(_enabledDimNames.size());
 
     updateSelection();
 }
-
 
 void GeneSurferPlugin::updateScatterOpacity()
 {
@@ -1994,57 +2004,57 @@ void GeneSurferPlugin::updateScatterOpacity()
 void GeneSurferPlugin::updateScatterColors()
 {
     // TODO: Remove, _scatterViews are no longer needed
-    if (!_positionDataset.isValid())
-        return;
-
-    // Clear clicked frame - _scatterViews
-    if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
-        _scatterViews[_selectedClusterIndex]->selectView(false); 
-        _selectedClusterIndex = -1;// reset the selected cluster index to -1
-        //qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
-    }
-
-    std::vector<uint32_t>& selection = _positionDataset->getSelectionIndices();
-
-    if (!_sliceDataset.isValid()) {
-        //2D dataset
-        for (int i = 0; i < _nclust; i++)
-        {
-            std::vector<float> dimV = _colorScalars[i];
-            //_scatterViews[i]->setScalars(dimV, selection[0]);// TO DO: hard-coded the idx of point // selection not working?
-            _scatterViews[i]->setScalars(dimV, 1);
-        }
-    }
-    else {
-        // 3D dataset
-
-        if (_colorScalars[0].empty()) {
-            qDebug() << "GeneSurferPlugin::updateScatterColors: _colorScalars[0] is empty";
-            return;
-        }
-
-        for (int j = 0; j < _nclust; j++) {
-            if (j >= _colorScalars.size()) {
-                qDebug() << "GeneSurferPlugin::updateScatterColors: Row index out of range: j=" << j;
-                break;
-            }
-
-            std::vector<float> viewScalars(_onSliceIndices.size());
-#pragma omp parallel for
-            for (int i = 0; i < _onSliceIndices.size(); i++)
-            {
-                if (_onSliceIndices[i] < _colorScalars[j].size()) {
-                    viewScalars[i] = _colorScalars[j][_onSliceIndices[i]];
-                }
-                else {
-                    qDebug() << "Column index out of range: j=" << j << " i=" << i << " _onSliceIndices[i]=" << _onSliceIndices[i];
-                    //break; // TO DO: remove this break statement
-                }
-            }
-            //_scatterViews[j]->setScalars(viewScalars, selection[0]); // TODO: check if this is needed
-            _scatterViews[j]->setScalars(viewScalars, 1);
-        }
-    }
+//    if (!_positionDataset.isValid())
+//        return;
+//
+//    // Clear clicked frame - _scatterViews
+//    if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
+//        _scatterViews[_selectedClusterIndex]->selectView(false); 
+//        _selectedClusterIndex = -1;// reset the selected cluster index to -1
+//        //qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
+//    }
+//
+//    std::vector<uint32_t>& selection = _positionDataset->getSelectionIndices();
+//
+//    if (!_sliceDataset.isValid()) {
+//        //2D dataset
+//        for (int i = 0; i < _nclust; i++)
+//        {
+//            std::vector<float> dimV = _colorScalars[i];
+//            //_scatterViews[i]->setScalars(dimV, selection[0]);// TO DO: hard-coded the idx of point // selection not working?
+//            _scatterViews[i]->setScalars(dimV, 1);
+//        }
+//    }
+//    else {
+//        // 3D dataset
+//
+//        if (_colorScalars[0].empty()) {
+//            qDebug() << "GeneSurferPlugin::updateScatterColors: _colorScalars[0] is empty";
+//            return;
+//        }
+//
+//        for (int j = 0; j < _nclust; j++) {
+//            if (j >= _colorScalars.size()) {
+//                qDebug() << "GeneSurferPlugin::updateScatterColors: Row index out of range: j=" << j;
+//                break;
+//            }
+//
+//            std::vector<float> viewScalars(_onSliceIndices.size());
+//#pragma omp parallel for
+//            for (int i = 0; i < _onSliceIndices.size(); i++)
+//            {
+//                if (_onSliceIndices[i] < _colorScalars[j].size()) {
+//                    viewScalars[i] = _colorScalars[j][_onSliceIndices[i]];
+//                }
+//                else {
+//                    qDebug() << "Column index out of range: j=" << j << " i=" << i << " _onSliceIndices[i]=" << _onSliceIndices[i];
+//                    //break; // TO DO: remove this break statement
+//                }
+//            }
+//            //_scatterViews[j]->setScalars(viewScalars, selection[0]); // TODO: check if this is needed
+//            _scatterViews[j]->setScalars(viewScalars, 1);
+//        }
+//    }
 }
 
 void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
@@ -2445,7 +2455,7 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetFromFileForRNA() {
     }
 
     qDebug() << "Warning! GeneSurferPlugin::loadLabelsFromSTDatasetFromFileForRNA: " << numClustersNotInST << " clusters not found in ST";
-    qDebug() << "_clusterNamesAvgExprRNA.size = " << _clusterNamesAvgExprRNA.size() << "_countsAllRNA.size = " << _countsAllRNA.size();
+    //qDebug() << "_clusterNamesAvgExprRNA.size = " << _clusterNamesAvgExprRNA.size() << "_countsAllRNA.size = " << _countsAllRNA.size();
 
     if (numClustersNotInST == _clusterNamesAvgExprRNA.size()) {
         qDebug() << "ERROR: None of the clusters from loaded csv file were found in the selected ST label dataset.";
@@ -3209,7 +3219,7 @@ void GeneSurferPlugin::onTableClicked(int row, int column) {
 
 void GeneSurferPlugin::updateClick() {
     // TODO: Remove
-    if (_selectedClusterIndex == -1) {
+    /*if (_selectedClusterIndex == -1) {
         qDebug() << "Warning! updateClick(): _selectedClusterIndex is -1, no view is selected";
         return;
     }
@@ -3222,7 +3232,7 @@ void GeneSurferPlugin::updateClick() {
     if (_sortedFloodIndices.empty()) {
         qDebug() << "ERROR! updateClick(): point selection is empty";
         return;
-    }
+    }*/
 
     // clear clicked frames
     // // TODO: Remove, _scatterViews are no longer needed
@@ -3471,7 +3481,7 @@ QVariantMap GeneSurferPlugin::toVariantMap() const
 
     variantMap.insert("SelectionFlag", _selectedByFlood);
 
-    variantMap.insert("SelectedClusterIndex", _selectedClusterIndex);
+    //variantMap.insert("SelectedClusterIndex", _selectedClusterIndex);
 
     return variantMap;
 }

@@ -225,7 +225,7 @@ private:
     std::map<int, int>                 _numGenesInCluster;        // Number of genes in each gene-set cluster
 
     // Interaction
-    int                                _selectedClusterIndex;
+    //int                                _selectedClusterIndex;
     int                                _selectedDimIndex;        // Current selected dimension index for _dimView
 
     std::vector<std::vector<float>>    _colorScalars;            // Scalars for the color of each scatter view
