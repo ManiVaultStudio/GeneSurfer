@@ -500,6 +500,10 @@ void GeneSurferPlugin::convertDataAndUpdateChart()
     else
         payloadMap["FilterType"] = "Others";
 
+    // automatically update scalars to the top dimension
+    _selectedDimName = filteredAndSortedGenes.back().first; // the last one has the highest correlation
+    updateDimView(_selectedDimName);
+
 
     qDebug() << "GeneSurferPlugin::convertDataAndUpdateChart: Send data from Qt cpp to D3 js";
     emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payloadMap);
@@ -1387,8 +1391,9 @@ void GeneSurferPlugin::updateSelection()
 
     convertDataAndUpdateChart();
     //updateScatterColors();// TODO: Remove, _scatterViews are no longer needed
-    //updateScatterOpacity();// TODO: Remove,
+    //updateScatterOpacity();// TODO: Remove, 
 
+   
     /*auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
     std::cout << "updateSelection() Elapsed time: " << elapsed.count() << " ms\n";*/
