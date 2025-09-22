@@ -91,7 +91,7 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _secondaryToolbarAction(this, "SecondaryToolbar"),
     _tertiaryToolbarAction(this, "TertiaryToolbar"),
     _selectedDimIndex(-1),
-    _selectedClusterIndex(-1), // -1 means no view selected
+    //_selectedClusterIndex(-1), // -1 means no view selected
     _colorMapAction(this, "Color map", "RdYlBu"),
     _saveToCsvAction(&getWidget(), "Save As...")
 
@@ -1994,57 +1994,57 @@ void GeneSurferPlugin::updateScatterOpacity()
 void GeneSurferPlugin::updateScatterColors()
 {
     // TODO: Remove, _scatterViews are no longer needed
-    if (!_positionDataset.isValid())
-        return;
-
-    // Clear clicked frame - _scatterViews
-    if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
-        _scatterViews[_selectedClusterIndex]->selectView(false); 
-        _selectedClusterIndex = -1;// reset the selected cluster index to -1
-        //qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
-    }
-
-    std::vector<uint32_t>& selection = _positionDataset->getSelectionIndices();
-
-    if (!_sliceDataset.isValid()) {
-        //2D dataset
-        for (int i = 0; i < _nclust; i++)
-        {
-            std::vector<float> dimV = _colorScalars[i];
-            //_scatterViews[i]->setScalars(dimV, selection[0]);// TO DO: hard-coded the idx of point // selection not working?
-            _scatterViews[i]->setScalars(dimV, 1);
-        }
-    }
-    else {
-        // 3D dataset
-
-        if (_colorScalars[0].empty()) {
-            qDebug() << "GeneSurferPlugin::updateScatterColors: _colorScalars[0] is empty";
-            return;
-        }
-
-        for (int j = 0; j < _nclust; j++) {
-            if (j >= _colorScalars.size()) {
-                qDebug() << "GeneSurferPlugin::updateScatterColors: Row index out of range: j=" << j;
-                break;
-            }
-
-            std::vector<float> viewScalars(_onSliceIndices.size());
-#pragma omp parallel for
-            for (int i = 0; i < _onSliceIndices.size(); i++)
-            {
-                if (_onSliceIndices[i] < _colorScalars[j].size()) {
-                    viewScalars[i] = _colorScalars[j][_onSliceIndices[i]];
-                }
-                else {
-                    qDebug() << "Column index out of range: j=" << j << " i=" << i << " _onSliceIndices[i]=" << _onSliceIndices[i];
-                    //break; // TO DO: remove this break statement
-                }
-            }
-            //_scatterViews[j]->setScalars(viewScalars, selection[0]); // TODO: check if this is needed
-            _scatterViews[j]->setScalars(viewScalars, 1);
-        }
-    }
+//    if (!_positionDataset.isValid())
+//        return;
+//
+//    // Clear clicked frame - _scatterViews
+//    if (_selectedClusterIndex >= 0 && _selectedClusterIndex < _nclust) {
+//        _scatterViews[_selectedClusterIndex]->selectView(false); 
+//        _selectedClusterIndex = -1;// reset the selected cluster index to -1
+//        //qDebug() << "_selectedClusterIndex" << _selectedClusterIndex;
+//    }
+//
+//    std::vector<uint32_t>& selection = _positionDataset->getSelectionIndices();
+//
+//    if (!_sliceDataset.isValid()) {
+//        //2D dataset
+//        for (int i = 0; i < _nclust; i++)
+//        {
+//            std::vector<float> dimV = _colorScalars[i];
+//            //_scatterViews[i]->setScalars(dimV, selection[0]);// TO DO: hard-coded the idx of point // selection not working?
+//            _scatterViews[i]->setScalars(dimV, 1);
+//        }
+//    }
+//    else {
+//        // 3D dataset
+//
+//        if (_colorScalars[0].empty()) {
+//            qDebug() << "GeneSurferPlugin::updateScatterColors: _colorScalars[0] is empty";
+//            return;
+//        }
+//
+//        for (int j = 0; j < _nclust; j++) {
+//            if (j >= _colorScalars.size()) {
+//                qDebug() << "GeneSurferPlugin::updateScatterColors: Row index out of range: j=" << j;
+//                break;
+//            }
+//
+//            std::vector<float> viewScalars(_onSliceIndices.size());
+//#pragma omp parallel for
+//            for (int i = 0; i < _onSliceIndices.size(); i++)
+//            {
+//                if (_onSliceIndices[i] < _colorScalars[j].size()) {
+//                    viewScalars[i] = _colorScalars[j][_onSliceIndices[i]];
+//                }
+//                else {
+//                    qDebug() << "Column index out of range: j=" << j << " i=" << i << " _onSliceIndices[i]=" << _onSliceIndices[i];
+//                    //break; // TO DO: remove this break statement
+//                }
+//            }
+//            //_scatterViews[j]->setScalars(viewScalars, selection[0]); // TODO: check if this is needed
+//            _scatterViews[j]->setScalars(viewScalars, 1);
+//        }
+//    }
 }
 
 void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
@@ -3209,7 +3209,7 @@ void GeneSurferPlugin::onTableClicked(int row, int column) {
 
 void GeneSurferPlugin::updateClick() {
     // TODO: Remove
-    if (_selectedClusterIndex == -1) {
+    /*if (_selectedClusterIndex == -1) {
         qDebug() << "Warning! updateClick(): _selectedClusterIndex is -1, no view is selected";
         return;
     }
@@ -3222,7 +3222,7 @@ void GeneSurferPlugin::updateClick() {
     if (_sortedFloodIndices.empty()) {
         qDebug() << "ERROR! updateClick(): point selection is empty";
         return;
-    }
+    }*/
 
     // clear clicked frames
     // // TODO: Remove, _scatterViews are no longer needed
@@ -3471,7 +3471,7 @@ QVariantMap GeneSurferPlugin::toVariantMap() const
 
     variantMap.insert("SelectionFlag", _selectedByFlood);
 
-    variantMap.insert("SelectedClusterIndex", _selectedClusterIndex);
+    //variantMap.insert("SelectedClusterIndex", _selectedClusterIndex);
 
     return variantMap;
 }
