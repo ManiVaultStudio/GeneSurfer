@@ -1047,7 +1047,7 @@ void GeneSurferPlugin::updateSelection()
             _computeSubset.computeSubsetDataAvgExpr(_avgExprRNA, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
             _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
             _subsetData3D = _subsetDataAvgOri;
-            qDebug() << "_subsetData3D.size " << _subsetDataAvgOri.rows() << _subsetDataAvgOri.cols();
+            //qDebug() << "_subsetData3D.size " << _subsetDataAvgOri.rows() << _subsetDataAvgOri.cols();
         }
     }
     else {
@@ -1314,7 +1314,7 @@ void GeneSurferPlugin::updateSelection()
         if (dimensionDataset.isValid())
         {
             dimensionDataset->extractDataForDimension(dimSpatial, 0);
-            qDebug() << "dimSpatial size: " << dimSpatial.size();
+            //qDebug() << "dimSpatial size: " << dimSpatial.size();
             qDebug() << "Current dimension of mapped ATAC dataset " << dimensionDataset->getDimensionNames()[0];
             _queryDimensionForATACRNA = dimensionDataset->getDimensionNames()[0];
             _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
@@ -1894,7 +1894,7 @@ void GeneSurferPlugin::updateRNAData()
                         qDebug() << "ERROR!!!!!updateRNAData() ptIndices.size() != 1";// should not happen
                     }
                 }
-                qDebug() << "RNA clusterToRowMap.size() = " << clusterToRowMap.size();
+                //qDebug() << "RNA clusterToRowMap.size() = " << clusterToRowMap.size();
 
                 _clusterNamesAvgExprRNA.clear();
                 _clusterNamesAvgExprRNA.resize(clusterToRowMap.size());
@@ -1905,17 +1905,17 @@ void GeneSurferPlugin::updateRNAData()
                 }
 
                 // manual check
-                for (int i = 0; i < 15; ++i)
+                /*for (int i = 0; i < 15; ++i)
                 {
                     QString clusterName = _clusterNamesAvgExprRNA[i];
                     qDebug() << "cluster " << i << " name: " << clusterName;
-                }
+                }*/
 
                 _clusterAliasToRowMap.clear();
                 for (int i = 0; i < _clusterNamesAvgExprRNA.size(); ++i) {
                     _clusterAliasToRowMap[_clusterNamesAvgExprRNA[i]] = i;
                 }
-                qDebug() << "_clusterAliasToRowMap.size = " << _clusterAliasToRowMap.size();
+                //qDebug() << "_clusterAliasToRowMap.size = " << _clusterAliasToRowMap.size();
 
                 loadLabelsFromSTDatasetFromFileForRNA();
 
@@ -1935,7 +1935,7 @@ void GeneSurferPlugin::updateRNAData()
             _clusterAliasToRowMap[_clusterNamesAvgExprRNA[i]] = i;
 
         }
-        qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+        //qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
         loadLabelsFromSTDatasetFromFileForRNA();
     }
 
@@ -1944,7 +1944,7 @@ void GeneSurferPlugin::updateRNAData()
     // update _enabledDimNames
     _enabledDimNames.clear();
     _enabledDimNames = _geneNamesAvgExprRNA;
-    qDebug() << "_enabledDimNames size: " << _enabledDimNames.size() << _enabledDimNames[0] << _enabledDimNames[1] << _enabledDimNames[2];
+    //qDebug() << "_enabledDimNames size: " << _enabledDimNames.size() << _enabledDimNames[0] << _enabledDimNames[1] << _enabledDimNames[2];
 
     // update max number of genes in _numGenesThresholdAction
     _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(_enabledDimNames.size());
@@ -2450,7 +2450,7 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetFromFileForRNA() {
     }
 
     qDebug() << "Warning! GeneSurferPlugin::loadLabelsFromSTDatasetFromFileForRNA: " << numClustersNotInST << " clusters not found in ST";
-    qDebug() << "_clusterNamesAvgExprRNA.size = " << _clusterNamesAvgExprRNA.size() << "_countsAllRNA.size = " << _countsAllRNA.size();
+    //qDebug() << "_clusterNamesAvgExprRNA.size = " << _clusterNamesAvgExprRNA.size() << "_countsAllRNA.size = " << _countsAllRNA.size();
 
     if (numClustersNotInST == _clusterNamesAvgExprRNA.size()) {
         qDebug() << "ERROR: None of the clusters from loaded csv file were found in the selected ST label dataset.";
