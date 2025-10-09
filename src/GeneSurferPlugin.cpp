@@ -646,6 +646,66 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
     _selectedDimName = selection;
     updateDimView(_selectedDimName);
 
+    // TODO: mark for Soumya
+    // Expected behavior: every time when a new dimension is selected in the barchart, update the corresponding Project Averages plugin to color the UMAP by the selected dimension
+    // e.g. if ATACtoRNA filter is selected, click on a bar in GeneSurfer, then the "Mapped RNA on UMAP" Project Averages plugin should be updated to color by the selected ATAC dimension
+    // e.g. if RNAtoATAC filter is selected, click on a bar in GeneSurfer, then the "Mapped ATAC on UMAP" Project Averages plugin should be updated to color by the selected RNA dimension
+    // Note: "Mapped RNA on UMAP" dimensionPickerAction is already connected to "Mapped RNA dataset" (for Spatial data)
+    // Note: "Mapped ATAC on UMAP" dimensionPickerAction is already connected to "Mapped ATAC dataset" (for Spatial data)
+    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA)
+    {
+        QString ProjectAveragesRNAonUMAP = "Project Averages 3";// should correspond to "Mapped RNA on UMAP"
+
+        qDebug() << "GeneSurferPlugin::publishSelection: Looking for Project Averages plugin to set color dimension";
+
+        auto ProjectAveragesPluginFactory = mv::plugins().getPluginFactory("Project Averages");
+        if (ProjectAveragesPluginFactory)
+        {
+            for (auto plugin : mv::plugins().getPluginsByFactory(ProjectAveragesPluginFactory))
+            {
+                qDebug() << "Found Project Averages plugin instance: " << plugin->getGuiName();
+
+                if (plugin->getGuiName() == ProjectAveragesRNAonUMAP)
+                {
+                    qDebug() << "Found Project Averages plugin instance: " << plugin->getGuiName();
+
+                    DimensionPickerAction* dimensionPickerAction1 = findActionByPath<DimensionPickerAction>(plugin, "ProjectAveragesPlugin/Settings/Averages Dataset Dimension");
+                    qDebug() << "Found DimensionPickerAction: ";
+                    //dimensionPickerAction1->setCurrentDimensionName(_selectedDimName); // TODO: should do this, but does not work, will crash here
+                    //qDebug() << "Set DimensionPickerAction to: ";
+                }
+
+            }
+        }
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
+    {
+        QString ProjectAveragesATAConUMAP = "Project Averages 4";// should correspond to "Mapped ATAC on UMAP"
+       
+        auto ProjectAveragesPluginFactory = mv::plugins().getPluginFactory("Project Averages");
+        if (ProjectAveragesPluginFactory)
+        {
+            for (auto plugin : mv::plugins().getPluginsByFactory(ProjectAveragesPluginFactory))
+            {
+                //plugin->printChildren();
+
+                // set the RNA scatterplot color to the mapped RNA dataset
+                if (plugin->getGuiName() == ProjectAveragesATAConUMAP)
+                {
+                    qDebug() << "Found Project Averages plugin instance: " << plugin->getGuiName();
+                    //plugin->printChildren();
+
+                    DimensionPickerAction* dimensionPickerAction1 = findActionByPath<DimensionPickerAction>(plugin, "ProjectAveragesPlugin/Settings/Averages Dataset Dimension");
+                    qDebug() << "Found DimensionPickerAction";
+                    //qDebug() << "test " << dimensionPickerAction1->getDimensionNames()[0]; // test
+                    //dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);// TODO: should do this, but does not work, will crash here
+                    //dimensionPickerAction1->setCurrentDimensionIndex(0);
+                    //qDebug() << "Set DimensionPickerAction to: ";
+                }
+            }
+        }
+    }
+
     //qDebug() << "GeneSurferPlugin::publishSelection: selection: " << selection;
 }
 
@@ -1695,6 +1755,9 @@ void GeneSurferPlugin::updateFilterLabel()
         updateClusterScalarOutput(allZeros);
     }   
     
+    ////////////////////
+    // ATAC to RNA   //
+    ////////////////////
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
         _ATACtoRNA = true;
         qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = true";
@@ -1757,6 +1820,9 @@ void GeneSurferPlugin::updateFilterLabel()
         }
     }
     else {
+    ////////////////////
+    // RNA to ATAC //
+    ////////////////////
         _ATACtoRNA = false;
         qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = false";
         updateSingleCellOption();
