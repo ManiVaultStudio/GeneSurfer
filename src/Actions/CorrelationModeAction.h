@@ -45,14 +45,14 @@ public: // Serialization
 
 public: // Action getters
     TriggerAction& getDiffAction() { return _diffAction; }
-    TriggerAction& getMoranAction() { return _moranAction; }
+    //TriggerAction& getMoranAction() { return _moranAction; }
 
 private:
     GeneSurferPlugin*   _geneSurferPlugin;     /** Pointer to the GeneSurfer plugin */
     TriggerAction       _diffAction;     /** Trigger action for activating the diff mode */
-    TriggerAction       _moranAction;     // experiment
-    TriggerAction       _spatialCorrelationZAction;     // experiment
-    TriggerAction       _spatialCorrelationYAction;     // experiment
+    //TriggerAction       _moranAction;     // experiment
+    //TriggerAction       _spatialCorrelationZAction;     // experiment
+    //TriggerAction       _spatialCorrelationYAction;     // experiment
 
     TriggerAction       _rnaToATACCorrelationAction;
     TriggerAction       _atacToRNACorrelationAction;
