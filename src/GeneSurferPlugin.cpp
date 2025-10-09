@@ -645,34 +645,32 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
 {
     _selectedDimName = selection;
     updateDimView(_selectedDimName);
-
-    // TODO: mark for Soumya
-    // Expected behavior: every time when a new dimension is selected in the barchart, update the corresponding Project Averages plugin to color the UMAP by the selected dimension
-    // e.g. if ATACtoRNA filter is selected, click on a bar in GeneSurfer, then the "Mapped RNA on UMAP" Project Averages plugin should be updated to color by the selected ATAC dimension
-    // e.g. if RNAtoATAC filter is selected, click on a bar in GeneSurfer, then the "Mapped ATAC on UMAP" Project Averages plugin should be updated to color by the selected RNA dimension
-    // Note: "Mapped RNA on UMAP" dimensionPickerAction is already connected to "Mapped RNA dataset" (for Spatial data)
-    // Note: "Mapped ATAC on UMAP" dimensionPickerAction is already connected to "Mapped ATAC dataset" (for Spatial data)
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA)
     {
-        QString ProjectAveragesRNAonUMAP = "Project Averages 3";// should correspond to "Mapped RNA on UMAP"
+        QString ProjectAveragesRNAonUMAPDatasetName = "Mapped RNA on UMAP";// should correspond to "Mapped RNA on UMAP"
 
-        qDebug() << "GeneSurferPlugin::publishSelection: Looking for Project Averages plugin to set color dimension";
-
-        auto ProjectAveragesPluginFactory = mv::plugins().getPluginFactory("Project Averages");
-        if (ProjectAveragesPluginFactory)
+        auto allDatasets = mv::data().getAllDatasets();
+        if (allDatasets.size()>0)
         {
-            for (auto plugin : mv::plugins().getPluginsByFactory(ProjectAveragesPluginFactory))
+            for (auto dataset : allDatasets)
             {
-                qDebug() << "Found Project Averages plugin instance: " << plugin->getGuiName();
+                
 
-                if (plugin->getGuiName() == ProjectAveragesRNAonUMAP)
+                if (dataset->getGuiName() == ProjectAveragesRNAonUMAPDatasetName)
                 {
-                    qDebug() << "Found Project Averages plugin instance: " << plugin->getGuiName();
+                    DimensionPickerAction* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
 
-                    DimensionPickerAction* dimensionPickerAction1 = findActionByPath<DimensionPickerAction>(plugin, "ProjectAveragesPlugin/Settings/Averages Dataset Dimension");
-                    qDebug() << "Found DimensionPickerAction: ";
-                    //dimensionPickerAction1->setCurrentDimensionName(_selectedDimName); // TODO: should do this, but does not work, will crash here
-                    //qDebug() << "Set DimensionPickerAction to: ";
+                    if (!dimensionPickerAction1) {
+                        qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
+                        return;
+                    }
+
+                    auto availableDimensionNames = dimensionPickerAction1->getDimensionNames();
+                    if (!availableDimensionNames.contains(_selectedDimName)) {
+                        qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
+                        return;
+                    }
+                    dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
                 }
 
             }
@@ -680,33 +678,35 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
     }
     else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
-        QString ProjectAveragesATAConUMAP = "Project Averages 4";// should correspond to "Mapped ATAC on UMAP"
-       
-        auto ProjectAveragesPluginFactory = mv::plugins().getPluginFactory("Project Averages");
-        if (ProjectAveragesPluginFactory)
+        QString ProjectAveragesATAConUMAPDatasetName = "Mapped ATAC on UMAP";// should correspond to "Mapped ATAC on UMAP"
+
+        auto allDatasets = mv::data().getAllDatasets();
+        if (allDatasets.size() > 0)
         {
-            for (auto plugin : mv::plugins().getPluginsByFactory(ProjectAveragesPluginFactory))
+            for (auto dataset : allDatasets)
             {
-                //plugin->printChildren();
 
-                // set the RNA scatterplot color to the mapped RNA dataset
-                if (plugin->getGuiName() == ProjectAveragesATAConUMAP)
+
+                if (dataset->getGuiName() == ProjectAveragesATAConUMAPDatasetName)
                 {
-                    qDebug() << "Found Project Averages plugin instance: " << plugin->getGuiName();
-                    //plugin->printChildren();
+                    DimensionPickerAction* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
+                    
+                    if (!dimensionPickerAction1) {
+                        qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
+                        return;
+                    }
 
-                    DimensionPickerAction* dimensionPickerAction1 = findActionByPath<DimensionPickerAction>(plugin, "ProjectAveragesPlugin/Settings/Averages Dataset Dimension");
-                    qDebug() << "Found DimensionPickerAction";
-                    //qDebug() << "test " << dimensionPickerAction1->getDimensionNames()[0]; // test
-                    //dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);// TODO: should do this, but does not work, will crash here
-                    //dimensionPickerAction1->setCurrentDimensionIndex(0);
-                    //qDebug() << "Set DimensionPickerAction to: ";
+                    auto availableDimensionNames = dimensionPickerAction1->getDimensionNames();
+                    if (!availableDimensionNames.contains(_selectedDimName)) {
+                        qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
+                        return;
+                    }
+                    dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
                 }
             }
         }
     }
 
-    //qDebug() << "GeneSurferPlugin::publishSelection: selection: " << selection;
 }
 
 QString GeneSurferPlugin::getCurrentDataSetID() const
