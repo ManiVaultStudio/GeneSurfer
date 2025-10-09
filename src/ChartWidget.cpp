@@ -19,10 +19,10 @@ ChartCommObject::ChartCommObject() :
 void ChartCommObject::js_qt_passSelectionToQt(const QString& data){
     _selectedIDsFromJS.clear();
 
-    if (!data.isEmpty())
-    {
-        qDebug() << "ChartCommObject::js_qt_passSelectionToQt: Selected item:" << data;
-    }    
+    //if (!data.isEmpty())
+    //{
+        //qDebug() << "ChartCommObject::js_qt_passSelectionToQt: Selected item:" << data;
+    //}    
     
     // Notify ManiVault core and thereby other plugins about new selection
     emit passSelectionToCore(data);

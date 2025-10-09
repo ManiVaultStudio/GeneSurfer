@@ -646,7 +646,54 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
     _selectedDimName = selection;
     updateDimView(_selectedDimName);
 
-    //qDebug() << "GeneSurferPlugin::publishSelection: selection: " << selection;
+    // TODO: Cache datasets for reuse
+    // TODO: ALso cache the other two datasets for RNAtoATAC?
+    const auto& allDatasets = mv::data().getAllDatasets();
+
+    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA)
+    {
+        constexpr auto ProjectAveragesRNAonUMAPDatasetName = "Mapped RNA on UMAP";
+        for (const auto& dataset : allDatasets)
+        {
+            if (dataset->getGuiName() == ProjectAveragesRNAonUMAPDatasetName)
+            {
+                auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
+                if (!dimensionPickerAction1) {
+                    qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
+                    break;
+                }
+                const auto& availableDimensionNames = dimensionPickerAction1->getDimensionNames();
+                if (!availableDimensionNames.contains(_selectedDimName)) {
+                    qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
+                    break;
+                }
+                dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
+                break; // Stop after first match
+            }
+        }
+    }
+    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
+    {
+        constexpr auto ProjectAveragesATAConUMAPDatasetName = "Mapped ATAC on UMAP";
+        for (const auto& dataset : allDatasets)
+        {
+            if (dataset->getGuiName() == ProjectAveragesATAConUMAPDatasetName)
+            {
+                auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
+                if (!dimensionPickerAction1) {
+                    qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
+                    break;
+                }
+                const auto& availableDimensionNames = dimensionPickerAction1->getDimensionNames();
+                if (!availableDimensionNames.contains(_selectedDimName)) {
+                    qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
+                    break;
+                }
+                dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
+                break; // Stop after first match
+            }
+        }
+    }
 }
 
 QString GeneSurferPlugin::getCurrentDataSetID() const
@@ -1695,6 +1742,9 @@ void GeneSurferPlugin::updateFilterLabel()
         updateClusterScalarOutput(allZeros);
     }   
     
+    ////////////////////
+    // ATAC to RNA   //
+    ////////////////////
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
         _ATACtoRNA = true;
         qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = true";
@@ -1757,6 +1807,9 @@ void GeneSurferPlugin::updateFilterLabel()
         }
     }
     else {
+    ////////////////////
+    // RNA to ATAC //
+    ////////////////////
         _ATACtoRNA = false;
         qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = false";
         updateSingleCellOption();
