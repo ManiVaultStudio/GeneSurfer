@@ -646,7 +646,8 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
     _selectedDimName = selection;
     updateDimView(_selectedDimName);
 
-    // Cache datasets for reuse
+    // TODO: Cache datasets for reuse
+    // TODO: ALso cache the other two datasets for RNAtoATAC?
     const auto& allDatasets = mv::data().getAllDatasets();
 
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA)
