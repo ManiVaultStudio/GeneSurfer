@@ -666,7 +666,8 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
                     }
 
                     auto availableDimensionNames = dimensionPickerAction1->getDimensionNames();
-                    if (!availableDimensionNames.contains(_selectedDimName)) {
+                    QSet<QString> availableSet = QSet<QString>(availableDimensionNames.begin(), availableDimensionNames.end());
+                    if (!availableSet.contains(_selectedDimName)) {
                         qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
                         return;
                     }
@@ -697,7 +698,8 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
                     }
 
                     auto availableDimensionNames = dimensionPickerAction1->getDimensionNames();
-                    if (!availableDimensionNames.contains(_selectedDimName)) {
+                    QSet<QString> availableSet = QSet<QString>(availableDimensionNames.begin(), availableDimensionNames.end());
+                    if (!availableSet.contains(_selectedDimName)) {
                         qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
                         return;
                     }
