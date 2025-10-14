@@ -656,95 +656,146 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
     // TODO: ALso cache the other two datasets for RNAtoATAC?
 
 
-    const auto& allDatasets = mv::data().getAllDatasets();
+    //const auto& allDatasets = mv::data().getAllDatasets();
 
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA)
     {
-        constexpr auto ProjectAveragesRNAonUMAPDatasetName = "Mapped RNA on UMAP";
-        for (const auto& dataset : allDatasets)
-        {
-            if (dataset->getGuiName() == ProjectAveragesRNAonUMAPDatasetName)
-            {
-                auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
-                if (!dimensionPickerAction1) {
-                    qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
-                    break;
-                }
-                const auto& availableDimensionNames = dimensionPickerAction1->getDimensionNames();
-                if (!availableDimensionNames.contains(_selectedDimName)) {
-                    qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
-                    break;
-                }
-                dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
-                break; // Stop after first match
-            }
+        //constexpr auto ProjectAveragesRNAonUMAPDatasetName = "Mapped RNA on UMAP";
+        //for (const auto& dataset : allDatasets)
+        //{
+        //    if (dataset->getGuiName() == ProjectAveragesRNAonUMAPDatasetName)
+        //    {
+        //        auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
+        //        if (!dimensionPickerAction1) {
+        //            qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
+        //            break;
+        //        }
+        //        const auto& availableDimensionNames = dimensionPickerAction1->getDimensionNames();
+        //        if (!availableDimensionNames.contains(_selectedDimName)) {
+        //            qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
+        //            break;
+        //        }
+        //        dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
+        //        break; // Stop after first match
+        //    }
+        //}
+
+        /*auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(_mappedRNAonUMAPDataset->findChildByPath("Settings/Averages Dataset Dimension"));
+        if (!dimensionPickerAction1) {
+            qDebug() << "DimensionPickerAction not found for plugin: " << _mappedRNAonUMAPDataset->getGuiName();
         }
+        const auto& availableDimensionNames1 = dimensionPickerAction1->getDimensionNames();
+        if (!availableDimensionNames1.contains(_selectedDimName)) {
+            qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << _mappedRNAonUMAPDataset->getGuiName();
+        }
+        dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);*/
       
 
-        constexpr auto ProjectAveragesRNAonSpatialDatasetName = "Mapped RNA dataset";
-        for (const auto& dataset : allDatasets)
-        {
-            if (dataset->getGuiName() == ProjectAveragesRNAonSpatialDatasetName)
-            {
-                auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
-                if (!dimensionPickerAction1) {
-                    qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
-                    break;
-                }
-                const auto& availableDimensionNames = dimensionPickerAction1->getDimensionNames();
-                if (!availableDimensionNames.contains(_selectedDimName)) {
-                    qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
-                    break;
-                }
-                dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
-                break; // Stop after first match
-            }
+        //constexpr auto ProjectAveragesRNAonSpatialDatasetName = "Mapped RNA dataset";
+        //for (const auto& dataset : allDatasets)
+        //{
+        //    if (dataset->getGuiName() == ProjectAveragesRNAonSpatialDatasetName)
+        //    {
+        //        auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
+        //        if (!dimensionPickerAction1) {
+        //            qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
+        //            break;
+        //        }
+        //        const auto& availableDimensionNames = dimensionPickerAction1->getDimensionNames();
+        //        if (!availableDimensionNames.contains(_selectedDimName)) {
+        //            qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
+        //            break;
+        //        }
+        //        dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
+        //        break; // Stop after first match
+        //    }
+        //}
+
+        auto* dimensionPickerAction2 = dynamic_cast<DimensionPickerAction*>(_mappedRNAonSpatialDataset->findChildByPath("Settings/Averages Dataset Dimension"));
+        if (!dimensionPickerAction2) {
+            qDebug() << "DimensionPickerAction not found for plugin: " << _mappedRNAonSpatialDataset->getGuiName();
         }
+        const auto& availableDimensionNames2 = dimensionPickerAction2->getDimensionNames();
+        if (!availableDimensionNames2.contains(_selectedDimName)) {
+            qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << _mappedRNAonSpatialDataset->getGuiName();
+        }
+        dimensionPickerAction2->setCurrentDimensionName(_selectedDimName);
      
     }
     else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
         
-        constexpr auto ProjectAveragesATAConUMAPDatasetName = "Mapped ATAC on UMAP";
-        for (const auto& dataset : allDatasets)
-        {
-            if (dataset->getGuiName() == ProjectAveragesATAConUMAPDatasetName)
-            {
-                auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
-                if (!dimensionPickerAction1) {
-                    qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
-                    break;
-                }
-                const auto& availableDimensionNames = dimensionPickerAction1->getDimensionNames();
-                if (!availableDimensionNames.contains(_selectedDimName)) {
-                    qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
-                    break;
-                }
-                dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
-                break; // Stop after first match
-            }
+        //constexpr auto ProjectAveragesATAConUMAPDatasetName = "Mapped ATAC on UMAP";
+        //for (const auto& dataset : allDatasets)
+        //{
+        //    if (dataset->getGuiName() == ProjectAveragesATAConUMAPDatasetName)
+        //    {
+        //        auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
+        //        if (!dimensionPickerAction1) {
+        //            qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
+        //            break;
+        //        }
+        //        const auto& availableDimensionNames = dimensionPickerAction1->getDimensionNames();
+        //        if (!availableDimensionNames.contains(_selectedDimName)) {
+        //            qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
+        //            break;
+        //        }
+        //        dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
+        //        break; // Stop after first match
+        //    }
+        //}
+
+        /*auto start1 = std::chrono::high_resolution_clock::now();
+        auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(_mappedATAConUMAPDataset->findChildByPath("Settings/Averages Dataset Dimension"));
+        if (!dimensionPickerAction1) {
+            qDebug() << "DimensionPickerAction not found for plugin: " << _mappedATAConUMAPDataset->getGuiName();
         }
+        const auto& availableDimensionNames1 = dimensionPickerAction1->getDimensionNames();
+        if (!availableDimensionNames1.contains(_selectedDimName)) {
+            qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << _mappedATAConUMAPDataset->getGuiName();
+        }
+        auto end1 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+        qDebug() << "Time taken to find DimensionPickerAction: " << elapsed1.count() << " ms";
+
+        auto start2 = std::chrono::high_resolution_clock::now();
+        dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
+        auto end2 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+        qDebug() << "Time taken to setCurrentDimensionName: " << elapsed2.count() << " ms";*/
        
 
-        constexpr auto ProjectAveragesATAConSpatialDatasetName = "Mapped ATAC dataset";
-        for (const auto& dataset : allDatasets)
-        {
-            if (dataset->getGuiName() == ProjectAveragesATAConSpatialDatasetName)
-            {
-                auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
-                if (!dimensionPickerAction1) {
-                    qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
-                    break;
-                }
-                const auto& availableDimensionNames = dimensionPickerAction1->getDimensionNames();
-                if (!availableDimensionNames.contains(_selectedDimName)) {
-                    qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
-                    break;
-                }
-                dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
-                break; // Stop after first match
-            }
+        //constexpr auto ProjectAveragesATAConSpatialDatasetName = "Mapped ATAC dataset";
+        //for (const auto& dataset : allDatasets)
+        //{
+        //    if (dataset->getGuiName() == ProjectAveragesATAConSpatialDatasetName)
+        //    {
+        //        auto* dimensionPickerAction1 = dynamic_cast<DimensionPickerAction*>(dataset->findChildByPath("Settings/Averages Dataset Dimension"));
+        //        if (!dimensionPickerAction1) {
+        //            qDebug() << "DimensionPickerAction not found for plugin: " << dataset->getGuiName();
+        //            break;
+        //        }
+        //        const auto& availableDimensionNames = dimensionPickerAction1->getDimensionNames();
+        //        if (!availableDimensionNames.contains(_selectedDimName)) {
+        //            qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << dataset->getGuiName();
+        //            break;
+        //        }
+        //        dimensionPickerAction1->setCurrentDimensionName(_selectedDimName);
+        //        break; // Stop after first match
+        //    }
+        //}
+
+        auto* dimensionPickerAction2 = dynamic_cast<DimensionPickerAction*>(_mappedATAConSpatialDataset->findChildByPath("Settings/Averages Dataset Dimension"));
+        if (!dimensionPickerAction2) {
+            qDebug() << "DimensionPickerAction not found for plugin: " << _mappedATAConSpatialDataset->getGuiName();
+
         }
+        const auto& availableDimensionNames2 = dimensionPickerAction2->getDimensionNames();
+        if (!availableDimensionNames2.contains(_selectedDimName)) {
+            qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << _mappedATAConSpatialDataset->getGuiName();
+
+        }
+        dimensionPickerAction2->setCurrentDimensionName(_selectedDimName);
     }
 }
 
@@ -1795,6 +1846,61 @@ void GeneSurferPlugin::updateFilterLabel()
     }   
 
     // check if mapping datasets are valid
+    if (!_mappedRNAonSpatialDataset.isValid())
+    {
+        // try to find the mapped RNA dataset
+        for (const auto& data : mv::data().getAllDatasets())
+        {
+            if (data->getGuiName() == "Mapped RNA dataset")
+            {
+                _mappedRNAonSpatialDataset = data;
+                qDebug() << "Found Mapped RNA dataset";
+                break;
+            }
+        }
+    }
+
+    if (!_mappedATAConSpatialDataset.isValid())
+    {
+        // try to find the mapped ATAC dataset
+        for (const auto& data : mv::data().getAllDatasets())
+        {
+            if (data->getGuiName() == "Mapped ATAC dataset")
+            {
+                _mappedATAConSpatialDataset = data;
+                qDebug() << "Found Mapped ATAC dataset";
+                break;
+            }
+        }
+    }
+
+    if (!_mappedRNAonUMAPDataset.isValid())
+    {
+        // try to find the mapped RNA dataset
+        for (const auto& data : mv::data().getAllDatasets())
+        {
+            if (data->getGuiName() == "Mapped RNA on UMAP")
+            {
+                _mappedRNAonUMAPDataset = data;
+                qDebug() << "Found Mapped RNA on UMAP dataset";
+                break;
+            }
+        }
+    }
+
+    if (!_mappedATAConUMAPDataset.isValid())
+    {
+        // try to find the mapped ATAC dataset
+        for (const auto& data : mv::data().getAllDatasets())
+        {
+            if (data->getGuiName() == "Mapped ATAC on UMAP")
+            {
+                _mappedATAConUMAPDataset = data;
+                qDebug() << "Found Mapped ATAC on UMAP dataset";
+                break;
+            }
+        }
+    }
 
 
     
