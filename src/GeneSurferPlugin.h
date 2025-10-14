@@ -228,8 +228,8 @@ private:
     //int                                _selectedClusterIndex;
     int                                _selectedDimIndex;        // Current selected dimension index for _dimView
 
-    std::vector<std::vector<float>>    _colorScalars;            // Scalars for the color of each scatter view
-    Dataset<Points>                    _clusterScalars;          // Scalars for plotting in volume viewer
+    //std::vector<std::vector<float>>    _colorScalars;            // Scalars for the color of each scatter view
+    //Dataset<Points>                    _clusterScalars;          // Scalars for plotting in volume viewer
 
     // 3D data
     int                                _currentSliceIndex = 0;   // Current slice index for 3D slice dataset

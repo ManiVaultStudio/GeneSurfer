@@ -409,17 +409,17 @@ void GeneSurferPlugin::positionDatasetChanged()
 
     //qDebug() << "GeneSurferPlugin::positionDatasetChanged(): enabledDimensions size: " << _enabledDimNames.size();
 
-    if (!_clusterScalars.isValid())
-    {
-        if (!_loadingFromProject)
-        {
-            _clusterScalars = mv::data().createDataset<Points>("Points", "Scalars");
-            events().notifyDatasetAdded(_clusterScalars);
-            // initialize the clusterScalars dataset with 0s
-            std::vector<float> tempInit(_numPoints, 0.0f);
-            _clusterScalars->setData(tempInit.data(), tempInit.size(), 1);
-        }
-    }
+    //if (!_clusterScalars.isValid())
+    //{
+    //    if (!_loadingFromProject)
+    //    {
+    //        _clusterScalars = mv::data().createDataset<Points>("Points", "Scalars");
+    //        events().notifyDatasetAdded(_clusterScalars);
+    //        // initialize the clusterScalars dataset with 0s
+    //        std::vector<float> tempInit(_numPoints, 0.0f);
+    //        _clusterScalars->setData(tempInit.data(), tempInit.size(), 1);
+    //    }
+    //}
 
     qDebug() << "GeneSurferPlugin::positionDatasetChanged(): start converting dataset ... ";
     convertToEigenMatrix(_positionDataset, _positionSourceDataset, _dataStore.getBaseData());
@@ -766,6 +766,7 @@ void GeneSurferPlugin::updateViewData(std::vector<Vector2f>& positions) {
 }
 
 void GeneSurferPlugin::updateShowDimension() {
+    // TODO: remove, not used anymore
     int shownDimension = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionIndex();
     QString shownDimensionName = _settingsAction.getDimensionSelectionAction().getDimensionAction().getCurrentDimensionName();
 
@@ -1723,12 +1724,12 @@ void GeneSurferPlugin::updateFilterLabel()
     _selectedDimIndex = -1; // reset to no selection
 
     // Clear selected dim in scalars dataset
-    if (_clusterScalars.isValid())
-    {
-        //_selectedClusterIndex = -1;
-        std::vector<float> allZeros(_numPoints, 0.0f);
-        updateClusterScalarOutput(allZeros);
-    }   
+    //if (_clusterScalars.isValid())
+    //{
+    //    //_selectedClusterIndex = -1;
+    //    std::vector<float> allZeros(_numPoints, 0.0f);
+    //    updateClusterScalarOutput(allZeros);
+    //}   
 
     // check if mapping datasets are valid
     if (!_mappedRNAonSpatialDataset.isValid())
@@ -2018,6 +2019,8 @@ void GeneSurferPlugin::updateScatterColors()
 
 void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
 {
+    // TODO: remove, not used anymore
+    
     // Clear clicked frame - _dimView
     //if (_selectedClusterIndex == 6) {
     //    //_dimView->selectView(false);
@@ -2550,6 +2553,8 @@ void GeneSurferPlugin::matchLabelInSubsetForRNA()
 
 void GeneSurferPlugin::clusterGenes()
 {
+    // TODO: remove, not used anymore
+    
     //qDebug() << "clusterGenes start...";
 
     // filter genes based on the defined number of genes
@@ -2764,91 +2769,91 @@ void GeneSurferPlugin::computeEntireClusterScalars(const std::vector<int> filter
     // Compute mean expression for each cluster
     // for the entire spaial map
 
-    _colorScalars.clear();
-    _colorScalars.resize(_nclust, std::vector<float>(_numPoints, 0.0f));
-
-    const auto& baseData = _dataStore.getBaseData();
-
-    /* auto start1 = std::chrono::high_resolution_clock::now();
-     Eigen::MatrixXf allMeans1;
-     allMeans1.resize(_nclust, baseData.rows());
-     std::vector<int> dimensionsPerCluster1(_nclust, 0);
-
-     for (int d = 0; d < filteredDimIndices.size(); ++d) {
-         int cluster = labels[d];
-         allMeans1.row(cluster) += baseData.col(filteredDimIndices[d]);
-         dimensionsPerCluster1[cluster]++;
-     }
-     auto end1 = std::chrono::high_resolution_clock::now();
-     std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
-     std::cout << "1 old Elapsed time: " << elapsed1.count() << " ms\n";*/
-
-    auto start11 = std::chrono::high_resolution_clock::now();
-    Eigen::MatrixXf allMeans = Eigen::MatrixXf::Zero(_nclust, _dataStore.getBaseData().rows());
-    std::vector<int> dimensionsPerCluster(_nclust, 0);
-
-#pragma omp parallel for  
-    for (int cluster = 0; cluster < _nclust; ++cluster) {
-        for (int d = 0; d < filteredDimIndices.size(); ++d) {
-            if (labels[d] == cluster) {
-                allMeans.row(cluster) += baseData.col(filteredDimIndices[d]);
-                dimensionsPerCluster[cluster]++;
-            }
-        }
-    }
-    auto end11 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed11 = end11 - start11;
-    std::cout << "1 new Elapsed time: " << elapsed11.count() << " ms\n";
-
-
-    /* auto start12 = std::chrono::high_resolution_clock::now();
-     Eigen::MatrixXf allMeans12 = Eigen::MatrixXf::Zero(_nclust, _dataStore.getBaseData().rows());
-     std::vector<int> dimensionsPerCluster12(_nclust, 0);
-     std::vector<std::vector<int>> indicesPerCluster(_nclust);
-
-     for (int d = 0; d < filteredDimIndices.size(); ++d) {
-         int cluster = labels[d];
-         indicesPerCluster[cluster].push_back(filteredDimIndices[d]);
-     }
- #pragma omp parallel for
-     for (int cluster = 0; cluster < _nclust; ++cluster) {
-         for (int idx : indicesPerCluster[cluster]) {
-             allMeans12.row(cluster) += baseData.col(idx);
-             dimensionsPerCluster12[cluster]++;
-         }
-     }
-     auto end12 = std::chrono::high_resolution_clock::now();
-     std::chrono::duration<double, std::milli> elapsed12 = end12 - start12;
-     std::cout << "1 new 2 Elapsed time: " << elapsed12.count() << " ms\n";*/
-
-
-    auto start2 = std::chrono::high_resolution_clock::now();
-    for (int cluster = 0; cluster < _nclust; ++cluster) {
-        if (dimensionsPerCluster[cluster] != 0) {
-            allMeans.row(cluster) /= dimensionsPerCluster[cluster];  // sum/num_genes
-        }
-    }
-    auto end2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
-    std::cout << "2 Elapsed time: " << elapsed2.count() << " ms\n";
-
-
-
-    ////Populate _colorScalars with the data from allMeans
-    //for (int cluster = 0; cluster < _nclust; ++cluster) {
-    //    for (int i = 0; i < _numPoints; ++i) {
-    //        _colorScalars[cluster][i] = allMeans(cluster, i);
-    //    }
-    //}
-
-    auto start3 = std::chrono::high_resolution_clock::now();
-    // new Populate _colorScalars with the data from allMeans
-    for (int cluster = 0; cluster < _nclust; ++cluster) {
-        Eigen::Map<Eigen::VectorXf>(&_colorScalars[cluster][0], _numPoints) = allMeans.row(cluster);
-    }
-    auto end3 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
-    std::cout << "3 Elapsed time: " << elapsed3.count() << " ms\n";
+//    _colorScalars.clear();
+//    _colorScalars.resize(_nclust, std::vector<float>(_numPoints, 0.0f));
+//
+//    const auto& baseData = _dataStore.getBaseData();
+//
+//    /* auto start1 = std::chrono::high_resolution_clock::now();
+//     Eigen::MatrixXf allMeans1;
+//     allMeans1.resize(_nclust, baseData.rows());
+//     std::vector<int> dimensionsPerCluster1(_nclust, 0);
+//
+//     for (int d = 0; d < filteredDimIndices.size(); ++d) {
+//         int cluster = labels[d];
+//         allMeans1.row(cluster) += baseData.col(filteredDimIndices[d]);
+//         dimensionsPerCluster1[cluster]++;
+//     }
+//     auto end1 = std::chrono::high_resolution_clock::now();
+//     std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+//     std::cout << "1 old Elapsed time: " << elapsed1.count() << " ms\n";*/
+//
+//    auto start11 = std::chrono::high_resolution_clock::now();
+//    Eigen::MatrixXf allMeans = Eigen::MatrixXf::Zero(_nclust, _dataStore.getBaseData().rows());
+//    std::vector<int> dimensionsPerCluster(_nclust, 0);
+//
+//#pragma omp parallel for  
+//    for (int cluster = 0; cluster < _nclust; ++cluster) {
+//        for (int d = 0; d < filteredDimIndices.size(); ++d) {
+//            if (labels[d] == cluster) {
+//                allMeans.row(cluster) += baseData.col(filteredDimIndices[d]);
+//                dimensionsPerCluster[cluster]++;
+//            }
+//        }
+//    }
+//    auto end11 = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed11 = end11 - start11;
+//    std::cout << "1 new Elapsed time: " << elapsed11.count() << " ms\n";
+//
+//
+//    /* auto start12 = std::chrono::high_resolution_clock::now();
+//     Eigen::MatrixXf allMeans12 = Eigen::MatrixXf::Zero(_nclust, _dataStore.getBaseData().rows());
+//     std::vector<int> dimensionsPerCluster12(_nclust, 0);
+//     std::vector<std::vector<int>> indicesPerCluster(_nclust);
+//
+//     for (int d = 0; d < filteredDimIndices.size(); ++d) {
+//         int cluster = labels[d];
+//         indicesPerCluster[cluster].push_back(filteredDimIndices[d]);
+//     }
+// #pragma omp parallel for
+//     for (int cluster = 0; cluster < _nclust; ++cluster) {
+//         for (int idx : indicesPerCluster[cluster]) {
+//             allMeans12.row(cluster) += baseData.col(idx);
+//             dimensionsPerCluster12[cluster]++;
+//         }
+//     }
+//     auto end12 = std::chrono::high_resolution_clock::now();
+//     std::chrono::duration<double, std::milli> elapsed12 = end12 - start12;
+//     std::cout << "1 new 2 Elapsed time: " << elapsed12.count() << " ms\n";*/
+//
+//
+//    auto start2 = std::chrono::high_resolution_clock::now();
+//    for (int cluster = 0; cluster < _nclust; ++cluster) {
+//        if (dimensionsPerCluster[cluster] != 0) {
+//            allMeans.row(cluster) /= dimensionsPerCluster[cluster];  // sum/num_genes
+//        }
+//    }
+//    auto end2 = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+//    std::cout << "2 Elapsed time: " << elapsed2.count() << " ms\n";
+//
+//
+//
+//    ////Populate _colorScalars with the data from allMeans
+//    //for (int cluster = 0; cluster < _nclust; ++cluster) {
+//    //    for (int i = 0; i < _numPoints; ++i) {
+//    //        _colorScalars[cluster][i] = allMeans(cluster, i);
+//    //    }
+//    //}
+//
+//    auto start3 = std::chrono::high_resolution_clock::now();
+//    // new Populate _colorScalars with the data from allMeans
+//    for (int cluster = 0; cluster < _nclust; ++cluster) {
+//        Eigen::Map<Eigen::VectorXf>(&_colorScalars[cluster][0], _numPoints) = allMeans.row(cluster);
+//    }
+//    auto end3 = std::chrono::high_resolution_clock::now();
+//    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
+//    std::cout << "3 Elapsed time: " << elapsed3.count() << " ms\n";
 
 }
 
@@ -2857,139 +2862,140 @@ void GeneSurferPlugin::computeFloodedClusterScalars(const std::vector<int> filte
     // TODO: Remove, not used anymore
     // Compute mean expression for each cluster
     // only for flooded cells, others are filled with the lowest value
-    _colorScalars.clear();
-    _colorScalars.resize(_nclust, std::vector<float>(_numPoints, 0.0f));
-
-    DataMatrix subsetData;
-
-    if (!_sliceDataset.isValid()) {
-        // 2D dataset
-        subsetData = _subsetData;
-    }
-    else {
-        // 3D dataset
-        subsetData = _subsetData3D;
-    }
-
-    Eigen::MatrixXf subsetMeans = Eigen::MatrixXf::Zero(_nclust, subsetData.rows());
-    std::vector<int> dimensionsPerCluster(_nclust, 0);
-
-#pragma omp parallel for
-    for (int d = 0; d < filteredDimIndices.size(); ++d) {
-        int cluster = labels[d];
-#pragma omp critical
-        {
-            subsetMeans.row(cluster) += subsetData.col(filteredDimIndices[d]);
-            dimensionsPerCluster[cluster]++;
-        }
-    }
-    for (int cluster = 0; cluster < _nclust; ++cluster) {
-        subsetMeans.row(cluster) /= dimensionsPerCluster[cluster];  // sum/num_genes
-    }
-
-    // Populate _colorScalars
-    for (int cluster = 0; cluster < _nclust; ++cluster) {
-        for (int i = 0; i < _sortedFloodIndices.size(); ++i) {
-            _colorScalars[cluster][_sortedFloodIndices[i]] = subsetMeans(cluster, i);
-        }
-    }
-
-    // fill in the empty spaces with the lowest value in every row of _colorScalars
-
-#pragma omp parallel for
-    for (int clusterIndex = 0; clusterIndex < _colorScalars.size(); ++clusterIndex) {
-        std::vector<float>& clusterScalar = _colorScalars[clusterIndex];
-
-        float minValue = *std::min_element(clusterScalar.begin(), clusterScalar.end());
-        for (int i = 0; i < _numPoints; ++i) {
-            if (!_isFloodIndex[i]) {
-                clusterScalar[i] = minValue;
-            }
-        }
-    }
+//    _colorScalars.clear();
+//    _colorScalars.resize(_nclust, std::vector<float>(_numPoints, 0.0f));
+//
+//    DataMatrix subsetData;
+//
+//    if (!_sliceDataset.isValid()) {
+//        // 2D dataset
+//        subsetData = _subsetData;
+//    }
+//    else {
+//        // 3D dataset
+//        subsetData = _subsetData3D;
+//    }
+//
+//    Eigen::MatrixXf subsetMeans = Eigen::MatrixXf::Zero(_nclust, subsetData.rows());
+//    std::vector<int> dimensionsPerCluster(_nclust, 0);
+//
+//#pragma omp parallel for
+//    for (int d = 0; d < filteredDimIndices.size(); ++d) {
+//        int cluster = labels[d];
+//#pragma omp critical
+//        {
+//            subsetMeans.row(cluster) += subsetData.col(filteredDimIndices[d]);
+//            dimensionsPerCluster[cluster]++;
+//        }
+//    }
+//    for (int cluster = 0; cluster < _nclust; ++cluster) {
+//        subsetMeans.row(cluster) /= dimensionsPerCluster[cluster];  // sum/num_genes
+//    }
+//
+//    // Populate _colorScalars
+//    for (int cluster = 0; cluster < _nclust; ++cluster) {
+//        for (int i = 0; i < _sortedFloodIndices.size(); ++i) {
+//            _colorScalars[cluster][_sortedFloodIndices[i]] = subsetMeans(cluster, i);
+//        }
+//    }
+//
+//    // fill in the empty spaces with the lowest value in every row of _colorScalars
+//
+//#pragma omp parallel for
+//    for (int clusterIndex = 0; clusterIndex < _colorScalars.size(); ++clusterIndex) {
+//        std::vector<float>& clusterScalar = _colorScalars[clusterIndex];
+//
+//        float minValue = *std::min_element(clusterScalar.begin(), clusterScalar.end());
+//        for (int i = 0; i < _numPoints; ++i) {
+//            if (!_isFloodIndex[i]) {
+//                clusterScalar[i] = minValue;
+//            }
+//        }
+//    }
 }
 
 void GeneSurferPlugin::computeFloodedClusterScalarsSingleCell(const std::vector<int> filteredDimIndices, const int* labels) {
     // TODO: Remove, not used anymore
     // Compute mean expression for each cluster
     // only for flooded cells, others are filled with the lowest value
-    _colorScalars.clear();
-    _colorScalars.resize(_nclust, std::vector<float>(_numPoints, 0.0f));
-
-    std::unordered_map<QString, int> clusterAliasToRowMapSubset;// ATTENTION here only cluster alias within the subset!!
-    for (int i = 0; i < _clustersToKeep.size(); ++i) {
-        clusterAliasToRowMapSubset[_clustersToKeep[i]] = i;
-    }
-
-    auto subsetData = _subsetDataAvgOri;
-
-    Eigen::MatrixXf subsetMeans = Eigen::MatrixXf::Zero(_nclust, subsetData.rows());
-    std::vector<int> dimensionsPerCluster(_nclust, 0);
-
-#pragma omp parallel for
-    for (int d = 0; d < filteredDimIndices.size(); ++d) {
-        int cluster = labels[d];
-#pragma omp critical
-        {
-            subsetMeans.row(cluster) += subsetData.col(filteredDimIndices[d]);
-            dimensionsPerCluster[cluster]++;
-        }
-    }
-
-    for (int cluster = 0; cluster < _nclust; ++cluster) {
-        subsetMeans.row(cluster) /= dimensionsPerCluster[cluster];  // sum/num_genes
-    }
-
-    // Populate _colorScalars
-    for (size_t i = 0; i < _sortedFloodIndices.size(); ++i) {
-        int cellIndex = _sortedFloodIndices[i]; // Get the actual cell index
-        QString label = _cellLabels[cellIndex]; // Get the cluster alias label name of the cell
-        int columnIndex = clusterAliasToRowMapSubset[label]; // Get the column index of the cluster alias label name [in the subset]
-
-        // Assuming label is within the column range of subsetMeans2
-        for (int cluster = 0; cluster < _nclust; ++cluster) {
-            _colorScalars[cluster][cellIndex] = subsetMeans(cluster, columnIndex);
-        }
-    }
-
-#pragma omp parallel for
-    for (int clusterIndex = 0; clusterIndex < _colorScalars.size(); ++clusterIndex) {
-        std::vector<float>& clusterScalar = _colorScalars[clusterIndex];
-
-        float minValue = *std::min_element(clusterScalar.begin(), clusterScalar.end());
-        for (int i = 0; i < _numPoints; ++i) {
-            if (!_isFloodIndex[i]) {
-                clusterScalar[i] = minValue;
-            }
-        }
-    }
+//    _colorScalars.clear();
+//    _colorScalars.resize(_nclust, std::vector<float>(_numPoints, 0.0f));
+//
+//    std::unordered_map<QString, int> clusterAliasToRowMapSubset;// ATTENTION here only cluster alias within the subset!!
+//    for (int i = 0; i < _clustersToKeep.size(); ++i) {
+//        clusterAliasToRowMapSubset[_clustersToKeep[i]] = i;
+//    }
+//
+//    auto subsetData = _subsetDataAvgOri;
+//
+//    Eigen::MatrixXf subsetMeans = Eigen::MatrixXf::Zero(_nclust, subsetData.rows());
+//    std::vector<int> dimensionsPerCluster(_nclust, 0);
+//
+//#pragma omp parallel for
+//    for (int d = 0; d < filteredDimIndices.size(); ++d) {
+//        int cluster = labels[d];
+//#pragma omp critical
+//        {
+//            subsetMeans.row(cluster) += subsetData.col(filteredDimIndices[d]);
+//            dimensionsPerCluster[cluster]++;
+//        }
+//    }
+//
+//    for (int cluster = 0; cluster < _nclust; ++cluster) {
+//        subsetMeans.row(cluster) /= dimensionsPerCluster[cluster];  // sum/num_genes
+//    }
+//
+//    // Populate _colorScalars
+//    for (size_t i = 0; i < _sortedFloodIndices.size(); ++i) {
+//        int cellIndex = _sortedFloodIndices[i]; // Get the actual cell index
+//        QString label = _cellLabels[cellIndex]; // Get the cluster alias label name of the cell
+//        int columnIndex = clusterAliasToRowMapSubset[label]; // Get the column index of the cluster alias label name [in the subset]
+//
+//        // Assuming label is within the column range of subsetMeans2
+//        for (int cluster = 0; cluster < _nclust; ++cluster) {
+//            _colorScalars[cluster][cellIndex] = subsetMeans(cluster, columnIndex);
+//        }
+//    }
+//
+//#pragma omp parallel for
+//    for (int clusterIndex = 0; clusterIndex < _colorScalars.size(); ++clusterIndex) {
+//        std::vector<float>& clusterScalar = _colorScalars[clusterIndex];
+//
+//        float minValue = *std::min_element(clusterScalar.begin(), clusterScalar.end());
+//        for (int i = 0; i < _numPoints; ++i) {
+//            if (!_isFloodIndex[i]) {
+//                clusterScalar[i] = minValue;
+//            }
+//        }
+//    }
 }
 
 void GeneSurferPlugin::updateClusterScalarOutput(const std::vector<float>& scalars)
 {
-    if (!_clusterScalars.isValid())
-    {
-        qDebug() << "updateClusterScalarOutput() _clusterScalars is not valid.";
-        return;
-    }
+    // TODO: remove, not used anymore
+    //if (!_clusterScalars.isValid())
+    //{
+    //    qDebug() << "updateClusterScalarOutput() _clusterScalars is not valid.";
+    //    return;
+    //}
 
-    _clusterScalars->setData<float>(scalars.data(), scalars.size(), 1);
-    
-    if (_selectedDimIndex == -1)
-        _clusterScalars->setDimensionNames({ "NoneSelected" });
-    else 
-        _clusterScalars->setDimensionNames({ _selectedDimName });
+    //_clusterScalars->setData<float>(scalars.data(), scalars.size(), 1);
+    //
+    //if (_selectedDimIndex == -1)
+    //    _clusterScalars->setDimensionNames({ "NoneSelected" });
+    //else 
+    //    _clusterScalars->setDimensionNames({ _selectedDimName });
 
-    /*if (_selectedClusterIndex == 6)
-        _clusterScalars->setDimensionNames({ _selectedDimName });
-    else if (_selectedClusterIndex == -1)
-        _clusterScalars->setDimensionNames({ "NoneSelected" });
-    else
-        _clusterScalars->setDimensionNames({ "SelectedCluster" });*/
+    ///*if (_selectedClusterIndex == 6)
+    //    _clusterScalars->setDimensionNames({ _selectedDimName });
+    //else if (_selectedClusterIndex == -1)
+    //    _clusterScalars->setDimensionNames({ "NoneSelected" });
+    //else
+    //    _clusterScalars->setDimensionNames({ "SelectedCluster" });*/
 
-    events().notifyDatasetDataChanged(_clusterScalars);
-    //events().notifyDatasetDataDimensionsChanged(_clusterScalars);
-    //qDebug() << "GeneSurferPlugin::updateClusterScalarOutput(): finished";
+    //events().notifyDatasetDataChanged(_clusterScalars);
+    ////events().notifyDatasetDataDimensionsChanged(_clusterScalars);
+    ////qDebug() << "GeneSurferPlugin::updateClusterScalarOutput(): finished";
 }
 
 void GeneSurferPlugin::getFuntionalEnrichment()
@@ -3305,8 +3311,8 @@ void GeneSurferPlugin::updateSlice(int sliceIndex) {
     //updateScatterOpacity();
     // updateScatterColors(); // TODO: Remove, _scatterViews are no longer needed
 
-    if (_selectedDimName != "NoneSelected")
-        updateDimView(_selectedDimName);
+    /*if (_selectedDimName != "NoneSelected")
+        updateDimView(_selectedDimName);*/
 }
 
 ////////////////////
@@ -3341,8 +3347,8 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
     _settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
     //qDebug() << "GeneSurferPlugin::fromVariantMap() 3 ";
 
-    QString clusterScalarsId = variantMap["ClusterScalars"].toString();
-    _clusterScalars = mv::data().getDataset<Points>(clusterScalarsId);
+    /*QString clusterScalarsId = variantMap["ClusterScalars"].toString();
+    _clusterScalars = mv::data().getDataset<Points>(clusterScalarsId);*/
 
     if (_sliceDataset.isValid())
     {
@@ -3352,8 +3358,8 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
     }
 
     _selectedDimName = variantMap["SelectedDimName"].toString();
-    if (_selectedDimName != "NoneSelected")
-        updateDimView(_selectedDimName);
+    /*if (_selectedDimName != "NoneSelected")
+        updateDimView(_selectedDimName);*/
 
     if (_avgExprStatus != AvgExpressionStatus::NONE)
     {
@@ -3419,7 +3425,7 @@ QVariantMap GeneSurferPlugin::toVariantMap() const
 
     variantMap.insert("AvgExpressionStatus", static_cast<int>(_avgExprStatus));
 
-    variantMap.insert("ClusterScalars", _clusterScalars.getDatasetId());
+    //variantMap.insert("ClusterScalars", _clusterScalars.getDatasetId());
 
     variantMap.insert("SelectedDimName", _selectedDimName);
 
