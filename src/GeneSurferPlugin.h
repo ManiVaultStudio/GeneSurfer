@@ -283,9 +283,9 @@ private:
     QString                            _queryDimensionForATACRNA; // seed used in searching RNA-ATAC correspondence
 
     mv::Dataset<Points> _mappedRNAonSpatialDataset; // dataset for mapped RNA data on spatial domain
-    mv::Dataset<Points> _mappedRNAonUMAPDataset; // dataset for mapped RNA data on UMAP
+    //mv::Dataset<Points> _mappedRNAonUMAPDataset; // dataset for mapped RNA data on UMAP
     mv::Dataset<Points> _mappedATAConSpatialDataset; // dataset for mapped ATAC data on spatial domain
-    mv::Dataset<Points> _mappedATAConUMAPDataset; // dataset for mapped ATAC data on UMAP
+    //mv::Dataset<Points> _mappedATAConUMAPDataset; // dataset for mapped ATAC data on UMAP
 
     TriggerAction                      _saveToCsvAction;         // Action to save barchart rank to a csv file
 

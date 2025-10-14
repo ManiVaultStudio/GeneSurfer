@@ -714,10 +714,12 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
         auto* dimensionPickerAction2 = dynamic_cast<DimensionPickerAction*>(_mappedRNAonSpatialDataset->findChildByPath("Settings/Averages Dataset Dimension"));
         if (!dimensionPickerAction2) {
             qDebug() << "DimensionPickerAction not found for plugin: " << _mappedRNAonSpatialDataset->getGuiName();
+            return;
         }
         const auto& availableDimensionNames2 = dimensionPickerAction2->getDimensionNames();
         if (!availableDimensionNames2.contains(_selectedDimName)) {
             qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << _mappedRNAonSpatialDataset->getGuiName();
+            return;
         }
         dimensionPickerAction2->setCurrentDimensionName(_selectedDimName);
      
@@ -788,12 +790,12 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
         auto* dimensionPickerAction2 = dynamic_cast<DimensionPickerAction*>(_mappedATAConSpatialDataset->findChildByPath("Settings/Averages Dataset Dimension"));
         if (!dimensionPickerAction2) {
             qDebug() << "DimensionPickerAction not found for plugin: " << _mappedATAConSpatialDataset->getGuiName();
-
+            return;
         }
         const auto& availableDimensionNames2 = dimensionPickerAction2->getDimensionNames();
         if (!availableDimensionNames2.contains(_selectedDimName)) {
             qDebug() << "Selected dimension " << _selectedDimName << " not found in available dimensions of Project Averages plugin: " << _mappedATAConSpatialDataset->getGuiName();
-
+            return;
         }
         dimensionPickerAction2->setCurrentDimensionName(_selectedDimName);
     }
@@ -1874,33 +1876,33 @@ void GeneSurferPlugin::updateFilterLabel()
         }
     }
 
-    if (!_mappedRNAonUMAPDataset.isValid())
-    {
-        // try to find the mapped RNA dataset
-        for (const auto& data : mv::data().getAllDatasets())
-        {
-            if (data->getGuiName() == "Mapped RNA on UMAP")
-            {
-                _mappedRNAonUMAPDataset = data;
-                qDebug() << "Found Mapped RNA on UMAP dataset";
-                break;
-            }
-        }
-    }
+    //if (!_mappedRNAonUMAPDataset.isValid())
+    //{
+    //    // try to find the mapped RNA dataset
+    //    for (const auto& data : mv::data().getAllDatasets())
+    //    {
+    //        if (data->getGuiName() == "Mapped RNA on UMAP")
+    //        {
+    //            _mappedRNAonUMAPDataset = data;
+    //            qDebug() << "Found Mapped RNA on UMAP dataset";
+    //            break;
+    //        }
+    //    }
+    //}
 
-    if (!_mappedATAConUMAPDataset.isValid())
-    {
-        // try to find the mapped ATAC dataset
-        for (const auto& data : mv::data().getAllDatasets())
-        {
-            if (data->getGuiName() == "Mapped ATAC on UMAP")
-            {
-                _mappedATAConUMAPDataset = data;
-                qDebug() << "Found Mapped ATAC on UMAP dataset";
-                break;
-            }
-        }
-    }
+    //if (!_mappedATAConUMAPDataset.isValid())
+    //{
+    //    // try to find the mapped ATAC dataset
+    //    for (const auto& data : mv::data().getAllDatasets())
+    //    {
+    //        if (data->getGuiName() == "Mapped ATAC on UMAP")
+    //        {
+    //            _mappedATAConUMAPDataset = data;
+    //            qDebug() << "Found Mapped ATAC on UMAP dataset";
+    //            break;
+    //        }
+    //    }
+    //}
 
 
     
