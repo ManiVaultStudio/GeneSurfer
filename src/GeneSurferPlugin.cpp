@@ -778,8 +778,9 @@ void GeneSurferPlugin::updateShowDimension() {
         return;
     }
 
-    _selectedDimName = shownDimensionName;
-    updateDimView(_selectedDimName);
+    /*_selectedDimName = shownDimensionName;
+    updateDimView(_selectedDimName);*/
+    publishSelection(shownDimensionName);
 }
 
 void GeneSurferPlugin::computeAvgExpression() {
