@@ -156,8 +156,7 @@ void GeneSurferPlugin::init()
 
     // Add label for filtering on top of the barchart
     _filterLabel = new QLabel(_chartWidget);
-    QFont sansFont("Helvetica [Cronyx]", 12);
-    _filterLabel->setFont(sansFont);
+    _filterLabel->setFont(QFont("Arial", 10));
     _filterLabel->setGeometry(10, 10, 600, 30);
     //_filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
 
