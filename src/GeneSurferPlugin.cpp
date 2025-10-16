@@ -109,7 +109,7 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _primaryToolbarAction.addAction(&_settingsAction.getClusteringAction(), 1, GroupAction::Horizontal);// TODO: remove ClusteringAction
     _primaryToolbarAction.addAction(&_settingsAction.getDimensionSelectionAction(), 2, GroupAction::Horizontal);
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
-    _primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction());
+    //_primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction()); // Disabled for publishing project. Will need it for generating projects.
 
     //_secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());// TODO: remove EnrichmentAction
 
