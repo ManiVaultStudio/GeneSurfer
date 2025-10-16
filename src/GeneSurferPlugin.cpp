@@ -1789,22 +1789,26 @@ void GeneSurferPlugin::updateRNAData()
             if (data->getGuiName() == "marm_Cluster_v4_metacell")
             {
                 _avgExprDatasetRNA = data;
-                qDebug() << "Found RNA averages dataset: marm_Cluster_v4_metacell";
+                qDebug() << "updateRNAData(): Found RNA averages dataset: marm_Cluster_v4_metacell";
                 break;
             }
         }
 
         // check again
         if (!_avgExprDatasetRNA.isValid()) {
-            qDebug() << "ERROR: no valid RNA averages dataset found!";
+            qDebug() << "updateRNAData(): ERROR: no valid RNA averages dataset found!";
             return;
         }
     }
+    else
+    {
+        qDebug() << "updateRNAData(): RNA averages dataset is valid" << _avgExprDatasetRNA->getGuiName();
+    }
 
     if (_avgExprRNA.size() == 0) {
-        /*qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr is empty";
+        qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr is empty";
         qDebug() << "_loadingFromProject = " << _loadingFromProject;
-        qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();*/
+        qDebug() << "_avgExprDatasetRNA.isValid() = " << _avgExprDatasetRNA.isValid();
 
         if (_avgExprDatasetRNA.isValid()) {
             //qDebug() << "_avgExprDataset is valid...";
@@ -1845,9 +1849,11 @@ void GeneSurferPlugin::updateRNAData()
                 {
                     clustersRNA = clusterLabelDatasetRNA->getClusters();
                 }
-                else
+                else {
+                    qDebug() << "updateRNAData(): ERROR: no valid RNA averages label dataset found!";
                     return;
-
+                }
+                    
                 // Mapping from cluster name to row (temp)
                 std::map<QString, int> clusterToRowMap;
                 for (int i = 0; i < clustersRNA.size(); ++i) {
@@ -1860,7 +1866,7 @@ void GeneSurferPlugin::updateRNAData()
                         qDebug() << "ERROR!!!!!updateRNAData() ptIndices.size() != 1";// should not happen
                     }
                 }
-                //qDebug() << "RNA clusterToRowMap.size() = " << clusterToRowMap.size();
+                qDebug() << "RNA clusterToRowMap.size() = " << clusterToRowMap.size();
 
                 _clusterNamesAvgExprRNA.clear();
                 _clusterNamesAvgExprRNA.resize(clusterToRowMap.size());
@@ -1881,7 +1887,7 @@ void GeneSurferPlugin::updateRNAData()
                 for (int i = 0; i < _clusterNamesAvgExprRNA.size(); ++i) {
                     _clusterAliasToRowMap[_clusterNamesAvgExprRNA[i]] = i;
                 }
-                //qDebug() << "_clusterAliasToRowMap.size = " << _clusterAliasToRowMap.size();
+                qDebug() << "_clusterAliasToRowMap.size = " << _clusterAliasToRowMap.size();
 
                 loadLabelsFromSTDatasetFromFileForRNA();
 
@@ -1895,13 +1901,13 @@ void GeneSurferPlugin::updateRNAData()
     else {
         // _avgExprRNA is already loaded or computed
         // in case switch from DIMENSION, only update _clusterAliasToRowMap and loadLabelsFromSTDatasetFromFile()
-
+        qDebug() << "_avgExprRNA is already loaded or computed" << _avgExprRNA.size();
         _clusterAliasToRowMap.clear();
         for (int i = 0; i < _clusterNamesAvgExprRNA.size(); ++i) {
             _clusterAliasToRowMap[_clusterNamesAvgExprRNA[i]] = i;
 
         }
-        //qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+        qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
         loadLabelsFromSTDatasetFromFileForRNA();
     }
 
@@ -1910,7 +1916,7 @@ void GeneSurferPlugin::updateRNAData()
     // update _enabledDimNames
     _enabledDimNames.clear();
     _enabledDimNames = _geneNamesAvgExprRNA;
-    //qDebug() << "_enabledDimNames size: " << _enabledDimNames.size() << _enabledDimNames[0] << _enabledDimNames[1] << _enabledDimNames[2];
+    qDebug() << "_enabledDimNames size: " << _enabledDimNames.size() << _enabledDimNames[0] << _enabledDimNames[1] << _enabledDimNames[2];
 
     // update max number of genes in _numGenesThresholdAction
     _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(_enabledDimNames.size());
