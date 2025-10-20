@@ -137,7 +137,7 @@ private:
     void clusterGenes();
 
     /** Compute the scalar values of each cluster for the entire scatter plot */
-    void computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels);
+    //void computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels);
 
     /** Compute the scalar values of each cluster for the only flooded cells */
     void computeFloodedClusterScalars(const std::vector<int> filteredDimIndices, const int* labels);
@@ -189,6 +189,8 @@ private:
 
     void matchLabelInSubsetForRNA();
 
+    void updateMappedDatasets();
+
 private:
 
     DataStorage                        _dataStore;
@@ -228,8 +230,8 @@ private:
     //int                                _selectedClusterIndex;
     int                                _selectedDimIndex;        // Current selected dimension index for _dimView
 
-    std::vector<std::vector<float>>    _colorScalars;            // Scalars for the color of each scatter view
-    Dataset<Points>                    _clusterScalars;          // Scalars for plotting in volume viewer
+    //std::vector<std::vector<float>>    _colorScalars;            // Scalars for the color of each scatter view
+    //Dataset<Points>                    _clusterScalars;          // Scalars for plotting in volume viewer
 
     // 3D data
     int                                _currentSliceIndex = 0;   // Current slice index for 3D slice dataset
@@ -281,6 +283,11 @@ private:
     std::vector<QString>               _clusterNamesAvgExprRNA;     // From avg expr single cell data, should be same order as each row in dataset?
     Eigen::VectorXf                    _countsAllRNA;               // counts for each label within the entire dataset - same order as avgExprRNA row
     QString                            _queryDimensionForATACRNA; // seed used in searching RNA-ATAC correspondence
+
+    mv::Dataset<Points> _mappedRNAonSpatialDataset; // dataset for mapped RNA data on spatial domain
+    //mv::Dataset<Points> _mappedRNAonUMAPDataset; // dataset for mapped RNA data on UMAP
+    mv::Dataset<Points> _mappedATAConSpatialDataset; // dataset for mapped ATAC data on spatial domain
+    //mv::Dataset<Points> _mappedATAConUMAPDataset; // dataset for mapped ATAC data on UMAP
 
     TriggerAction                      _saveToCsvAction;         // Action to save barchart rank to a csv file
 

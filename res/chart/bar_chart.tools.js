@@ -248,7 +248,7 @@ function highlightBars(dimensions) {
         return;
     }
 
-    log("GeneSurfer: bar_chart.tools.js: highlight bars");
+    //log("GeneSurfer: bar_chart.tools.js: highlight bars");
 
     d3.selectAll(".myRect").style("opacity", 0.2);
     d3.selectAll(".geneNameText").remove();

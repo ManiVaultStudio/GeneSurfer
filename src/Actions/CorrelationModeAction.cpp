@@ -12,8 +12,8 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     //_moranAction(this, "Filter by Moran's I"),
     //_spatialCorrelationZAction(this, "Filter by Spatial Correlation Z"),
     //_spatialCorrelationYAction(this, "Filter by Spatial Correlation Y"),
-    _rnaToATACCorrelationAction(this, "Filter by corr with a RNA gene"),
-    _atacToRNACorrelationAction(this, "Filter by corr with a ATAC peak")
+    _rnaToATACCorrelationAction(this, "Filter by corr with an RNA gene"),
+    _atacToRNACorrelationAction(this, "Filter by corr with an ATAC peak")
 {
     setIcon(mv::util::StyledIcon("filter"));
     setToolTip("Gene filtering Mode");
