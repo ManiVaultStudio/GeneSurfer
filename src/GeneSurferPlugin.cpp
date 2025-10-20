@@ -1131,30 +1131,14 @@ void GeneSurferPlugin::updateSelection()
         std::unordered_map<QString, float> clusterDimSums;
         std::vector<float> dimSpatial;
 
-        // TEST: use mapped RNA dataset to get the dimension data ----------------------------------------------------
-        Dataset<Points> dimensionDataset;
-        for (const auto& data : mv::data().getAllDatasets())
+        if (!_mappedRNAonSpatialDataset.isValid())
         {
-            if (data->getGuiName() == "Mapped RNA dataset")
-            {
-                dimensionDataset = data;
-                qDebug() << "Found Mapped RNA dataset";
-                break;
-            }
+            updateMappedDatasets();
         }
-        if (dimensionDataset.isValid())
-        {
-            dimensionDataset->extractDataForDimension(dimSpatial, 0);
-            //qDebug() << "dimSpatial size: " << dimSpatial.size();
-            qDebug() << "Current dimension of mapped RNA dataset " << dimensionDataset->getDimensionNames()[0];
-            _queryDimensionForATACRNA = dimensionDataset->getDimensionNames()[0];
-            _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
-        }
-        else
-        {
-            qDebug() << "ERROR: no valid Mapped RNA dataset found!";
-            return;
-        }
+        _mappedRNAonSpatialDataset->extractDataForDimension(dimSpatial, 0);
+        _queryDimensionForATACRNA = _mappedRNAonSpatialDataset->getDimensionNames()[0];
+        _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
+
 
         for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
             int ptIndex = _sortedFloodIndices[index];
@@ -1190,30 +1174,14 @@ void GeneSurferPlugin::updateSelection()
         std::unordered_map<QString, float> clusterDimSums;
         std::vector<float> dimSpatial;
 
-        // TEST: use mapped RNA dataset to get the dimension data ----------------------------------------------------
-        Dataset<Points> dimensionDataset;
-        for (const auto& data : mv::data().getAllDatasets())
+        if (!_mappedATAConSpatialDataset.isValid())
         {
-            if (data->getGuiName() == "Mapped ATAC dataset")
-            {
-                dimensionDataset = data;
-                qDebug() << "Found Mapped ATAC dataset";
-                break;
-            }
-        }
-        if (dimensionDataset.isValid())
-        {
-            dimensionDataset->extractDataForDimension(dimSpatial, 0);
-            //qDebug() << "dimSpatial size: " << dimSpatial.size();
-            qDebug() << "Current dimension of mapped ATAC dataset " << dimensionDataset->getDimensionNames()[0];
-            _queryDimensionForATACRNA = dimensionDataset->getDimensionNames()[0];
-            _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
-        }
-        else
-        {
-            qDebug() << "ERROR: no valid Mapped RNA dataset found!";
+            updateMappedDatasets();
             return;
         }
+        _mappedATAConSpatialDataset->extractDataForDimension(dimSpatial, 0);
+        _queryDimensionForATACRNA = _mappedATAConSpatialDataset->getDimensionNames()[0];
+        _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
 
         for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
             int ptIndex = _sortedFloodIndices[index];
@@ -1560,6 +1528,31 @@ void GeneSurferPlugin::updateFilterLabel()
 
     _selectedDimIndex = -1; // reset to no selection
 
+    updateMappedDatasets();
+
+    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
+    ////////////////////
+    // ATAC to RNA   //
+    ////////////////////
+        _ATACtoRNA = true;
+        qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = true";
+        updateRNAData();
+
+    }
+    else {
+    ////////////////////
+    // RNA to ATAC //
+    ////////////////////
+        _ATACtoRNA = false;
+        qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = false";
+        updateSingleCellOption();
+
+    }
+}
+
+void GeneSurferPlugin::updateMappedDatasets()
+{
+    // FIXME: dataset names are hardcoded here
     // check if mapping datasets are valid
     if (!_mappedRNAonSpatialDataset.isValid())
     {
@@ -1587,25 +1580,6 @@ void GeneSurferPlugin::updateFilterLabel()
                 break;
             }
         }
-    }
-       
-    if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
-    ////////////////////
-    // ATAC to RNA   //
-    ////////////////////
-        _ATACtoRNA = true;
-        qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = true";
-        updateRNAData();
-
-    }
-    else {
-    ////////////////////
-    // RNA to ATAC //
-    ////////////////////
-        _ATACtoRNA = false;
-        qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = false";
-        updateSingleCellOption();
-
     }
 }
 

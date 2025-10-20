@@ -189,6 +189,8 @@ private:
 
     void matchLabelInSubsetForRNA();
 
+    void updateMappedDatasets();
+
 private:
 
     DataStorage                        _dataStore;
