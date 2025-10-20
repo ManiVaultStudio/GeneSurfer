@@ -76,22 +76,16 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     ViewPlugin(factory),
     _nclust(3),
     _positionDataset(),
-    //_scatterViews(6 + 1, nullptr),// TO DO: hard code max 6 scatterViews
-    //_dimView(nullptr),
     _positions(),
     _positionSourceDataset(),
     _numPoints(0),
-    //_colorScalars(_nclust, std::vector<float>(_numPoints, 0.0f)),
     _chartWidget(nullptr),
-    //_tableWidget(nullptr),
-    //_client(nullptr),
     _dropWidget(nullptr),
     _settingsAction(this, "Settings Action"),
     _primaryToolbarAction(this, "PrimaryToolbar"),
     _secondaryToolbarAction(this, "SecondaryToolbar"),
     _tertiaryToolbarAction(this, "TertiaryToolbar"),
     _selectedDimIndex(-1),
-    //_selectedClusterIndex(-1), // -1 means no view selected
     _colorMapAction(this, "Color map", "RdYlBu"),
     _saveToCsvAction(&getWidget(), "Save As...")
 
@@ -111,28 +105,6 @@ GeneSurferPlugin::GeneSurferPlugin(const PluginFactory* factory) :
     _primaryToolbarAction.addAction(&_settingsAction.getCorrelationModeAction(), -1, GroupAction::Horizontal);
     //_primaryToolbarAction.addAction(&_settingsAction.getSingleCellModeAction()); // Disabled for publishing project. Will need it for generating projects.
 
-    //_secondaryToolbarAction.addAction(&_settingsAction.getEnrichmentAction());// TODO: remove EnrichmentAction
-
-    //_tertiaryToolbarAction.addAction(&_settingsAction.getSectionAction(), 1, GroupAction::Horizontal);
-    //_tertiaryToolbarAction.addAction(&_settingsAction.getPositionAction(), -1, GroupAction::Horizontal);// TODO: remove PositionAction
-    //_tertiaryToolbarAction.addAction(&_settingsAction.getPointPlotAction(), -1, GroupAction::Horizontal);
-
-    // // TODO: Remove, _scatterViews are no longer needed
-    //for (int i = 0; i < 6; i++)//TO DO: hard code max 6 scatterViews
-    //{
-    //    _scatterViews[i] = new ScatterView(this);
-    //}
-
-    //_dimView = new ScatterView(this);
-
-    // TODO: Remove, _scatterViews are no longer needed
-    //for (int i = 0; i < 6; i++) {//TO DO: hard code max 6 scatterViews
-    //    connect(_scatterViews[i], &ScatterView::initialized, this, [this, i]() {_scatterViews[i]->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
-    //    connect(_scatterViews[i], &ScatterView::viewSelected, this, [this, i]() { _selectedClusterIndex = i; updateClick(); });
-    //}
-
-    //connect(_dimView, &ScatterView::initialized, this, [this]() {_dimView->setColorMap(_colorMapAction.getColorMapImage().mirrored(false, true)); });
-    //connect(_dimView, &ScatterView::viewSelected, this, [this]() { _selectedClusterIndex = 6; updateClick(); });
 }
 
 void GeneSurferPlugin::init()
@@ -143,9 +115,6 @@ void GeneSurferPlugin::init()
     auto layout = new QVBoxLayout();
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(_primaryToolbarAction.createWidget(&getWidget()), 1);
-
-    // Create the splitter for the barchart and tableDimLayout
-    //QSplitter* splitterChartTable = new QSplitter(Qt::Horizontal, &getWidget());
 
     // Create barchart widget and set html contents of webpage 
     _chartWidget = new ChartWidget(this);
@@ -168,48 +137,7 @@ void GeneSurferPlugin::init()
     else
         _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
     
-
-    //_tableWidget = new MyTableWidget();// TODO: remove _tableWidget, not needed anymore
-
-    //auto widget = _secondaryToolbarAction.createWidget(&getWidget());
-    //widget->setMinimumWidth(10);// Fix the width of the secondary toolbar for splitter to work properly
-
-    // Container widget for table and dim view
-    //QWidget* tableDimWidget = new QWidget();
-    //auto tableDimLayout = new QVBoxLayout(tableDimWidget);
-    //tableDimLayout->addWidget(widget);
-    //tableDimLayout->addWidget(_tableWidget, 50);
-    //tableDimLayout->addWidget(_dimView);
-    //tableDimWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-
-    // Add widgets to splitter, set stretch factors and add splitter to layout
-    //splitterChartTable->addWidget(_chartWidget);
-    //splitterChartTable->addWidget(tableDimWidget);
-    //splitterChartTable->setStretchFactor(0, 60);
-    //splitterChartTable->setStretchFactor(1, 40);
-    //splitterChartTable->setChildrenCollapsible(false);
-
-    //layout->addWidget(splitterChartTable, 100);// same stretch factor as clusterViewMainLayout
     layout->addWidget(_chartWidget, 100);
-
-    //auto clusterViewMainLayout = new QVBoxLayout();
-    //clusterViewMainLayout->setContentsMargins(6, 6, 6, 6);
-
-    //auto clusterViewRow1 = new QHBoxLayout();
-    //for (int i = 0; i < 3; i++) {//TO DO: initialize 3 sactter plots
-    //    clusterViewRow1->addWidget(_scatterViews[i], 50);
-    //}
-    //clusterViewMainLayout->addLayout(clusterViewRow1);
-
-    //auto clusterViewRow2 = new QHBoxLayout();
-    //for (int i = 3; i < 6; i++) {//TO DO: initialize 3 sactter plots
-    //    clusterViewRow2->addWidget(_scatterViews[i], 50);
-    //}
-    //clusterViewMainLayout->addLayout(clusterViewRow2);
-
-    //layout->addWidget(_tertiaryToolbarAction.createWidget(&getWidget()), 1);
-
-    //layout->addLayout(clusterViewMainLayout, 50);// same stretch factor as splitter
 
     // Apply the layout
     getWidget().setLayout(layout);
@@ -364,12 +292,6 @@ void GeneSurferPlugin::init()
 
         updateSelection();
         });
-
-   /* _client = new EnrichmentAnalysis(this);
-    connect(_client, &EnrichmentAnalysis::enrichmentDataReady, this, &GeneSurferPlugin::updateEnrichmentTable);
-    connect(_client, &EnrichmentAnalysis::enrichmentDataNotExists, this, &GeneSurferPlugin::noDataEnrichmentTable);*/
-
-    //connect(_tableWidget, &QTableWidget::cellClicked, this, &GeneSurferPlugin::onTableClicked); // on table clicked
 }
 
 void GeneSurferPlugin::loadData(const mv::Datasets& datasets)
@@ -405,20 +327,6 @@ void GeneSurferPlugin::positionDatasetChanged()
         if (enabledDimensions[i])
             _enabledDimNames.push_back(dimNames[i]);
     }
-
-    //qDebug() << "GeneSurferPlugin::positionDatasetChanged(): enabledDimensions size: " << _enabledDimNames.size();
-
-    //if (!_clusterScalars.isValid())
-    //{
-    //    if (!_loadingFromProject)
-    //    {
-    //        _clusterScalars = mv::data().createDataset<Points>("Points", "Scalars");
-    //        events().notifyDatasetAdded(_clusterScalars);
-    //        // initialize the clusterScalars dataset with 0s
-    //        std::vector<float> tempInit(_numPoints, 0.0f);
-    //        _clusterScalars->setData(tempInit.data(), tempInit.size(), 1);
-    //    }
-    //}
 
     qDebug() << "GeneSurferPlugin::positionDatasetChanged(): start converting dataset ... ";
     convertToEigenMatrix(_positionDataset, _positionSourceDataset, _dataStore.getBaseData());
@@ -500,10 +408,7 @@ void GeneSurferPlugin::convertDataAndUpdateChart()
         payloadMap["FilterType"] = "Others";
 
     // automatically update scalars to the top dimension
-    //_selectedDimName = filteredAndSortedGenes.back().first; // the last one has the highest correlation
-    //updateDimView(_selectedDimName);
     publishSelection(filteredAndSortedGenes.back().first);
-
 
     qDebug() << "GeneSurferPlugin::convertDataAndUpdateChart: Send data from Qt cpp to D3 js";
     emit _chartWidget->getCommunicationObject().qt_js_setDataAndPlotInJS(payloadMap);
@@ -557,29 +462,6 @@ void GeneSurferPlugin::saveDataToCsvAction()
     else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
         out << "Filter type: RNAtoATAC,";
-
-        // for RNAtoATAC filter, also output the selected RNA-seq gene symbol
-        // FIXME: duplicate code with updateSelection()
-        //Dataset<Points> dimensionDataset;
-        //for (const auto& data : mv::data().getAllDatasets())
-        //{
-        //    if (data->getGuiName() == "Mapped RNA dataset")
-        //    {
-        //        dimensionDataset = data;
-        //        //qDebug() << "Found Mapped RNA dataset";
-        //        break;
-        //    }
-        //}
-        //QString queryGene;
-        //if (dimensionDataset.isValid())
-        //{
-        //    queryGene = dimensionDataset->getDimensionNames()[0];
-        //    qDebug() << "Query gene in Mapped RNA dataset: " << queryGene;
-        //}
-        //else
-        //{
-        //    qDebug() << "ERROR: no valid Mapped RNA dataset found!";
-        //}
         qDebug() << "Current query dimension before saving" << _queryDimensionForATACRNA;
         out << "Query gene: " << _queryDimensionForATACRNA << ",";
 
@@ -589,29 +471,6 @@ void GeneSurferPlugin::saveDataToCsvAction()
     else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA)
     {
         out << "Filter type: ATACtoRNA,";
-
-        // for ATACtoRNA filter, also output the selected ATAC name
-        // FIXME: duplicate code with updateSelection()
-        //Dataset<Points> dimensionDataset;
-        //for (const auto& data : mv::data().getAllDatasets())
-        //{
-        //    if (data->getGuiName() == "Mapped ATAC dataset")
-        //    {
-        //        dimensionDataset = data;
-        //        //qDebug() << "Found Mapped RNA dataset";
-        //        break;
-        //    }
-        //}
-        //QString queryGene;
-        //if (dimensionDataset.isValid())
-        //{
-        //    queryGene = dimensionDataset->getDimensionNames()[0];
-        //    qDebug() << "Query gene in Mapped ATAC dataset: " << queryGene;
-        //}
-        //else
-        //{
-        //    qDebug() << "ERROR: no valid Mapped ATAC dataset found!";
-        //}
         qDebug() << "Current query dimension before saving" << _queryDimensionForATACRNA;
         out << "Query ATAC: " << _queryDimensionForATACRNA << ",";
 
@@ -753,8 +612,8 @@ void GeneSurferPlugin::updateSelectedDim() {
 }
 
 void GeneSurferPlugin::updateViewData(std::vector<Vector2f>& positions) {
-
-    // TO DO: can save some time here only computing data bounds once
+    // TODO: remove, not used anymore
+   
     // pass the 2d points to the scatter plot widget
     //for (int i = 0; i < _nclust; i++) {// TO DO: hard code max 6 scatterViews
     //    _scatterViews[i]->setData(&positions);
@@ -777,8 +636,6 @@ void GeneSurferPlugin::updateShowDimension() {
         return;
     }
 
-    /*_selectedDimName = shownDimensionName;
-    updateDimView(_selectedDimName);*/
     publishSelection(shownDimensionName);
 }
 
@@ -1036,7 +893,7 @@ void GeneSurferPlugin::setEnrichmentAPIOptions(QStringList options)
 
 
 void GeneSurferPlugin::updateEnrichmentSpecies()
-{
+{   
     QString selectedSpecies = _settingsAction.getEnrichmentAction().getSpeciesPickerAction().getCurrentText();
 
     if (selectedSpecies == "Mus musculus")
@@ -1068,9 +925,6 @@ void GeneSurferPlugin::updateSelection()
         qDebug() << "GeneSurferPlugin::updateSelection(): _isFloodIndex is empty";
         return;
     }
-
-    //qDebug() << "GeneSurferPlugin::updateSelection(): start... ";
-    //auto start = std::chrono::high_resolution_clock::now();
 
     ////////////////////
     // Compute subset //
@@ -1417,17 +1271,7 @@ void GeneSurferPlugin::updateSelection()
     ////////////////////
     // Update Plots //
     ////////////////////
-    // TODO: Remove scatter plots that are no longer needed
-    //for (const auto& pair : _numGenesInCluster) {
-    //    QString clusterIdx = QString::number(pair.first);
-    //    QString numGenesInThisCluster = QString::number(pair.second);
-    //    //_scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " genes)");
-    //    _scatterViews[pair.first]->setProjectionName("Cluster " + clusterIdx + " (" + numGenesInThisCluster + " dims)");
-    //}
-
     convertDataAndUpdateChart();
-    //updateScatterColors();// TODO: Remove, _scatterViews are no longer needed
-    //updateScatterOpacity();// TODO: Remove, 
 
     // unselect the selection, to show no selection on scatter plot. 
     // problem: will not be able to highlight the selected cells on the scatter plot anymore
@@ -1435,12 +1279,7 @@ void GeneSurferPlugin::updateSelection()
     _positionDataset->setSelectionIndices(emptySelection);
     events().notifyDatasetDataSelectionChanged(_positionDataset);*/
 
-   
-    /*auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed = end - start;
-    std::cout << "updateSelection() Elapsed time: " << elapsed.count() << " ms\n";*/
 
-    //qDebug() << "GeneSurferPlugin::updateSelection(): end... ";
 }
 
 DataMatrix GeneSurferPlugin::populateAvgExprToSpatial() {
@@ -1719,17 +1558,7 @@ void GeneSurferPlugin::updateFilterLabel()
     else
         _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
 
-    // TODO: clear the selected view
-
     _selectedDimIndex = -1; // reset to no selection
-
-    // Clear selected dim in scalars dataset
-    //if (_clusterScalars.isValid())
-    //{
-    //    //_selectedClusterIndex = -1;
-    //    std::vector<float> allZeros(_numPoints, 0.0f);
-    //    updateClusterScalarOutput(allZeros);
-    //}   
 
     // check if mapping datasets are valid
     if (!_mappedRNAonSpatialDataset.isValid())
@@ -1925,7 +1754,7 @@ void GeneSurferPlugin::updateRNAData()
 }
 
 void GeneSurferPlugin::updateScatterOpacity()
-{
+{ // TODO: Remove, _scatterViews are no longer needed
     if (!_positionDataset.isValid())
         return;
 
@@ -2092,9 +1921,6 @@ void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
 
     normalizeVector(dimV);
     updateClusterScalarOutput(dimV);
-
-
-
 
     //if (!_sliceDataset.isValid()) {
     //    // 2D dataset
@@ -2605,7 +2431,6 @@ void GeneSurferPlugin::clusterGenes()
     }
 
     // compute the correlation between each pair of the filtered genes
-    //auto start2 = std::chrono::high_resolution_clock::now();
 
     Eigen::MatrixXf corrFilteredGene(filteredDimNames.size(), filteredDimNames.size());
 
@@ -2627,47 +2452,12 @@ void GeneSurferPlugin::clusterGenes()
         }
         else {
             // add weighting 
-           /* qDebug() << "computePairwiseCorrelationVector: 3D dataset singlecell";
-            qDebug() << "computePairwiseCorrelationVector: _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
-            qDebug() << "computePairwiseCorrelationVector: _countsSubset size: " << _countsSubset.size() << "_countsSubset[0] " << _countsSubset[0];
-            qDebug() << "computePairwiseCorrelationVector: filteredDimNames size: " << filteredDimNames.size() << " filteredDimIndices size: " << filteredDimIndices.size();*/
-
-            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, _countsSubset, corrFilteredGene);// SC: with weighting
-
-            // output the element in the first row and first column of corrFilteredGene
-            /*qDebug() << "GeneSurferPlugin::clusterGenes(): corrFilteredGene(0,0): " << corrFilteredGene(0, 0);
-            qDebug() << "GeneSurferPlugin::clusterGenes(): corrFilteredGene(1,0): " << corrFilteredGene(1, 0);
-            qDebug() << " Mean of corrFilteredGene.row(0) : " << corrFilteredGene.row(0).mean();*/
-
-            // test without weighting
-            //Eigen::MatrixXf corrFilteredGeneTEST(filteredDimNames.size(), filteredDimNames.size());
-            //_corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, corrFilteredGeneTEST);
-
-            // compare the two correlation matrices
-            /*std::cout << "Mean of corrFilteredGene: " << corrFilteredGene.mean() << std::endl;
-            std::cout << "Mean of corrFilteredGeneTEST: " << corrFilteredGeneTEST.mean() << std::endl;
-
-            std::cout << "Norm of corrFilteredGene: " << corrFilteredGene.norm() << std::endl;
-            std::cout << "Norm of corrFilteredGeneTEST: " << corrFilteredGeneTEST.norm() << std::endl;*/
-
-            /*Eigen::MatrixXf diffMatrix = corrFilteredGene - corrFilteredGeneTEST;
-            std::cout << "Norm of Difference Matrix: " << diffMatrix.norm() << std::endl;
-            std::cout << "Max difference in matrices: " << diffMatrix.cwiseAbs().maxCoeff() << std::endl;
-
-            std::cout << "Correlation Matrix with Weighting: \n" << corrFilteredGene << std::endl;
-            std::cout << "Correlation Matrix without Weighting: \n" << corrFilteredGeneTEST << std::endl;
-            std::cout << "Difference Matrix: \n" << diffMatrix << std::endl;*/
+            _corrFilter.computePairwiseCorrelationVector(filteredDimNames, filteredDimIndices, _subsetData3D, _countsSubset, corrFilteredGene);// SC: with weighting 
         }
 
     }
 
-    /*auto end2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
-    std::cout << "clusterGenes() computeCorrFilteredGene Elapsed time: " << elapsed2.count() << " ms\n";
-    qDebug() << "GeneSurferPlugin::clusterGenes():corrFilteredGene is computed";*/
-
     // substract correlation from 1 to get distance
-    //auto start3 = std::chrono::high_resolution_clock::now();
 
     Eigen::MatrixXf distanceMatrix = Eigen::MatrixXf::Ones(corrFilteredGene.rows(), corrFilteredGene.cols()) - corrFilteredGene;
 
@@ -2725,41 +2515,17 @@ void GeneSurferPlugin::clusterGenes()
         _dimNameToClusterLabel[filteredDimNames[i]] = labels[i];
     }
 
-    /*auto end3 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
-    std::cout << "clusterGenes() Apply clustering Elapsed time: " << elapsed3.count() << " ms\n";*/
-
-
     // temporary code: output the number of genes in each cluster
     _numGenesInCluster.clear();
     for (int i = 0; i < filteredDimNames.size(); ++i) {
         _numGenesInCluster[labels[i]]++;
     }
 
-    /*auto start5 = std::chrono::high_resolution_clock::now();
-    computeEntireClusterScalars(filteredDimIndices, labels);
-    auto end5 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsed5 = end5 - start5;
-    std::cout << "computeEntireClusterScalars Elapsed time: " << elapsed5.count() << " ms\n";*/
-
     if (_isSingleCell != true) {
-        //auto start5 = std::chrono::high_resolution_clock::now();
-
         computeFloodedClusterScalars(filteredDimIndices, labels);
-
-        /*auto end5 = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> elapsed5 = end5 - start5;
-        std::cout << "clusterGenes() computeFloodedClusterScalars Elapsed time: " << elapsed5.count() << " ms\n";*/
     }
     else {
-
-        //auto start5 = std::chrono::high_resolution_clock::now();
-
         computeFloodedClusterScalarsSingleCell(filteredDimIndices, labels);
-
-        /*auto end5 = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> elapsed5 = end5 - start5;
-        std::cout << "clusterGenes() computeFloodedClusterScalarsSingleCell Elapsed time: " << elapsed5.count() << " ms\n";*/
     }
 
     delete[] distmat;
@@ -3353,9 +3119,6 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
     _settingsAction.fromVariantMap(variantMap["SettingsAction"].toMap());
     //qDebug() << "GeneSurferPlugin::fromVariantMap() 3 ";
 
-    /*QString clusterScalarsId = variantMap["ClusterScalars"].toString();
-    _clusterScalars = mv::data().getDataset<Points>(clusterScalarsId);*/
-
     if (_sliceDataset.isValid())
     {
         //qDebug() << "GeneSurferPlugin::fromVariantMap() 4 ";
@@ -3364,8 +3127,6 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
     }
 
     _selectedDimName = variantMap["SelectedDimName"].toString();
-    /*if (_selectedDimName != "NoneSelected")
-        updateDimView(_selectedDimName);*/
 
     if (_avgExprStatus != AvgExpressionStatus::NONE)
     {
@@ -3397,12 +3158,8 @@ void GeneSurferPlugin::fromVariantMap(const QVariantMap& variantMap)
         updateSelection();
     }
 
-    // load the selected view
-    //_selectedClusterIndex = variantMap["SelectedClusterIndex"].toInt();
-    //updateClick();
 
-
-    // TODO: delete
+    // TODO: needed for generating project
     // generate a cluster dataset for _clusterNamesAvgExpr and attach it to parent dataset _avgExprDataset 
     /*Dataset<Clusters> clusterDataset = mv::data().createDataset<Clusters>("Cluster", "Clusters", _avgExprDataset);
     QVector<Cluster> clusters;
@@ -3431,8 +3188,6 @@ QVariantMap GeneSurferPlugin::toVariantMap() const
 
     variantMap.insert("AvgExpressionStatus", static_cast<int>(_avgExprStatus));
 
-    //variantMap.insert("ClusterScalars", _clusterScalars.getDatasetId());
-
     variantMap.insert("SelectedDimName", _selectedDimName);
 
     if (_sliceDataset.isValid())
@@ -3451,8 +3206,6 @@ QVariantMap GeneSurferPlugin::toVariantMap() const
     }
 
     variantMap.insert("SelectionFlag", _selectedByFlood);
-
-    //variantMap.insert("SelectedClusterIndex", _selectedClusterIndex);
 
     return variantMap;
 }
