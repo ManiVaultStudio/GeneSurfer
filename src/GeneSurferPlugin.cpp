@@ -932,7 +932,7 @@ void GeneSurferPlugin::updateSelection()
     if (_ATACtoRNA)
     {
         if (_isSingleCell && _sliceDataset.isValid()) {
-            qDebug() << "HARDCODED mode only for 3D ATAC";
+            //qDebug() << "HARDCODED mode only for 3D ATAC";
             countLabelDistribution();
             _computeSubset.computeSubsetDataAvgExpr(_avgExprRNA, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
             _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
@@ -1107,24 +1107,24 @@ void GeneSurferPlugin::updateSelection()
     // TODO: only for 3D + singlecell right now
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
-        qDebug() << "Compute filtering: 2D + ST + Dimension";
+        qDebug() << "Compute filtering: 2D + ST + RNAtoATAC";
         qDebug() << "ERROR: not implemented yet";
         return;
     }
     if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
-        qDebug() << "Compute filtering: 3D + ST + Dimension";
+        qDebug() << "Compute filtering: 3D + ST + RNAtoATAC";
         qDebug() << "ERROR: not implemented yet";
         return;
     }
     if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
-        qDebug() << "Compute filtering: 2D + SingleCell + Dimension";
+        qDebug() << "Compute filtering: 2D + SingleCell + RNAtoATAC";
         qDebug() << "ERROR: not implemented yet";
         return;
     }
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC) {
-        qDebug() << "Compute filtering: 3D + SingleCell + Dimension";
+        qDebug() << "Compute filtering: RNAtoATAC";
 
         std::vector<float> dimAvg;
 
@@ -1183,7 +1183,7 @@ void GeneSurferPlugin::updateSelection()
     // TODO: only for 3D + singlecell right now
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
 
-        qDebug() << "TEST: ATAC to RNA";
+        qDebug() << "Compute filtering: ATACtoRNA";
 
         // get the vector of a specific ATAC-seq peak
         std::vector<float> dimAvg;
@@ -1231,7 +1231,7 @@ void GeneSurferPlugin::updateSelection()
             dimAvg.push_back(averageDim);
 
         }
-        qDebug() << "dimAvg size: " << dimAvg.size();
+        //qDebug() << "dimAvg size: " << dimAvg.size();
 
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _countsSubset, _corrGeneVector);// with weighting
 
@@ -1402,18 +1402,18 @@ void GeneSurferPlugin::updateSingleCellOption() {
     qDebug() << "GeneSurferPlugin::updateSingleCellOption(): start... ";
 
     _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().isChecked() ? _isSingleCell = true : _isSingleCell = false;
-    qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _isSingleCell: " << _isSingleCell;
+    //qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _isSingleCell: " << _isSingleCell;
 
     if (_isSingleCell) {
-        qDebug() << "Using Single Cell";
+        //qDebug() << "Using Single Cell";
 
         if (_avgExpr.size() == 0) {
-            qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr is empty";
-            qDebug() << "_loadingFromProject = " << _loadingFromProject;
-            qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
+            //qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr is empty";
+            //qDebug() << "_loadingFromProject = " << _loadingFromProject;
+            //qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
 
             if (_avgExprDataset.isValid()) {
-                qDebug() << "_avgExprDataset is valid...";
+                //qDebug() << "_avgExprDataset is valid...";
                 switch (_avgExprStatus)
                 {
                 case AvgExpressionStatus::NONE:
@@ -1443,14 +1443,14 @@ void GeneSurferPlugin::updateSingleCellOption() {
                     _geneNamesAvgExpr.clear();
                     _geneNamesAvgExpr = _avgExprDataset->getDimensionNames();
 
-                    qDebug() << "_geneNamesAvgExpr size: " << _geneNamesAvgExpr.size();
-                    qDebug() << "_clusterNamesAvgExpr size: " << _clusterNamesAvgExpr.size() << " _clusterNamesAvgExpr[0]: " << _clusterNamesAvgExpr[0];
+                    //qDebug() << "_geneNamesAvgExpr size: " << _geneNamesAvgExpr.size();
+                    //qDebug() << "_clusterNamesAvgExpr size: " << _clusterNamesAvgExpr.size() << " _clusterNamesAvgExpr[0]: " << _clusterNamesAvgExpr[0];
 
                     _clusterAliasToRowMap.clear();
                     for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
                         _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
                     }
-                    qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+                    //qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
                     loadLabelsFromSTDatasetFromFile();
 
                     break;
@@ -1463,14 +1463,14 @@ void GeneSurferPlugin::updateSingleCellOption() {
         else {
             // _avgExpr is already loaded or computed
             // in case switch from ATACtoRNA, only update _clusterAliasToRowMap and loadLabelsFromSTDatasetFromFile()
-            qDebug() << "_geneNamesAvgExpr size: " << _geneNamesAvgExpr.size();
-            qDebug() << "_clusterNamesAvgExpr size: " << _clusterNamesAvgExpr.size() << " _clusterNamesAvgExpr[0]: " << _clusterNamesAvgExpr[0];
+            //qDebug() << "_geneNamesAvgExpr size: " << _geneNamesAvgExpr.size();
+            //qDebug() << "_clusterNamesAvgExpr size: " << _clusterNamesAvgExpr.size() << " _clusterNamesAvgExpr[0]: " << _clusterNamesAvgExpr[0];
 
             _clusterAliasToRowMap.clear();
             for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
                 _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
             }
-            qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+            //qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
             loadLabelsFromSTDatasetFromFile();
         }
 
@@ -1635,9 +1635,9 @@ void GeneSurferPlugin::updateRNAData()
     }
 
     if (_avgExprRNA.size() == 0) {
-        qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr is empty";
-        qDebug() << "_loadingFromProject = " << _loadingFromProject;
-        qDebug() << "_avgExprDatasetRNA.isValid() = " << _avgExprDatasetRNA.isValid();
+        //qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr is empty";
+        //qDebug() << "_loadingFromProject = " << _loadingFromProject;
+        //qDebug() << "_avgExprDatasetRNA.isValid() = " << _avgExprDatasetRNA.isValid();
 
         if (_avgExprDatasetRNA.isValid()) {
             //qDebug() << "_avgExprDataset is valid...";
@@ -1667,7 +1667,7 @@ void GeneSurferPlugin::updateRNAData()
                 QVector<Cluster> clustersRNA;
                 for (const auto& data : _avgExprDatasetRNA->getChildren())
                 {
-                    if (data->getGuiName() == "_index")
+                    if (data->getGuiName() == "_index") // TODO: hardcoded name
                     {
                         clusterLabelDatasetRNA = data;
                         qDebug() << "Found RNA averages label dataset: _index";
@@ -1695,7 +1695,7 @@ void GeneSurferPlugin::updateRNAData()
                         qDebug() << "ERROR!!!!!updateRNAData() ptIndices.size() != 1";// should not happen
                     }
                 }
-                qDebug() << "RNA clusterToRowMap.size() = " << clusterToRowMap.size();
+                //qDebug() << "RNA clusterToRowMap.size() = " << clusterToRowMap.size();
 
                 _clusterNamesAvgExprRNA.clear();
                 _clusterNamesAvgExprRNA.resize(clusterToRowMap.size());
@@ -1730,13 +1730,13 @@ void GeneSurferPlugin::updateRNAData()
     else {
         // _avgExprRNA is already loaded or computed
         // in case switch from DIMENSION, only update _clusterAliasToRowMap and loadLabelsFromSTDatasetFromFile()
-        qDebug() << "_avgExprRNA is already loaded or computed" << _avgExprRNA.size();
+        //qDebug() << "_avgExprRNA is already loaded or computed" << _avgExprRNA.size();
         _clusterAliasToRowMap.clear();
         for (int i = 0; i < _clusterNamesAvgExprRNA.size(); ++i) {
             _clusterAliasToRowMap[_clusterNamesAvgExprRNA[i]] = i;
 
         }
-        qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+        //qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
         loadLabelsFromSTDatasetFromFileForRNA();
     }
 
@@ -1745,7 +1745,7 @@ void GeneSurferPlugin::updateRNAData()
     // update _enabledDimNames
     _enabledDimNames.clear();
     _enabledDimNames = _geneNamesAvgExprRNA;
-    qDebug() << "_enabledDimNames size: " << _enabledDimNames.size() << _enabledDimNames[0] << _enabledDimNames[1] << _enabledDimNames[2];
+    //qDebug() << "_enabledDimNames size: " << _enabledDimNames.size() << _enabledDimNames[0] << _enabledDimNames[1] << _enabledDimNames[2];
 
     // update max number of genes in _numGenesThresholdAction
     _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(_enabledDimNames.size());
@@ -2535,8 +2535,8 @@ void GeneSurferPlugin::clusterGenes()
 
 }
 
-void GeneSurferPlugin::computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
-{
+//void GeneSurferPlugin::computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
+//{
     // TODO: Remove, not used anymore
     // Compute mean expression for each cluster
     // for the entire spaial map
@@ -2627,7 +2627,7 @@ void GeneSurferPlugin::computeEntireClusterScalars(const std::vector<int> filter
 //    std::chrono::duration<double, std::milli> elapsed3 = end3 - start3;
 //    std::cout << "3 Elapsed time: " << elapsed3.count() << " ms\n";
 
-}
+//}
 
 void GeneSurferPlugin::computeFloodedClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
 {

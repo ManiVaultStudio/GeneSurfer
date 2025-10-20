@@ -137,7 +137,7 @@ private:
     void clusterGenes();
 
     /** Compute the scalar values of each cluster for the entire scatter plot */
-    void computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels);
+    //void computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels);
 
     /** Compute the scalar values of each cluster for the only flooded cells */
     void computeFloodedClusterScalars(const std::vector<int> filteredDimIndices, const int* labels);
