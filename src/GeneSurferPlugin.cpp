@@ -126,17 +126,24 @@ void GeneSurferPlugin::init()
     // Add label for filtering on top of the barchart
     _filterLabel = new QLabel(_chartWidget);
     _filterLabel->setFont(QFont("Arial", 10));
-    _filterLabel->setGeometry(10, 10, 600, 30);
-    //_filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
+    _filterLabel->setGeometry(10, 5, 600, 20);
+
+    _seedDimensionLabel = new QLabel(_chartWidget);
+    _seedDimensionLabel->setFont(QFont("Arial", 10));
+    _seedDimensionLabel->setGeometry(10, 20, 600, 20);
 
     // also show query dimension for ATAC<->RNA
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA || _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
-        _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString()+ " seed: " + _queryDimensionForATACRNA);
+        _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString());
+        _seedDimensionLabel->setText("Seed: " + _queryDimensionForATACRNA);
     }
     else
+    {
         _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
-    
+        _seedDimensionLabel->setText("");
+    }
+
     layout->addWidget(_chartWidget, 100);
 
     // Apply the layout
@@ -524,7 +531,7 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
             return;
         }
         dimensionPickerAction->setCurrentDimensionName(_selectedDimName);
-     
+
     }
     else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
     {
@@ -613,7 +620,7 @@ void GeneSurferPlugin::updateSelectedDim() {
 
 void GeneSurferPlugin::updateViewData(std::vector<Vector2f>& positions) {
     // TODO: remove, not used anymore
-   
+
     // pass the 2d points to the scatter plot widget
     //for (int i = 0; i < _nclust; i++) {// TO DO: hard code max 6 scatterViews
     //    _scatterViews[i]->setData(&positions);
@@ -893,7 +900,7 @@ void GeneSurferPlugin::setEnrichmentAPIOptions(QStringList options)
 
 
 void GeneSurferPlugin::updateEnrichmentSpecies()
-{   
+{
     QString selectedSpecies = _settingsAction.getEnrichmentAction().getSpeciesPickerAction().getCurrentText();
 
     if (selectedSpecies == "Mus musculus")
@@ -1137,7 +1144,7 @@ void GeneSurferPlugin::updateSelection()
         }
         _mappedRNAonSpatialDataset->extractDataForDimension(dimSpatial, 0);
         _queryDimensionForATACRNA = _mappedRNAonSpatialDataset->getDimensionNames()[0];
-        _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
+        _seedDimensionLabel->setText("Seed: " + _queryDimensionForATACRNA);
 
 
         for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
@@ -1181,7 +1188,7 @@ void GeneSurferPlugin::updateSelection()
         }
         _mappedATAConSpatialDataset->extractDataForDimension(dimSpatial, 0);
         _queryDimensionForATACRNA = _mappedATAConSpatialDataset->getDimensionNames()[0];
-        _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
+        _seedDimensionLabel->setText("Seed: " + _queryDimensionForATACRNA);
 
         for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
             int ptIndex = _sortedFloodIndices[index];
@@ -1520,29 +1527,34 @@ void GeneSurferPlugin::updateScatterPointSize()
 
 void GeneSurferPlugin::updateFilterLabel()
 {
-    //_filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA || _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
-        _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString() + ", seed: " + _queryDimensionForATACRNA);
+    {
+        _filterLabel->setText("Filter by:" + _corrFilter.getCorrFilterTypeAsString());
+        _seedDimensionLabel->setText("Seed: " + _queryDimensionForATACRNA);
+    }
     else
+    {
         _filterLabel->setText("Filter dimensions by:" + _corrFilter.getCorrFilterTypeAsString());
+        _seedDimensionLabel->setText("");
+    }
 
     _selectedDimIndex = -1; // reset to no selection
 
     updateMappedDatasets();
 
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
-    ////////////////////
-    // ATAC to RNA   //
-    ////////////////////
+        ////////////////////
+        // ATAC to RNA   //
+        ////////////////////
         _ATACtoRNA = true;
         qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = true";
         updateRNAData();
 
     }
     else {
-    ////////////////////
-    // RNA to ATAC //
-    ////////////////////
+        ////////////////////
+        // RNA to ATAC //
+        ////////////////////
         _ATACtoRNA = false;
         qDebug() << "GeneSurferPlugin::updateFilterLabel(): set _ATACtoRNA = false";
         updateSingleCellOption();
@@ -1656,7 +1668,7 @@ void GeneSurferPlugin::updateRNAData()
                     qDebug() << "updateRNAData(): ERROR: no valid RNA averages label dataset found!";
                     return;
                 }
-                    
+
                 // Mapping from cluster name to row (temp)
                 std::map<QString, int> clusterToRowMap;
                 for (int i = 0; i < clustersRNA.size(); ++i) {
@@ -1829,7 +1841,7 @@ void GeneSurferPlugin::updateScatterColors()
 void GeneSurferPlugin::updateDimView(const QString& selectedDimName)
 {
     // TODO: remove, not used anymore
-    
+
     // Clear clicked frame - _dimView
     //if (_selectedClusterIndex == 6) {
     //    //_dimView->selectView(false);
@@ -2360,7 +2372,7 @@ void GeneSurferPlugin::matchLabelInSubsetForRNA()
 void GeneSurferPlugin::clusterGenes()
 {
     // TODO: remove, not used anymore
-    
+
     //qDebug() << "clusterGenes start...";
 
     // filter genes based on the defined number of genes
@@ -2746,186 +2758,186 @@ void GeneSurferPlugin::updateClusterScalarOutput(const std::vector<float>& scala
 
 void GeneSurferPlugin::getFuntionalEnrichment()
 {
-//    // TODO: Remove, not used anymore
-//    QStringList geneNamesInCluster;
-//    _simplifiedToIndexGeneMapping.clear();
-//    for (const auto& pair : _dimNameToClusterLabel) {
-//        if (pair.second == _selectedClusterIndex) {
-//            QString geneName = pair.first;
-//            QString simplifiedGeneName = geneName;// copy for potential modification
-//
-//            // check if gene name contains an _copy index - for modified duplicate gene symbols in ABC Atlas
-//            int index = geneName.lastIndexOf("_copy");
-//            if (index != -1) {
-//                simplifiedGeneName = geneName.left(index);// remove the index
-//                _simplifiedToIndexGeneMapping[simplifiedGeneName].append(geneName);
-//            }
-//
-//            geneNamesInCluster.append(simplifiedGeneName);
-//        }
-//    }
-//
-//    // output _simplifiedToIndexGeneMapping if not empty
-//    if (!_simplifiedToIndexGeneMapping.empty()) {
-//        for (auto it = _simplifiedToIndexGeneMapping.constBegin(); it != _simplifiedToIndexGeneMapping.constEnd(); ++it) {
-//            qDebug() << it.key() << ":";
-//            for (const QString& value : it.value()) {
-//                qDebug() << value;
-//            }
-//        }
-//    }
-//
-//    if (!geneNamesInCluster.isEmpty()) {
-//
-//        if (_currentEnrichmentAPI == "ToppGene") {
-//            // ToppGene
-//            _client->lookupSymbolsToppGene(geneNamesInCluster);
-//        }
-//
-//        if (_currentEnrichmentAPI == "gProfiler") {
-//            // gProfiler
-//            QStringList backgroundGeneNames;
-//            if (_isSingleCell != true) {
-//                for (const auto& name : _enabledDimNames) {
-//                    backgroundGeneNames.append(name);
-//                }
-//                //qDebug() << "getFuntionalEnrichment(): ST mode, with background";
-//            }
-//            else {
-//                // in single cell mode, background is empty
-//                //qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
-//            }
-//            //qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
-//            _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames, _currentEnrichmentSpecies);
-//        }
-//
-//        //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);
-//    }
-//
-//    // output the gene names
-//    for (int i = 0; i < geneNamesInCluster.size(); i++) {
-//        QString item = geneNamesInCluster[i];
-//        if (i == 0)
-//            std::cout << "Genes in this cluster: " << item.toUtf8().constData() << " ";
-//        else
-//            std::cout << item.toUtf8().constData() << " ";
-//    }
-//    std::cout << std::endl;
+    //    // TODO: Remove, not used anymore
+    //    QStringList geneNamesInCluster;
+    //    _simplifiedToIndexGeneMapping.clear();
+    //    for (const auto& pair : _dimNameToClusterLabel) {
+    //        if (pair.second == _selectedClusterIndex) {
+    //            QString geneName = pair.first;
+    //            QString simplifiedGeneName = geneName;// copy for potential modification
+    //
+    //            // check if gene name contains an _copy index - for modified duplicate gene symbols in ABC Atlas
+    //            int index = geneName.lastIndexOf("_copy");
+    //            if (index != -1) {
+    //                simplifiedGeneName = geneName.left(index);// remove the index
+    //                _simplifiedToIndexGeneMapping[simplifiedGeneName].append(geneName);
+    //            }
+    //
+    //            geneNamesInCluster.append(simplifiedGeneName);
+    //        }
+    //    }
+    //
+    //    // output _simplifiedToIndexGeneMapping if not empty
+    //    if (!_simplifiedToIndexGeneMapping.empty()) {
+    //        for (auto it = _simplifiedToIndexGeneMapping.constBegin(); it != _simplifiedToIndexGeneMapping.constEnd(); ++it) {
+    //            qDebug() << it.key() << ":";
+    //            for (const QString& value : it.value()) {
+    //                qDebug() << value;
+    //            }
+    //        }
+    //    }
+    //
+    //    if (!geneNamesInCluster.isEmpty()) {
+    //
+    //        if (_currentEnrichmentAPI == "ToppGene") {
+    //            // ToppGene
+    //            _client->lookupSymbolsToppGene(geneNamesInCluster);
+    //        }
+    //
+    //        if (_currentEnrichmentAPI == "gProfiler") {
+    //            // gProfiler
+    //            QStringList backgroundGeneNames;
+    //            if (_isSingleCell != true) {
+    //                for (const auto& name : _enabledDimNames) {
+    //                    backgroundGeneNames.append(name);
+    //                }
+    //                //qDebug() << "getFuntionalEnrichment(): ST mode, with background";
+    //            }
+    //            else {
+    //                // in single cell mode, background is empty
+    //                //qDebug() << "getFuntionalEnrichment(): single cell mode, without background";
+    //            }
+    //            //qDebug() << "getFuntionalEnrichment(): backgroundGeneNames size: " << backgroundGeneNames.size();
+    //            _client->postGeneGprofiler(geneNamesInCluster, backgroundGeneNames, _currentEnrichmentSpecies);
+    //        }
+    //
+    //        //EnrichmentAnalysis* tempClient = new EnrichmentAnalysis(this);
+    //    }
+    //
+    //    // output the gene names
+    //    for (int i = 0; i < geneNamesInCluster.size(); i++) {
+    //        QString item = geneNamesInCluster[i];
+    //        if (i == 0)
+    //            std::cout << "Genes in this cluster: " << item.toUtf8().constData() << " ";
+    //        else
+    //            std::cout << item.toUtf8().constData() << " ";
+    //    }
+    //    std::cout << std::endl;
 }
 
 void GeneSurferPlugin::updateEnrichmentTable(const QVariantList& data) {
-//    // TODO: Remove, not used anymore
-//    //qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): start";
-//
-//    _enrichmentResult = data;
-//
-//    /*for (const QVariant& item : data) {
-//        QVariantMap dataMap = item.toMap();
-//        for (auto key : dataMap.keys()) {
-//            qDebug() << key << ":" << dataMap[key].toString();
-//        }
-//    }*/
-//
-//    // automatically extracting headers from the keys of the first item
-//    QStringList headers;
-//    QList<QString> keys = data.first().toMap().keys();
-//    for (int i = 0; i < keys.size(); ++i) {
-//        headers.append(keys[i]);
-//    }
-//
-//    _tableWidget->clearContents();
-//    _tableWidget->setRowCount(data.size());
-//    _tableWidget->setColumnCount(keys.size());
-//
-//    _tableWidget->setHorizontalHeaderLabels(headers);
-//
-//    // automatically populate the table with data
-//    for (int row = 0; row < data.size(); ++row) {
-//        QVariantMap dataMap = data.at(row).toMap();
-//
-//        for (int col = 0; col < headers.size(); ++col) {
-//            QString key = headers.at(col);
-//            QTableWidgetItem* tableItem = new QTableWidgetItem(dataMap[key].toString());
-//            _tableWidget->setItem(row, col, tableItem);
-//        }
-//    }
-//
-//    //_tableWidget->resizeRowsToContents();
-//    _tableWidget->resizeColumnsToContents();
-//
-//    _tableWidget->show();
-//
-//    qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): finished";
+    //    // TODO: Remove, not used anymore
+    //    //qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): start";
+    //
+    //    _enrichmentResult = data;
+    //
+    //    /*for (const QVariant& item : data) {
+    //        QVariantMap dataMap = item.toMap();
+    //        for (auto key : dataMap.keys()) {
+    //            qDebug() << key << ":" << dataMap[key].toString();
+    //        }
+    //    }*/
+    //
+    //    // automatically extracting headers from the keys of the first item
+    //    QStringList headers;
+    //    QList<QString> keys = data.first().toMap().keys();
+    //    for (int i = 0; i < keys.size(); ++i) {
+    //        headers.append(keys[i]);
+    //    }
+    //
+    //    _tableWidget->clearContents();
+    //    _tableWidget->setRowCount(data.size());
+    //    _tableWidget->setColumnCount(keys.size());
+    //
+    //    _tableWidget->setHorizontalHeaderLabels(headers);
+    //
+    //    // automatically populate the table with data
+    //    for (int row = 0; row < data.size(); ++row) {
+    //        QVariantMap dataMap = data.at(row).toMap();
+    //
+    //        for (int col = 0; col < headers.size(); ++col) {
+    //            QString key = headers.at(col);
+    //            QTableWidgetItem* tableItem = new QTableWidgetItem(dataMap[key].toString());
+    //            _tableWidget->setItem(row, col, tableItem);
+    //        }
+    //    }
+    //
+    //    //_tableWidget->resizeRowsToContents();
+    //    _tableWidget->resizeColumnsToContents();
+    //
+    //    _tableWidget->show();
+    //
+    //    qDebug() << "GeneSurferPlugin::updateEnrichmentTable(): finished";
 }
 
 void GeneSurferPlugin::noDataEnrichmentTable() {
-//    // TODO: Remove, not used anymore
-//    _tableWidget->clearContents();
-//    _tableWidget->setRowCount(1);
-//    _tableWidget->setColumnCount(1);
-//
-//    QStringList header = { "Message" };
-//    _tableWidget->setHorizontalHeaderLabels(header);
-//    QTableWidgetItem* item = new QTableWidgetItem("No enrichment analysis result available.");
-//
-//    _tableWidget->setItem(0, 0, item);
-//    _tableWidget->resizeColumnsToContents();
+    //    // TODO: Remove, not used anymore
+    //    _tableWidget->clearContents();
+    //    _tableWidget->setRowCount(1);
+    //    _tableWidget->setColumnCount(1);
+    //
+    //    QStringList header = { "Message" };
+    //    _tableWidget->setHorizontalHeaderLabels(header);
+    //    QTableWidgetItem* item = new QTableWidgetItem("No enrichment analysis result available.");
+    //
+    //    _tableWidget->setItem(0, 0, item);
+    //    _tableWidget->resizeColumnsToContents();
 }
 
 void GeneSurferPlugin::onTableClicked(int row, int column) {
-//    // TODO: Remove, not used anymore
-//    //qDebug() << "Cell clicked in row:" << row << "column:" << column;
-//
-//    // get gene symbols of the selected row
-//    QVariantMap selectedItemMap = _enrichmentResult[row].toMap();
-//    QString geneSymbols = selectedItemMap["Symbol"].toString();
-//    //qDebug() << "Gene symbols in the selected item:" << geneSymbols;
-//
-//    QStringList geneSymbolList = geneSymbols.split(",");
-//
-//    // match the gene symbols with the gene names in the cluster - gene symbols returned from toppGene are all capitals
-//    QVariantList geneNamesForHighlighting;
-//    for (const QString& symbol : geneSymbolList) {
-//
-//        QString searchGeneSymbol;
-//
-//
-//        // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all upper case
-//        if (_currentEnrichmentAPI == "ToppGene") {
-//
-//            // first check if the gene symbol is already in the same format as the data
-//            if (_enabledDimNames[0][1].isUpper()) // check if the second letter is uppercase
-//            {
-//                searchGeneSymbol = symbol;
-//            }
-//            else
-//            {
-//                searchGeneSymbol = symbol.toLower(); // convert to lower case
-//                searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
-//            }
-//        }
-//
-//        // gProfiler
-//        if (_currentEnrichmentAPI == "gProfiler") {
-//            searchGeneSymbol = symbol; // TO DO: check if the gene symbols are already in the correct format
-//        }
-//
-//        // Attempt to find original, indexed gene names using the reverse mapping
-//        QStringList originalGeneNames = _simplifiedToIndexGeneMapping.value(searchGeneSymbol);
-//
-//        if (!originalGeneNames.isEmpty()) {
-//            //qDebug() << "Original gene names found for symbol" << searchGeneSymbol << ":" << originalGeneNames;
-//            // original, indexed versions exist, add them for highlighting
-//            for (const QString& originalGeneName : originalGeneNames) {
-//                geneNamesForHighlighting.append(QVariant(originalGeneName));
-//            }
-//        }
-//        else {
-//            // no indexed version found, use the modified search symbol
-//            geneNamesForHighlighting.append(QVariant(searchGeneSymbol));
-//        }
-//    }
-//    emit _chartWidget->getCommunicationObject().qt_js_highlightInJS(geneNamesForHighlighting);
+    //    // TODO: Remove, not used anymore
+    //    //qDebug() << "Cell clicked in row:" << row << "column:" << column;
+    //
+    //    // get gene symbols of the selected row
+    //    QVariantMap selectedItemMap = _enrichmentResult[row].toMap();
+    //    QString geneSymbols = selectedItemMap["Symbol"].toString();
+    //    //qDebug() << "Gene symbols in the selected item:" << geneSymbols;
+    //
+    //    QStringList geneSymbolList = geneSymbols.split(",");
+    //
+    //    // match the gene symbols with the gene names in the cluster - gene symbols returned from toppGene are all capitals
+    //    QVariantList geneNamesForHighlighting;
+    //    for (const QString& symbol : geneSymbolList) {
+    //
+    //        QString searchGeneSymbol;
+    //
+    //
+    //        // ToppGene Properly format the symbol (first letter uppercase, rest lowercase) - gene symbols returned from ToppGene are all upper case
+    //        if (_currentEnrichmentAPI == "ToppGene") {
+    //
+    //            // first check if the gene symbol is already in the same format as the data
+    //            if (_enabledDimNames[0][1].isUpper()) // check if the second letter is uppercase
+    //            {
+    //                searchGeneSymbol = symbol;
+    //            }
+    //            else
+    //            {
+    //                searchGeneSymbol = symbol.toLower(); // convert to lower case
+    //                searchGeneSymbol[0] = searchGeneSymbol[0].toUpper();
+    //            }
+    //        }
+    //
+    //        // gProfiler
+    //        if (_currentEnrichmentAPI == "gProfiler") {
+    //            searchGeneSymbol = symbol; // TO DO: check if the gene symbols are already in the correct format
+    //        }
+    //
+    //        // Attempt to find original, indexed gene names using the reverse mapping
+    //        QStringList originalGeneNames = _simplifiedToIndexGeneMapping.value(searchGeneSymbol);
+    //
+    //        if (!originalGeneNames.isEmpty()) {
+    //            //qDebug() << "Original gene names found for symbol" << searchGeneSymbol << ":" << originalGeneNames;
+    //            // original, indexed versions exist, add them for highlighting
+    //            for (const QString& originalGeneName : originalGeneNames) {
+    //                geneNamesForHighlighting.append(QVariant(originalGeneName));
+    //            }
+    //        }
+    //        else {
+    //            // no indexed version found, use the modified search symbol
+    //            geneNamesForHighlighting.append(QVariant(searchGeneSymbol));
+    //        }
+    //    }
+    //    emit _chartWidget->getCommunicationObject().qt_js_highlightInJS(geneNamesForHighlighting);
 }
 
 void GeneSurferPlugin::updateClick() {
@@ -2960,59 +2972,59 @@ void GeneSurferPlugin::updateClick() {
         }
     }*/
 
-//    if (selectedView != nullptr)
-//    {
-//        // one of the scatterViews is selected
-//        selectedView->selectView(true);
-//        getFuntionalEnrichment();
-//
-//        // TO DO: seperate the enrichment analysis part and the update scalars part
-//        std::vector<float> dimV = _colorScalars[_selectedClusterIndex]; // TO DO: get the dimV for 3D
-//
-//        // assign the lowest value to the non-flooded cells
-//        float minValue = *std::min_element(dimV.begin(), dimV.end());
-//#pragma omp parallel for
-//        for (int i = 0; i < _numPoints; ++i) {
-//            if (!_isFloodIndex[i]) {
-//                dimV[i] = minValue;
-//            }
-//        }
-//        normalizeVector(dimV);
-//        updateClusterScalarOutput(dimV);
-//    }
-//    else {
-        // dimView is selected
-//        if (_selectedClusterIndex == 6) {// TO DO: hard coded for the current layout
-//            _dimView->selectView(true);
-//
-//            Eigen::VectorXf dimValue;
-//            std::vector<float> dimV;
-//            if (!_isSingleCell) {
-//                //dimValue = _dataStore.getBaseData()(Eigen::all, _selectedDimIndex); //align with _enabledDimNames
-//                _positionSourceDataset->extractDataForDimension(dimV, _selectedDimIndex);// align with _positionSourceDataset
-//            }
-//            else {
-//                // for singlecell option
-//                Eigen::VectorXf avgValue;
-//                if (_ATACtoRNA)
-//                    avgValue = _avgExprRNA(Eigen::all, _selectedDimIndex);
-//                else
-//                    avgValue = _avgExpr(Eigen::all, _selectedDimIndex);
-//
-//                //populate the avg expr values to all ST points
-//                dimValue.resize(_numPoints);
-//#pragma omp parallel for
-//                for (int i = 0; i < _numPoints; ++i) {
-//                    QString label = _cellLabels[i]; // Get the cluster alias label name of the cell
-//                    dimValue[i] = avgValue(_clusterAliasToRowMap[label]);
-//                }
-//                dimV.assign(dimValue.data(), dimValue.data() + dimValue.size());
-//            }
-//
-//            normalizeVector(dimV);
-//            updateClusterScalarOutput(dimV);
-//        }
-    //}
+    //    if (selectedView != nullptr)
+    //    {
+    //        // one of the scatterViews is selected
+    //        selectedView->selectView(true);
+    //        getFuntionalEnrichment();
+    //
+    //        // TO DO: seperate the enrichment analysis part and the update scalars part
+    //        std::vector<float> dimV = _colorScalars[_selectedClusterIndex]; // TO DO: get the dimV for 3D
+    //
+    //        // assign the lowest value to the non-flooded cells
+    //        float minValue = *std::min_element(dimV.begin(), dimV.end());
+    //#pragma omp parallel for
+    //        for (int i = 0; i < _numPoints; ++i) {
+    //            if (!_isFloodIndex[i]) {
+    //                dimV[i] = minValue;
+    //            }
+    //        }
+    //        normalizeVector(dimV);
+    //        updateClusterScalarOutput(dimV);
+    //    }
+    //    else {
+            // dimView is selected
+    //        if (_selectedClusterIndex == 6) {// TO DO: hard coded for the current layout
+    //            _dimView->selectView(true);
+    //
+    //            Eigen::VectorXf dimValue;
+    //            std::vector<float> dimV;
+    //            if (!_isSingleCell) {
+    //                //dimValue = _dataStore.getBaseData()(Eigen::all, _selectedDimIndex); //align with _enabledDimNames
+    //                _positionSourceDataset->extractDataForDimension(dimV, _selectedDimIndex);// align with _positionSourceDataset
+    //            }
+    //            else {
+    //                // for singlecell option
+    //                Eigen::VectorXf avgValue;
+    //                if (_ATACtoRNA)
+    //                    avgValue = _avgExprRNA(Eigen::all, _selectedDimIndex);
+    //                else
+    //                    avgValue = _avgExpr(Eigen::all, _selectedDimIndex);
+    //
+    //                //populate the avg expr values to all ST points
+    //                dimValue.resize(_numPoints);
+    //#pragma omp parallel for
+    //                for (int i = 0; i < _numPoints; ++i) {
+    //                    QString label = _cellLabels[i]; // Get the cluster alias label name of the cell
+    //                    dimValue[i] = avgValue(_clusterAliasToRowMap[label]);
+    //                }
+    //                dimV.assign(dimValue.data(), dimValue.data() + dimValue.size());
+    //            }
+    //
+    //            normalizeVector(dimV);
+    //            updateClusterScalarOutput(dimV);
+    //        }
+        //}
 }
 
 void GeneSurferPlugin::updateSlice(int sliceIndex) {

@@ -220,6 +220,7 @@ private:
     int                                _numGenesThreshold = 50;
     corrFilter::CorrFilter             _corrFilter;
     QLabel*                            _filterLabel;             // Label for filtering genes on the bar chart
+    QLabel*                            _seedDimensionLabel;      // Label for seed dimension if ATAC<->RNA 
 
     // Clustering
     int                                _nclust;                  // Number of clusters
