@@ -126,11 +126,14 @@ void GeneSurferPlugin::init()
     // Add label for filtering on top of the barchart
     _filterLabel = new QLabel(_chartWidget);
     _filterLabel->setFont(QFont("Arial", 10));
-    _filterLabel->setGeometry(10, 5, 600, 20);
+    _filterLabel->setGeometry(10, 5, 150, 15);
 
     _seedDimensionLabel = new QLabel(_chartWidget);
     _seedDimensionLabel->setFont(QFont("Arial", 10));
-    _seedDimensionLabel->setGeometry(10, 20, 600, 20);
+    _seedDimensionLabel->setGeometry(10, 20, 200, 15);
+
+    _filterLabel->setStyleSheet("background: white; color: black;");
+    _seedDimensionLabel->setStyleSheet("background: white; color: black;");
 
     // also show query dimension for ATAC<->RNA
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA || _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
