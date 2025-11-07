@@ -522,7 +522,11 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
 
     if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA)
     {
-
+        if (!_mappedRNAonSpatialDataset.isValid())
+        {
+            qDebug() << "_mappedRNAonSpatialDataset is NOT valid";
+            return;
+        }
         auto* dimensionPickerAction = dynamic_cast<DimensionPickerAction*>(_mappedRNAonSpatialDataset->findChildByPath("Settings/Averages Dataset Dimension"));
         if (!dimensionPickerAction) {
             qDebug() << "DimensionPickerAction not found for plugin: " << _mappedRNAonSpatialDataset->getGuiName();
@@ -536,8 +540,14 @@ void GeneSurferPlugin::publishSelection(const QString& selection)
         dimensionPickerAction->setCurrentDimensionName(_selectedDimName);
 
     }
-    else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
+    //else if (_corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
+    else
     {
+        if (!_mappedATAConSpatialDataset.isValid())
+        {
+            qDebug() << "mappedATAConSpatialDataset is NOT valid";
+            return;
+        }
         auto* dimensionPickerAction = dynamic_cast<DimensionPickerAction*>(_mappedATAConSpatialDataset->findChildByPath("Settings/Averages Dataset Dimension"));
         if (!dimensionPickerAction) {
             qDebug() << "DimensionPickerAction not found for plugin: " << _mappedATAConSpatialDataset->getGuiName();
