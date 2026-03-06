@@ -16,7 +16,7 @@ CorrelationModeAction::CorrelationModeAction(QObject* parent, const QString& tit
     _atacToRNACorrelationAction(this, "Filter by corr with an ATAC peak")
 {
     setIcon(mv::util::StyledIcon("filter"));
-    setToolTip("Gene filtering Mode");
+    setToolTip("Feature filtering Mode");
     setConfigurationFlag(WidgetAction::ConfigurationFlag::ForceCollapsedInGroup);
     setLabelSizingType(LabelSizingType::Auto);
 
