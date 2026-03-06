@@ -19,7 +19,7 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
     _singleCellModeAction(this, "Projection Mode"),
     _clusteringAction(this, "Cluster Settings"),
     _sectionAction(this, "Section selection"),
-    _correlationModeAction(this, "Gene filtering"),
+    _correlationModeAction(this, "Feature filtering"),
     _enrichmentAction(this, "Enrichment settings")
 {
     setText("Settings");
