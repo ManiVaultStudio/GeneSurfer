@@ -1746,7 +1746,7 @@ void GeneSurferPlugin::updateRNAData()
     //qDebug() << "_enabledDimNames size: " << _enabledDimNames.size() << _enabledDimNames[0] << _enabledDimNames[1] << _enabledDimNames[2];
 
     // update max number of genes in _numGenesThresholdAction
-    _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(_enabledDimNames.size());
+    _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(static_cast<int>(_enabledDimNames.size()));
 
     updateSelection();
 }
