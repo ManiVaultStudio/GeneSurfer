@@ -33,7 +33,6 @@
 #include <chrono>
 
 
-
 Q_PLUGIN_METADATA(IID "nl.BioVault.GeneSurferPlugin")
 
 using namespace mv;
