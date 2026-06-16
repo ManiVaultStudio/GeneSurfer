@@ -31,7 +31,7 @@ ClusteringAction::ClusteringAction(QObject* parent, const QString& title) :
         });
 
     connect(&geneSurferPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
-        _numGenesThresholdAction.setMaximum(geneSurferPlugin->getPositionSourceDataset()->getDimensionsPickerAction().getEnabledDimensions().size());
+        _numGenesThresholdAction.setMaximum(static_cast<int>(geneSurferPlugin->getPositionSourceDataset()->getDimensionsPickerAction().getEnabledDimensions().size()));
         });
 
 }
