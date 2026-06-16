@@ -1468,7 +1468,7 @@ void GeneSurferPlugin::updateSingleCellOption() {
         _enabledDimNames = _geneNamesAvgExpr;
 
         // update max number of genes in _numGenesThresholdAction
-        _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(_enabledDimNames.size());
+        _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(static_cast<int>(_enabledDimNames.size()));
 
         updateSelection();
     }
@@ -1487,7 +1487,7 @@ void GeneSurferPlugin::updateSingleCellOption() {
         }
 
         // update max number of genes in _numGenesThresholdAction
-        _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(_enabledDimNames.size());
+        _settingsAction.getClusteringAction().getNumGenesThresholdAction().setMaximum(static_cast<int>(_enabledDimNames.size()));
 
         updateSelection();
     }
@@ -2039,8 +2039,8 @@ void GeneSurferPlugin::loadAvgExpressionFromFile() {
         matrixData.push_back(rowData);
     }
 
-    int numClusters = _clusterNamesAvgExpr.size();
-    int numGenes = _geneNamesAvgExpr.size();
+    int numClusters = static_cast<int>(_clusterNamesAvgExpr.size());
+    int numGenes = static_cast<int>(_geneNamesAvgExpr.size());
 
     file.close();
 
