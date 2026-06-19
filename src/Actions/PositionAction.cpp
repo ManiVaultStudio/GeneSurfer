@@ -34,7 +34,7 @@ connect(&_xDimensionPickerAction, &DimensionPickerAction::currentDimensionIndexC
              geneSurferPlugin->updateSelectedDim();
      });
 
-     connect(&geneSurferPlugin->getPositionDataset(), &Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
+     connect(&geneSurferPlugin->getPositionDataset(), &mv::Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
          _xDimensionPickerAction.setPointsDataset(geneSurferPlugin->getPositionDataset());
          _yDimensionPickerAction.setPointsDataset(geneSurferPlugin->getPositionDataset());
 
@@ -51,7 +51,7 @@ connect(&_xDimensionPickerAction, &DimensionPickerAction::currentDimensionIndexC
 
      updateReadOnly();
 
-     connect(&geneSurferPlugin->getPositionDataset(), &Dataset<Points>::changed, this, updateReadOnly);
+     connect(&geneSurferPlugin->getPositionDataset(), &mv::Dataset<Points>::changed, this, updateReadOnly);
      // TO DO: how do the following work? - end
 
 }

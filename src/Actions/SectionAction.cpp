@@ -21,7 +21,7 @@ SectionAction::SectionAction(QObject* parent, const QString& title) :
 
     _sliceAction.setEnabled(false); // Disable until sliceDataset is loaded
 
-    connect(&geneSurferPlugin->getSliceDataset(), &Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
+    connect(&geneSurferPlugin->getSliceDataset(), &mv::Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
         _sliceAction.setEnabled(geneSurferPlugin->getSliceDataset().isValid());
         _sliceAction.setMaximum(geneSurferPlugin->getSliceDataset()->getClusters().size() - 1);// Start from 0
         });
