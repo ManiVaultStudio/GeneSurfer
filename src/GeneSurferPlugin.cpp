@@ -4,6 +4,7 @@
 #include "ScatterView.h"
 
 #include <DatasetsMimeData.h>
+#include <util/Serialization.h>
 
 #include <vector>
 #include <random>
@@ -23,6 +24,7 @@
 #include <QMimeData>
 #include <QDebug>
 #include <QSplitter>
+#include <QMessageBox>
 
 // for reading hard-coded csv files
 #include <iostream>
