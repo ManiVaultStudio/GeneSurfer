@@ -25,6 +25,7 @@
 #include <QMimeData>
 #include <QDebug>
 #include <QSplitter>
+#include <QMessageBox>
 
 // for reading hard-coded csv files
 #include <iostream>
