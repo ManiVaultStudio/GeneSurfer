@@ -25,7 +25,7 @@ DimensionSelectionAction::DimensionSelectionAction(QObject* parent, const QStrin
         }
         });
 
-    connect(&geneSurferPlugin->getPositionSourceDataset(), &Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
+    connect(&geneSurferPlugin->getPositionSourceDataset(), &mv::Dataset<Points>::changed, this, [this, geneSurferPlugin]() {
         //auto sortedGeneNames = geneSurferPlugin->getPositionSourceDataset()->getDimensionNames();
 
         //std::sort(sortedGeneNames.begin(), sortedGeneNames.end(), [](const QString& a, const QString& b) {

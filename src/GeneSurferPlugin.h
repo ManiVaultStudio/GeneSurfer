@@ -154,7 +154,7 @@ private:
     void updateClick();
 
     /** set data for the views */
-    void updateViewData(std::vector<Vector2f>& positions);
+    void updateViewData(std::vector<mv::Vector2f>& positions);
 
     /** count distribution of labels within floodfill */
     void countLabelDistribution();
@@ -236,7 +236,7 @@ private:
 
     // 3D data
     int                                _currentSliceIndex = 0;   // Current slice index for 3D slice dataset
-    Dataset<Clusters>                  _sliceDataset;            // Dataset for 3D slices
+    mv::Dataset<Clusters>                  _sliceDataset;            // Dataset for 3D slices
     std::vector<int>                   _onSliceIndices;          // Pt indices on the current slice
     std::vector<int>                   _onSliceFloodIndices;     // Flood indices on the slice
     std::vector<int>                   _onSliceWaveNumbers;      // Wave numbers on the slice

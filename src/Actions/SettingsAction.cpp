@@ -45,20 +45,20 @@ SettingsAction::SettingsAction(QObject* parent, const QString& title) :
         _enrichmentAction.setEnabled(hasDataset);
     };
 
-    connect(&_geneSurferPlugin->getPositionDataset(), &Dataset<Points>::changed, this, updateEnabled);
+    connect(&_geneSurferPlugin->getPositionDataset(), &mv::Dataset<Points>::changed, this, updateEnabled);
 
     updateEnabled();
 
-    connect(&_positionDatasetPickerAction, &DatasetPickerAction::datasetPicked, [this](Dataset<DatasetImpl> pickedDataset) -> void {
+    connect(&_positionDatasetPickerAction, &DatasetPickerAction::datasetPicked, [this](mv::Dataset<mv::DatasetImpl> pickedDataset) -> void {
         _geneSurferPlugin->getPositionDataset() = pickedDataset;
         });
-    connect(&_geneSurferPlugin->getPositionDataset(), &Dataset<Points>::changed, this, [this](DatasetImpl* dataset) -> void {
+    connect(&_geneSurferPlugin->getPositionDataset(), &mv::Dataset<Points>::changed, this, [this](mv::DatasetImpl* dataset) -> void {
         _positionDatasetPickerAction.setCurrentDataset(dataset);
         });
-    connect(&_geneSurferPlugin->getSliceDataset(), &Dataset<Clusters>::changed, this, [this](DatasetImpl* dataset) -> void {
+    connect(&_geneSurferPlugin->getSliceDataset(), &mv::Dataset<Clusters>::changed, this, [this](mv::DatasetImpl* dataset) -> void {
         _sliceDatasetPickerAction.setCurrentDataset(dataset);
         });
-    connect(&_geneSurferPlugin->getAvgExprDataset(), &Dataset<Clusters>::changed, this, [this](DatasetImpl* dataset) -> void {
+    connect(&_geneSurferPlugin->getAvgExprDataset(), &mv::Dataset<Clusters>::changed, this, [this](mv::DatasetImpl* dataset) -> void {
         _avgExprDatasetPickerAction.setCurrentDataset(dataset);
         });
 }
@@ -76,7 +76,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     if (positionDataset.isValid())
     {
         qDebug() << ">>>>> Found position dataset " << positionDataset->getGuiName();
-        Dataset pickedDataset = mv::data().getDataset(positionDataset.getDatasetId());
+        mv::Dataset pickedDataset = mv::data().getDataset(positionDataset.getDatasetId());
         _geneSurferPlugin->getPositionDataset() = pickedDataset;
     }
 
@@ -85,7 +85,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     if (sliceDataset.isValid())
     {
         qDebug() << ">>>>> Found slice dataset " << sliceDataset->getGuiName();
-        Dataset pickedDataset = mv::data().getDataset(sliceDataset.getDatasetId());
+        mv::Dataset pickedDataset = mv::data().getDataset(sliceDataset.getDatasetId());
         _geneSurferPlugin->getSliceDataset() = pickedDataset;
     }
 
@@ -94,7 +94,7 @@ void SettingsAction::fromVariantMap(const QVariantMap& variantMap)
     if (avgExprDataset.isValid())
     {
         qDebug() << ">>>>> Found Avg Expression dataset " << avgExprDataset->getGuiName();
-        Dataset pickedDataset = mv::data().getDataset(avgExprDataset.getDatasetId());
+        mv::Dataset pickedDataset = mv::data().getDataset(avgExprDataset.getDatasetId());
         _geneSurferPlugin->getAvgExprDataset() = pickedDataset;
     }
     //qDebug() << "SettingsAction::fromVariantMap 1";  

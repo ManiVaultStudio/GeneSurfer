@@ -3,6 +3,7 @@
 #include "ChartWidget.h"
 #include "ScatterView.h"
 
+#include <util/Serialization.h>
 #include <DatasetsMimeData.h>
 #include <util/Serialization.h>
 
@@ -38,6 +39,7 @@
 Q_PLUGIN_METADATA(IID "nl.BioVault.GeneSurferPlugin")
 
 using namespace mv;
+using namespace mv::util;
 
 namespace
 {
