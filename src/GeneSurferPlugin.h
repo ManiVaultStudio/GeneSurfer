@@ -28,7 +28,7 @@
 
 #include <QFileDialog>
 
-
+using namespace mv;
 
 /** All plugin related classes are in the mv plugin namespace */
 using namespace mv::plugin;
@@ -67,7 +67,7 @@ public:
     void init() override;
 
     /** Store a private reference to the data set that should be displayed */
-    void loadData(const mv::Datasets& datasets) override;
+    void loadData(const Datasets& datasets) override;
  
     void updateNumCluster(); 
 
@@ -200,16 +200,16 @@ private:
     DropWidget*                        _dropWidget;              // Widget for drag and drop behavior
 
     // Data
-    mv::Dataset<Points>                _positionDataset;         // Smart pointer to points dataset for point position
-    mv::Dataset<Points>                _positionSourceDataset;   // Smart pointer to source of the points dataset for point position (if any)
-    std::vector<mv::Vector2f>          _positions;               // Point positions - if 3D, _positions is the 2D projection of the 3D data
+    Dataset<Points>                    _positionDataset;         // Smart pointer to points dataset for point position
+    Dataset<Points>                    _positionSourceDataset;   // Smart pointer to source of the points dataset for point position (if any)
+    std::vector<Vector2f>              _positions;               // Point positions - if 3D, _positions is the 2D projection of the 3D data
     int32_t                            _numPoints;               // Number of point positions
     std::vector<QString>               _enabledDimNames;
     bool                               _dataInitialized = false;
 
     // FloodFill subset computing
     std::vector<bool>                  _isFloodIndex;            // Direct mapping for flood indices
-    mv::Dataset<Points>                _floodFillDataset;        // Dataset for flood fill
+    Dataset<Points>                    _floodFillDataset;        // Dataset for flood fill
     std::vector<int>                   _sortedFloodIndices;      // Spatially sorted indices of flood fill at the current cursor position
     std::vector<int>                   _sortedWaveNumbers;       // Spatially sorted wave numbers of flood fill at the current cursor position
     Eigen::MatrixXf                    _subsetData;              // Subset of flooded data, sorted spatially
@@ -249,7 +249,7 @@ private:
     QString                            _currentEnrichmentSpecies = "mmusculus"; // current enrichment species
 
     // Single cell data
-    mv::Dataset<Points>                _avgExprDataset;          // Point dataset for average expression of each cluster
+    Dataset<Points>                    _avgExprDataset;          // Point dataset for average expression of each cluster
     Eigen::MatrixXf                    _avgExpr;                 // Average expression of each cluster
     Eigen::MatrixXf                    _subsetDataAvgOri;        // Subset of average expression of each cluster - NOT weighted 
     std::vector<QString>               _geneNamesAvgExpr;        // From avg expr single cell data    
@@ -302,14 +302,14 @@ public: // Data loading
 
 public:
     /** Get smart pointer to points dataset for point position */
-    mv::Dataset<Points>& getPositionDataset() { return _positionDataset; }
+    Dataset<Points>& getPositionDataset() { return _positionDataset; }
 
     /** Get smart pointer to source dataset */
-    mv::Dataset<Points>& getPositionSourceDataset() { return _positionSourceDataset; }
+    Dataset<Points>& getPositionSourceDataset() { return _positionSourceDataset; }
 
-    mv::Dataset<Points>& getAvgExprDataset() { return _avgExprDataset; }
+    Dataset<Points>& getAvgExprDataset() { return _avgExprDataset; }
 
-    mv::Dataset<Clusters>& getSliceDataset() { return _sliceDataset; }
+    Dataset<Clusters>& getSliceDataset() { return _sliceDataset; }
 
 public:
     int getSliceIndex() { return _currentSliceIndex; }
