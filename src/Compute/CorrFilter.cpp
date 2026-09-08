@@ -211,50 +211,67 @@ namespace corrFilter
 
     void SpatialCorr::computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, const Eigen::VectorXf& weights, std::vector<float>& corrVector) const
     {
-        // test with weighting
+        // with weighting
         // 3D cluster with mean position
-         
-        // check if the size of weights is the same as positionsOneDimension
-        if (weights.size() != positionsOneDimension.size())
+
+        const auto numColumns = static_cast<std::uint64_t>(dataMatrix.cols());
+
+        if (static_cast<std::uint64_t>(weights.size()) != positionsOneDimension.size() || weights.size() != dataMatrix.rows())
         {
-            qDebug() << "ERROR CorrFilter::computeCorrelationVectorOneDimension: weights.size(): " << weights.size() << " != positionsOneDimension.size(): " << positionsOneDimension.size();
+            qDebug() << "ERROR SpatialCorr::computeCorrelationVectorOneDimension:" << "incompatible matrix, positions, or weights dimensions";
+            corrVector.clear();
             return;
         }
-      
-        Eigen::VectorXf vector = Eigen::Map<Eigen::VectorXf>(positionsOneDimension.data(), positionsOneDimension.size());
 
-        // Compute weighted mean for vector
-        float weightedMean = (weights.array() * vector.array()).sum() / weights.sum();
+        corrVector.assign(numColumns, 0.0f);
 
-        // Compute weighted centered vector and norm
-        Eigen::VectorXf centered = vector.array() - weightedMean;
-        Eigen::VectorXf weightedCentered = centered.array() * weights.array().sqrt();
-        float norm = weightedCentered.squaredNorm();
+        if (weights.size() == 0 || numColumns == 0)
+            return;
 
-        std::vector<float> correlations(dataMatrix.cols());
+        // Weighted Pearson correlation requires finite, nonnegative weights.
+        if (!weights.allFinite() || (weights.array() < 0.0f).any())
+            return;
 
-        corrVector.clear();
-        corrVector.resize(dataMatrix.cols());
+        const float weightSum = weights.sum();
+        if (!(weightSum > 0.0f) || !std::isfinite(weightSum))
+            return;
 
-#pragma omp parallel for
-        for (int i = 0; i < dataMatrix.cols(); ++i) {
-            Eigen::VectorXf column = dataMatrix.col(i);
+        const float inverseWeightSum = 1.0f / weightSum;
 
-            // Compute weighted mean of the column
-            float meanColumn = (weights.array() * column.array()).sum() / weights.sum();
+        const Eigen::Map<const Eigen::VectorXf> positions(positionsOneDimension.data(), weights.size());
 
-            // Compute weighted centered column and norm
-            Eigen::VectorXf centeredColumn = column.array() - meanColumn;
-            Eigen::VectorXf weightedCenteredColumn = centeredColumn.array() * weights.array().sqrt();
-            float normColumn = weightedCenteredColumn.squaredNorm();
+        const float positionMean = weights.dot(positions) * inverseWeightSum;
 
-            // Compute the weighted dot product
-            float weightedDotProduct = (weightedCenteredColumn.array() * weightedCentered.array()).sum();
+        const Eigen::VectorXf centeredPositions = positions.array() - positionMean;
+        const Eigen::VectorXf weightedCenteredPositions = weights.array() * centeredPositions.array();
 
-            float correlation = weightedDotProduct / std::sqrt(normColumn * norm);
+        const float positionVariance = centeredPositions.dot(weightedCenteredPositions);
 
-            if (std::isnan(correlation)) { correlation = 0.0f; }
-            corrVector[i] = correlation;
+        if (!(positionVariance > 0.0f) || !std::isfinite(positionVariance))
+            return;
+
+        const float positionNorm = std::sqrt(positionVariance);
+
+#pragma omp parallel for schedule(static)
+        for (int i = 0; i < numColumns; ++i)
+        {
+            const auto column = dataMatrix.col(static_cast<Eigen::Index>(i));
+
+            const float columnMean = weights.dot(column) * inverseWeightSum;
+
+            const auto centeredColumn = column.array() - columnMean;
+
+            const float columnVariance = (weights.array() * centeredColumn.square()).sum();
+
+            if (!(columnVariance > 0.0f) || !std::isfinite(columnVariance))
+                continue;
+
+            const float covariance = (weightedCenteredPositions.array() * centeredColumn).sum();
+
+            const float correlation = (covariance / std::sqrt(columnVariance)) / positionNorm;
+
+            if (std::isfinite(correlation))
+                corrVector[i] = correlation;
         }
     }
 

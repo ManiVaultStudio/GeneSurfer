@@ -28,7 +28,6 @@ namespace corrFilter
         
         // 3D cluster with mean position + one dimension + weighting for singlecell
         void computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, const Eigen::VectorXf& weights, std::vector<float>& corrVector) const;
-    
     };
 
     class Diff

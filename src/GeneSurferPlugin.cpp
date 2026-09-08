@@ -1183,7 +1183,7 @@ void GeneSurferPlugin::updateSelection()
 
         // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _corrGeneVector);// without weighting
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _countsSubset, _corrGeneVector);// with weighting
-        //qDebug() << "_corrGeneVector size: " << _corrGeneVector.size();
+
     }
 
     // // -------------- ATAC to RNA-seq genes (ATAC peak as seed, identify similar RNA-seq genes) --------------
@@ -1223,10 +1223,7 @@ void GeneSurferPlugin::updateSelection()
 
         }
         //qDebug() << "dimAvg size: " << dimAvg.size();
-
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _countsSubset, _corrGeneVector);// with weighting
-
-
     };
 
     ////////////////////
