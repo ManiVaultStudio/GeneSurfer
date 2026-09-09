@@ -952,6 +952,7 @@ void GeneSurferPlugin::updateSelection()
     ////////////////////
     // Compute subset //
     ////////////////////
+    auto start1 = std::chrono::high_resolution_clock::now();
     if (_ATACtoRNA)
     {
         if (_isSingleCell && _sliceDataset.isValid()) {
@@ -997,12 +998,14 @@ void GeneSurferPlugin::updateSelection()
             
         }
     }
-
+    auto end1 = std::chrono::high_resolution_clock::now();
+    auto elapsed1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - start1);
+    qDebug() << "Time taken by computeSubset: " << elapsed1.count() << " ms";
 
     //////////////////////////////////////////////
     // Compute correlation for filtering genes //
     /////////////////////////////////////////////
-
+    auto start2 = std::chrono::high_resolution_clock::now();
     // -------------- Diff --------------
     if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
         qDebug() << "Compute filtering: 2D + ST + Diff";
@@ -1017,13 +1020,9 @@ void GeneSurferPlugin::updateSelection()
         //_corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector); //without weighting
 
         // add weighting for number of cells in each cluster
-        Eigen::VectorXf ratioCountsSubset = _countsSubset / _sortedFloodIndices.size() * _subsetDataAvgOri.rows();
-        Eigen::VectorXf ratioCountsAll = _countsAll / _numPoints * _avgExpr.rows();
+        _corrFilter.getDiffFilter().computeWeightedDiff(_subsetDataAvgOri, _avgExpr, _countsSubset, static_cast<std::uint64_t>(_sortedFloodIndices.size()), 
+            _countsAll, static_cast<std::uint64_t>(_numPoints), _corrGeneVector);
 
-
-        Eigen::MatrixXf weightedSubsetData = _subsetDataAvgOri.array().colwise() * ratioCountsSubset.array();
-        Eigen::MatrixXf weightedAvgExpr = _avgExpr.array().colwise() * ratioCountsAll.array();
-        _corrFilter.getDiffFilter().computeDiff(weightedSubsetData, weightedAvgExpr, _corrGeneVector);
     }
     // -------------- Moran's I -------------- // TO DO: add weighting for SC
 
@@ -1216,6 +1215,9 @@ void GeneSurferPlugin::updateSelection()
         //qDebug() << "dimAvg size: " << dimAvg.size();
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _countsSubset, _corrGeneVector);// with weighting
     };
+    auto end2 = std::chrono::high_resolution_clock::now();
+    auto elapsed2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
+    qDebug() << "Time taken by compute filtering: " << elapsed2.count() << " ms";
 
     ////////////////////
     // Clustering //
@@ -1223,6 +1225,7 @@ void GeneSurferPlugin::updateSelection()
     //clusterGenes(); // TODO: remove clustering step
     //qDebug() << "updateSelection(): data clustered";
 
+    auto start3 = std::chrono::high_resolution_clock::now();
     // Keep the results struture without clustering
     std::vector<std::pair<float, int>> pairs(_corrGeneVector.size());
     for (int i = 0; i < _corrGeneVector.size(); ++i) {
@@ -1245,7 +1248,10 @@ void GeneSurferPlugin::updateSelection()
 
     _numGenesInCluster.clear();
     _numGenesInCluster[sameLabel] = static_cast<int>(filteredDimNames.size());
-
+    
+    auto end3 = std::chrono::high_resolution_clock::now();
+    auto elapsed3 = std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3);
+    qDebug() << "Time taken by update plots: " << elapsed3.count() << " ms";
 
     ////////////////////
     // Update Plots //

@@ -621,29 +621,66 @@ namespace corrFilter
         Eigen::VectorXf meanB = allDataMatrix.colwise().mean();
         Eigen::VectorXf contrast = meanA - meanB;
 
-
-        /*qDebug() << "<<<<< contrast size: " << contrast.size() << " contrast min: " << contrast.minCoeff() << " contrast max: " << contrast.maxCoeff();
-        qDebug() << "contrast[0] " << contrast[0] << " contrast[1] " << contrast[1] << " contrast[2] " << contrast[2];
-        qDebug() << "meanA size: " << meanA.size() << " meanA min: " << meanA.minCoeff() << " meanA max: " << meanA.maxCoeff();
-        qDebug() << "meanA[0] " << meanA[0] << " meanA[1] " << meanA[1] << " meanA[2] " << meanA[2];
-        qDebug() << "meanB size: " << meanB.size() << " meanB min: " << meanB.minCoeff() << " meanB max: " << meanB.maxCoeff();
-        qDebug() << "meanB[0] " << meanB[0] << " meanB[1] " << meanB[1] << " meanB[2] " << meanB[2];*/
-
         // Norm to range [0, 1] for plotting in the bar chart
-        float minContrast = contrast.minCoeff();
-        float maxContrast = contrast.maxCoeff();
-        float rangeContrast = maxContrast - minContrast;
+        const float minContrast = contrast.minCoeff();
+        const float maxContrast = contrast.maxCoeff();
+        const float rangeContrast = maxContrast - minContrast;
 
         if (rangeContrast != 0) {
             contrast = (contrast.array() - minContrast) / rangeContrast;
         }
-        else {
+        else 
             contrast.setZero(); 
-        }
+
 
         diffVector.clear();
         diffVector.assign(contrast.data(), contrast.data() + contrast.size());
 
+    }
+
+    void Diff::computeWeightedDiff(const DataMatrix& selectionDataMatrix, const DataMatrix& allDataMatrix, const Eigen::VectorXf& selectionCounts, std::uint64_t selectionPointCount, const Eigen::VectorXf& allCounts,
+        std::uint64_t allPointCount, std::vector<float>& diffVector)
+    {
+        const auto numGenes = static_cast<std::uint64_t>(selectionDataMatrix.cols());
+
+        if (selectionDataMatrix.cols() != allDataMatrix.cols() || selectionDataMatrix.rows() != selectionCounts.size() ||
+            allDataMatrix.rows() != allCounts.size() || selectionPointCount == 0 || allPointCount == 0)
+        {
+            qDebug() << "Diff::computeWeightedDiff(): incompatible input dimensions";
+            diffVector.clear();
+            return;
+        }
+
+        diffVector.resize(numGenes);
+
+        const float inverseSelectionCount = 1.0f / static_cast<float>(selectionPointCount);
+
+        const float inverseAllCount = 1.0f / static_cast<float>(allPointCount);
+
+        const auto ompNumGenes = static_cast<std::int64_t>(numGenes);
+
+#pragma omp parallel for schedule(static)
+        for (std::int64_t gene = 0; gene < ompNumGenes; ++gene)
+        {
+            const auto eigenGene = static_cast<Eigen::Index>(gene);
+
+            const float selectionMean = selectionDataMatrix.col(eigenGene).dot(selectionCounts) * inverseSelectionCount;
+
+            const float allMean = allDataMatrix.col(eigenGene).dot(allCounts) * inverseAllCount;
+
+            diffVector[static_cast<std::uint64_t>(gene)] = selectionMean - allMean;
+        }
+
+        Eigen::Map<Eigen::VectorXf> contrast( diffVector.data(), static_cast<Eigen::Index>(numGenes));
+
+        const float minContrast = contrast.minCoeff();
+        const float maxContrast = contrast.maxCoeff();
+        const float rangeContrast = maxContrast - minContrast;
+
+        if (rangeContrast != 0.0f)
+            contrast.array() = (contrast.array() - minContrast) / rangeContrast;
+        else
+            contrast.setZero();
     }
 
 }

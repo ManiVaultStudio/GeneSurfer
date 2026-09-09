@@ -34,6 +34,9 @@ namespace corrFilter
     {
     public:
         void computeDiff(const DataMatrix& selectionDataMatrix, const DataMatrix& allDataMatrix, std::vector<float>& diffVector);
+
+        void computeWeightedDiff(const DataMatrix& selectionDataMatrix, const DataMatrix& allDataMatrix, const Eigen::VectorXf& selectionCounts, std::uint64_t selectionPointCount,
+            const Eigen::VectorXf& allCounts, std::uint64_t allPointCount, std::vector<float>& diffVector);
     };
 
     class Moran
