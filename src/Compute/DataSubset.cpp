@@ -182,22 +182,50 @@ void DataSubset::computeSubsetData(const DataMatrix& dataMatrix, const std::vect
 
 void DataSubset::computeSubsetDataAvgExpr(const DataMatrix& dataMatrix, const std::vector<QString>& clusterNames, const std::unordered_map<QString, int>& clusterToRowMap, DataMatrix& subsetDataMatrix)
 {
-    subsetDataMatrix.resize(clusterNames.size(), dataMatrix.cols());
+    const auto numRows = static_cast<std::uint64_t>(clusterNames.size());
+    const auto numColumns = static_cast<std::uint64_t>(dataMatrix.cols());
 
-#pragma omp parallel for
-    for (int i = 0; i < clusterNames.size(); ++i) {
-        QString clusterName = clusterNames[i];
+    subsetDataMatrix.resize(static_cast<Eigen::Index>(numRows), static_cast<Eigen::Index>(numColumns));
 
-        auto it = clusterToRowMap.find(clusterName);
-        if (it == clusterToRowMap.end()) {
-            #pragma omp critical
-            qDebug() << "Error: clusterName " << clusterName << " not found in _clusterAliasToRowMap";
+    // Resolve QString lookups once
+    std::vector<std::uint64_t> sourceRows(numRows);
+
+    for (std::uint64_t row = 0; row < numRows; ++row)
+    {
+        const auto it = clusterToRowMap.find(clusterNames[row]);
+
+        if (it == clusterToRowMap.end())
+        {
+            qDebug() << "Error: clusterName" << clusterNames[row] << "not found in clusterToRowMap";
+
+            sourceRows[row] = std::numeric_limits<std::uint64_t>::max();
+
             continue;
         }
-        int clusterIndex = it->second;
 
-        subsetDataMatrix.row(i) = dataMatrix.row(clusterIndex);
+        sourceRows[row] = static_cast<std::uint64_t>(it->second);
     }
 
-    //qDebug() << "DataSubset::computeSubsetDataAvgExpr(): subset num rows (clusters): " << subsetDataMatrix.rows() << ", num columns (genes): " << subsetDataMatrix.cols();
+    // parallelize over columns
+    const auto ompNumColumns = static_cast<std::int64_t>(numColumns);
+
+#pragma omp parallel for schedule(static)
+    for (std::int64_t column = 0; column < ompNumColumns; ++column)
+    {
+        const auto eigenColumn = static_cast<Eigen::Index>(column);
+
+        const float* source = dataMatrix.col(eigenColumn).data();
+
+        float* destination = subsetDataMatrix.col(eigenColumn).data();
+
+        for (std::uint64_t row = 0; row < numRows; ++row)
+        {
+            const auto sourceRow = sourceRows[row];
+
+            if (sourceRow != std::numeric_limits<std::uint64_t>::max())
+            {
+                destination[row] = source[sourceRow];
+            }
+        }
+    }
 }

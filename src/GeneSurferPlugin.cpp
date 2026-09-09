@@ -957,10 +957,10 @@ void GeneSurferPlugin::updateSelection()
         if (_isSingleCell && _sliceDataset.isValid()) {
             //qDebug() << "HARDCODED mode only for 3D ATAC";
             countLabelDistribution();
+
             _computeSubset.computeSubsetDataAvgExpr(_avgExprRNA, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
-            _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
+
             _subsetData3D = _subsetDataAvgOri;
-            //qDebug() << "_subsetData3D.size " << _subsetDataAvgOri.rows() << _subsetDataAvgOri.cols();
         }
     }
     else {
@@ -990,9 +990,11 @@ void GeneSurferPlugin::updateSelection()
         if (_isSingleCell && _sliceDataset.isValid()) {
             qDebug() << "Compute subset: 3D + SingleCell";
             countLabelDistribution();
+
             _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
-            _subsetData3D.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
+           
             _subsetData3D = _subsetDataAvgOri;
+            
         }
     }
 
@@ -2265,21 +2267,25 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetFromFileForRNA() {
 
 void GeneSurferPlugin::countLabelDistribution()
 {
-
-    std::unordered_map<QString, int> clusterPointCounts;
-
-    for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
-        int ptIndex = _sortedFloodIndices[index];
-        QString label = _cellLabels[ptIndex];
-        clusterPointCounts[label]++;
-    }
     _countsMap.clear();
-    _countsMap = clusterPointCounts;
+
+    for (const auto rawIndex : _sortedFloodIndices)
+    {
+        const auto ptIndex = static_cast<std::uint64_t>(rawIndex);
+        const QString& label = _cellLabels[ptIndex];
+        ++_countsMap[label];
+    }
 
     if (_ATACtoRNA)
+    { 
         matchLabelInSubsetForRNA();
+    }
+
     else
+    {
         matchLabelInSubset();
+    }
+
 }
 
 void GeneSurferPlugin::matchLabelInSubset()
