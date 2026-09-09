@@ -960,7 +960,7 @@ void GeneSurferPlugin::updateSelection()
 
             _computeSubset.computeSubsetDataAvgExpr(_avgExprRNA, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
 
-            _subsetData3D = _subsetDataAvgOri;
+            //_subsetData3D = _subsetDataAvgOri; // FIXME: _subsetData3D is not used for RNAtoATAC/RNAtoATAC/sc+Diff, so not needed for ATAC viewer
         }
     }
     else {
@@ -993,7 +993,7 @@ void GeneSurferPlugin::updateSelection()
 
             _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
            
-            _subsetData3D = _subsetDataAvgOri;
+            //_subsetData3D = _subsetDataAvgOri;// FIXME: _subsetData3D is not used for RNAtoATAC/RNAtoATAC/sc+Diff, so not needed for ATAC viewer
             
         }
     }
@@ -1020,17 +1020,6 @@ void GeneSurferPlugin::updateSelection()
         Eigen::VectorXf ratioCountsSubset = _countsSubset / _sortedFloodIndices.size() * _subsetDataAvgOri.rows();
         Eigen::VectorXf ratioCountsAll = _countsAll / _numPoints * _avgExpr.rows();
 
-        /* qDebug() << "_countsSubset size: " << _countsSubset.size() << "_countsSubset[0]: " << _countsSubset[0] << "_sortedFloodIndices.size()" << _sortedFloodIndices.size() <<"_subsetDataAvgOri.rows()" << _subsetDataAvgOri.rows();
-         qDebug() << "ratioCountsSubset[0]: " << ratioCountsSubset[0];
-         qDebug() << "max element in _countsSubset: " << *std::max_element(_countsSubset.begin(), _countsSubset.end());
-         qDebug() << "_countsAll size: " << _countsAll.size() << "_countsAll[0]: " << _countsAll[0];
-         qDebug() << "ratioCountsAll[0]: " << ratioCountsAll[0];
-         qDebug() << "max element in _countsAll: " << *std::max_element(_countsAll.begin(), _countsAll.end());
-
-         qDebug() << "_subsetDataAvgOri size: " << _subsetDataAvgOri.rows() << " " << _subsetDataAvgOri.cols();
-         qDebug() << "ratioCountsSubset size" << ratioCountsSubset.size();
-         qDebug() << "_avgExpr size: " << _avgExpr.rows() << " " << _avgExpr.cols();
-         qDebug() << "ratioCountsAll size" << ratioCountsAll.size();*/
 
         Eigen::MatrixXf weightedSubsetData = _subsetDataAvgOri.array().colwise() * ratioCountsSubset.array();
         Eigen::MatrixXf weightedAvgExpr = _avgExpr.array().colwise() * ratioCountsAll.array();
