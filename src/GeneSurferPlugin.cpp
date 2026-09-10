@@ -1022,15 +1022,8 @@ void GeneSurferPlugin::updateSingleCellOption() {
     //qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _isSingleCell: " << _isSingleCell;
 
     if (_isSingleCell) {
-        //qDebug() << "Using Single Cell";
-
         if (_avgExpr.size() == 0) {
-            //qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _avgExpr is empty";
-            //qDebug() << "_loadingFromProject = " << _loadingFromProject;
-            //qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
-
             if (_avgExprDataset.isValid()) {
-                //qDebug() << "_avgExprDataset is valid...";
                 switch (_avgExprStatus)
                 {
                 case AvgExpressionStatus::NONE:
@@ -1039,8 +1032,6 @@ void GeneSurferPlugin::updateSingleCellOption() {
                 case AvgExpressionStatus::COMPUTED:
                     qDebug() << "Status: COMPUTED";
 
-                    // in oder to avoid computing again - TO DO: seperate this part in the function
-                    //qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
                     convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);
                     _geneNamesAvgExpr.clear();
                     _geneNamesAvgExpr = _avgExprDataset->getDimensionNames();
@@ -1054,20 +1045,16 @@ void GeneSurferPlugin::updateSingleCellOption() {
                 case AvgExpressionStatus::LOADED:
                     qDebug() << "Status: LOADED";
 
-                    // in oder to avoid computing again - TO DO: seperate this part in the function
-                    //qDebug() << "_avgExprDataset.isValid() = " << _avgExprDataset.isValid();
-                    convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);// FIXME: is it necessary?
+                    convertToEigenMatrixProjection(_avgExprDataset, _avgExpr);
+
                     _geneNamesAvgExpr.clear();
                     _geneNamesAvgExpr = _avgExprDataset->getDimensionNames();
-
-                    //qDebug() << "_geneNamesAvgExpr size: " << _geneNamesAvgExpr.size();
-                    //qDebug() << "_clusterNamesAvgExpr size: " << _clusterNamesAvgExpr.size() << " _clusterNamesAvgExpr[0]: " << _clusterNamesAvgExpr[0];
 
                     _clusterAliasToRowMap.clear();
                     for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
                         _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
                     }
-                    //qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+
                     loadLabelsFromSTDatasetFromFile();
 
                     break;
@@ -1080,14 +1067,11 @@ void GeneSurferPlugin::updateSingleCellOption() {
         else {
             // _avgExpr is already loaded or computed
             // in case switch from ATACtoRNA, only update _clusterAliasToRowMap and loadLabelsFromSTDatasetFromFile()
-            //qDebug() << "_geneNamesAvgExpr size: " << _geneNamesAvgExpr.size();
-            //qDebug() << "_clusterNamesAvgExpr size: " << _clusterNamesAvgExpr.size() << " _clusterNamesAvgExpr[0]: " << _clusterNamesAvgExpr[0];
-
             _clusterAliasToRowMap.clear();
             for (int i = 0; i < _clusterNamesAvgExpr.size(); ++i) {
                 _clusterAliasToRowMap[_clusterNamesAvgExpr[i]] = i;
             }
-            //qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+
             loadLabelsFromSTDatasetFromFile();
         }
 
@@ -1256,8 +1240,6 @@ void GeneSurferPlugin::updateRNAData()
             case AvgExpressionStatus::LOADED:
                 //qDebug() << "Status: LOADED";
 
-                // in oder to avoid computing again - TO DO: seperate this part in the function
-                //qDebug() << "_avgExprDatasetRNA.isValid() = " << _avgExprDatasetRNA.isValid();
                 convertToEigenMatrixProjection(_avgExprDatasetRNA, _avgExprRNA);
 
                 _geneNamesAvgExprRNA.clear();
@@ -1326,13 +1308,13 @@ void GeneSurferPlugin::updateRNAData()
     else {
         // _avgExprRNA is already loaded or computed
         // in case switch from DIMENSION, only update _clusterAliasToRowMap and loadLabelsFromSTDatasetFromFile()
-        //qDebug() << "_avgExprRNA is already loaded or computed" << _avgExprRNA.size();
+
         _clusterAliasToRowMap.clear();
         for (int i = 0; i < _clusterNamesAvgExprRNA.size(); ++i) {
             _clusterAliasToRowMap[_clusterNamesAvgExprRNA[i]] = i;
 
         }
-        //qDebug() << "_clusterAliasToRowMap size: " << _clusterAliasToRowMap.size();
+
         loadLabelsFromSTDatasetFromFileForRNA();
     }
 

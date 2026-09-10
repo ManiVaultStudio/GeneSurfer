@@ -144,7 +144,7 @@ private:
 
     void saveDataToCsvAction();// save barchart rank to a csv file
 
-    // FIXME: temp test for searching ATAC->RNA correspondence
+    // for searching ATAC->RNA correspondence
     void updateRNAData();
 
     void loadLabelsFromSTDatasetFromFileForRNA();
