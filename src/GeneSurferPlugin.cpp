@@ -341,16 +341,17 @@ void GeneSurferPlugin::positionDatasetChanged()
             _enabledDimNames.push_back(dimNames[i]);
     }
 
-    qDebug() << "GeneSurferPlugin::positionDatasetChanged(): start converting dataset ... ";
-    convertToEigenMatrix(_positionDataset, _positionSourceDataset, _dataStore.getBaseData());
-    convertToEigenMatrixProjection(_positionDataset, _dataStore.getBaseFullProjection());
+    // TODO: remove, _dataStore and views are not used in ATAC viewer (only in ST mode)
+    //qDebug() << "GeneSurferPlugin::positionDatasetChanged(): start converting dataset ... ";
+    //convertToEigenMatrix(_positionDataset, _positionSourceDataset, _dataStore.getBaseData()); 
+    //convertToEigenMatrixProjection(_positionDataset, _dataStore.getBaseFullProjection());
 
-    standardizeData(_dataStore.getBaseData(), _dataStore.getVariances()); // getBaseData() is standardized here TO DO: temporarily disabled
+    //standardizeData(_dataStore.getBaseData(), _dataStore.getVariances()); // getBaseData() is standardized here TO DO: temporarily disabled
     //normalizeDataEigen(_dataStore.getBaseData(), _dataStore.getBaseNormalizedData());TO DO: getBaseData() or getBaseNormalizedData()
-    qDebug() << "GeneSurferPlugin::positionDatasetChanged(): finish converting dataset ... ";
+    //qDebug() << "GeneSurferPlugin::positionDatasetChanged(): finish converting dataset ... ";
 
-    _dataStore.createDataView();
-    updateSelectedDim();
+    //_dataStore.createDataView();
+    //updateSelectedDim();
 
     updateFloodFillDataset();
 
@@ -615,23 +616,24 @@ void GeneSurferPlugin::updateFloodFillDataset()
 }
 
 void GeneSurferPlugin::updateSelectedDim() {
-    int xDim = _settingsAction.getPositionAction().getXDimensionPickerAction().getCurrentDimensionIndex();
-    int yDim = _settingsAction.getPositionAction().getYDimensionPickerAction().getCurrentDimensionIndex();
+    // TODO: remove, not used for ATAC viewer
+    //int xDim = _settingsAction.getPositionAction().getXDimensionPickerAction().getCurrentDimensionIndex();
+    //int yDim = _settingsAction.getPositionAction().getYDimensionPickerAction().getCurrentDimensionIndex();
 
-    //qDebug() << "GeneSurferPlugin::updateSelectedDim(): xDim: " << xDim << " yDim: " << yDim;
+    ////qDebug() << "GeneSurferPlugin::updateSelectedDim(): xDim: " << xDim << " yDim: " << yDim;
 
-    _dataStore.createProjectionView(xDim, yDim);
+    //_dataStore.createProjectionView(xDim, yDim);
 
-    //qDebug()<< "GeneSurferPlugin::updateSelectedDim(): getProjectionSize()"<< _dataStore.getProjectionSize();
+    ////qDebug()<< "GeneSurferPlugin::updateSelectedDim(): getProjectionSize()"<< _dataStore.getProjectionSize();
 
-    _positions.clear();
-    _positions.resize(_dataStore.getProjectionView().rows());
+    //_positions.clear();
+    //_positions.resize(_dataStore.getProjectionView().rows());
 
-    for (int i = 0; i < _dataStore.getProjectionView().rows(); i++) {
-        _positions[i].set(_dataStore.getProjectionView()(i, 0), _dataStore.getProjectionView()(i, 1));
-    }
+    //for (int i = 0; i < _dataStore.getProjectionView().rows(); i++) {
+    //    _positions[i].set(_dataStore.getProjectionView()(i, 0), _dataStore.getProjectionView()(i, 1));
+    //}
 
-    updateViewData(_positions);
+    //updateViewData(_positions);
 }
 
 void GeneSurferPlugin::updateViewData(std::vector<Vector2f>& positions) {
@@ -3064,8 +3066,8 @@ void GeneSurferPlugin::updateSlice(int sliceIndex) {
     _onSliceIndices.clear();
     _onSliceIndices = indices;
 
-    _dataStore.createDataView(indices);
-    updateSelectedDim(); // TODO: check if this would still work if actions are removed
+    //_dataStore.createDataView(indices); // TODO: remove, not used in ATAC viewer
+    //updateSelectedDim(); // TODO: check if this would still work if actions are removed
 
     // update floodfill mask on 2D
     if (_isFloodIndex.empty()) {

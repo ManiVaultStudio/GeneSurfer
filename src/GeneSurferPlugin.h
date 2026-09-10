@@ -193,7 +193,7 @@ private:
 
 private:
 
-    DataStorage                        _dataStore;
+    DataStorage                        _dataStore;// TODO: not used in ATAC viewer, remove all ref
 
     ChartWidget*                       _chartWidget;             // WebWidget that sets up the HTML page - bar chart
     MyTableWidget*                     _tableWidget;             // Customized table widget for enrichment analysis
