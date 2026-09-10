@@ -837,9 +837,6 @@ void GeneSurferPlugin::updateEnrichmentSpecies()
 
 void GeneSurferPlugin::updateSelection()
 {
-    // clear table content
-    //_tableWidget->clearContents();
-
     if (!_positionDataset.isValid())
         return;
 
@@ -880,9 +877,7 @@ void GeneSurferPlugin::updateSelection()
         // add weighting for number of cells in each cluster
         _corrFilter.getDiffFilter().computeWeightedDiff(_subsetDataAvgOri, _avgExpr, _countsSubset, static_cast<std::uint64_t>(_sortedFloodIndices.size()), 
             _countsAll, static_cast<std::uint64_t>(_numPoints), _corrGeneVector);
-
     }
-
 
     // -------------- RNA-seq gene to ATAC (RNA-seq as seed, identify similar peaks) --------------
     // Only for 3D + singlecell right now
@@ -919,11 +914,8 @@ void GeneSurferPlugin::updateSelection()
             dimAvg.push_back(averageDim);
 
         }
-        //qDebug() << "dimAvg size: " << dimAvg.size();
-
         // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _corrGeneVector);// without weighting
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _countsSubset, _corrGeneVector);// with weighting
-
     }
 
     // // -------------- ATAC to RNA-seq genes (ATAC peak as seed, identify similar RNA-seq genes) --------------
@@ -962,7 +954,7 @@ void GeneSurferPlugin::updateSelection()
             dimAvg.push_back(averageDim);
 
         }
-        //qDebug() << "dimAvg size: " << dimAvg.size();
+
         _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, dimAvg, _countsSubset, _corrGeneVector);// with weighting
     };
 
@@ -1021,74 +1013,6 @@ DataMatrix GeneSurferPlugin::populateAvgExprToSpatial() {
     qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
 
     return populatedSubsetAvg;
-}
-
-void GeneSurferPlugin::computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg) {
-    std::unordered_map<QString, int> clusterWaveNumberSums;
-
-    for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
-        int ptIndex = _sortedFloodIndices[index];
-        QString label = _cellLabels[ptIndex];
-        clusterWaveNumberSums[label] += _sortedWaveNumbers[index]; // for computing the average wave number
-    }
-
-    for (int i = 0; i < _clustersToKeep.size(); ++i) {
-        QString label = _clustersToKeep[i];
-        int count = _countsMap[label];
-        float average = (count > 0) ? static_cast<float>(clusterWaveNumberSums[label]) / count : 0.0f;
-        waveAvg.push_back(average);
-    }
-
-    qDebug() << "computeMeanWaveNumbersByCluster(): waveAvg size: " << waveAvg.size();
-}
-
-void GeneSurferPlugin::computeMeanCoordinatesByCluster(std::vector<float>& xAvg, std::vector<float>& yAvg, std::vector<float>& zAvg) {
-    std::unordered_map<QString, float> clusterXSums;
-    std::unordered_map<QString, float> clusterYSums;
-    std::unordered_map<QString, float> clusterZSums;
-
-    std::vector<float> xPositions;
-    _positionDataset->extractDataForDimension(xPositions, 2);
-
-    std::vector<float> yPositions;
-    _positionDataset->extractDataForDimension(yPositions, 1);
-    std::vector<float> zPositions;
-    _positionDataset->extractDataForDimension(zPositions, 0);
-
-    qDebug() << "computeMeanCoordinatesByCluster(): _sortedFloodIndices.size(): " << _sortedFloodIndices.size();
-
-    for (int index = 0; index < _sortedFloodIndices.size(); ++index) {
-        int ptIndex = _sortedFloodIndices[index];
-
-        if (ptIndex >= zPositions.size())
-
-            qDebug() << "ERROR! ptIndex " << ptIndex << " >= zPositions.size() " << zPositions.size();
-
-
-        QString label = _cellLabels[ptIndex];
-
-        clusterXSums[label] += xPositions[ptIndex];
-        clusterYSums[label] += yPositions[ptIndex];
-        clusterZSums[label] += zPositions[ptIndex];
-    }
-
-    xAvg.clear();
-    yAvg.clear();
-    zAvg.clear();
-
-    for (int i = 0; i < _clustersToKeep.size(); ++i) {
-        QString label = _clustersToKeep[i];
-        int count = _countsMap[label];
-
-        float averageX = (count > 0) ? static_cast<float>(clusterXSums[label]) / count : 0.0f;
-        xAvg.push_back(averageX);
-
-        float averageY = (count > 0) ? static_cast<float>(clusterYSums[label]) / count : 0.0f;
-        yAvg.push_back(averageY);
-
-        float averageZ = (count > 0) ? static_cast<float>(clusterZSums[label]) / count : 0.0f;
-        zAvg.push_back(averageZ);
-    }
 }
 
 void GeneSurferPlugin::updateSingleCellOption() {
@@ -1855,47 +1779,6 @@ void GeneSurferPlugin::matchLabelInSubsetForRNA()
         _countsSubset[i] = static_cast<float>(_countsMap[clusterName]); // number of pt in each cluster WITHIN the selection
     }
 
-}
-
-void GeneSurferPlugin::clusterGenes()
-{
-    // TODO: remove, not used anymore
-}
-
-
-void GeneSurferPlugin::computeFloodedClusterScalars(const std::vector<int> filteredDimIndices, const int* labels)
-{
-    // TODO: Remove, not used anymore
-}
-
-void GeneSurferPlugin::computeFloodedClusterScalarsSingleCell(const std::vector<int> filteredDimIndices, const int* labels) {
-    // TODO: Remove, not used anymore
-}
-
-void GeneSurferPlugin::updateClusterScalarOutput(const std::vector<float>& scalars)
-{
-    // TODO: remove, not used anymore
-}
-
-void GeneSurferPlugin::getFuntionalEnrichment()
-{
-    // TODO: Remove, not used anymore
-}
-
-void GeneSurferPlugin::updateEnrichmentTable(const QVariantList& data) {
-    // TODO: Remove, not used anymore
-}
-
-void GeneSurferPlugin::noDataEnrichmentTable() {
-    // TODO: Remove, not used anymore
-}
-
-void GeneSurferPlugin::onTableClicked(int row, int column) {
-    // TODO: Remove, not used anymore
-}
-
-void GeneSurferPlugin::updateClick() {
-    // TODO: Remove, not used anymore
 }
 
 void GeneSurferPlugin::updateSlice(int sliceIndex) {

@@ -108,15 +108,6 @@ public slots:
     /** Converts ManiVault's point data to a json-like data structure that Qt can pass to the JS code */
     void convertDataAndUpdateChart();
 
-    /** Update the enrichment analysis table with the current data */
-    void updateEnrichmentTable(const QVariantList& data);
-
-    /** Update the enrichment analysis table when data is not avaliable */
-    void noDataEnrichmentTable();
-
-private slots:
-    /** Invoked when the selection of the cell in the table changes */
-    void onTableClicked(int row, int column);
 
 private:
     /** Published selections received from the JS side to ManiVault's core */
@@ -132,26 +123,6 @@ private:
 
     /** Update the _dimView */
     void updateDimView(const QString& selectedDim);
-
-    /** Cluster genes based on their pairwise correlations */
-    void clusterGenes();
-
-    /** Compute the scalar values of each cluster for the entire scatter plot */
-    //void computeEntireClusterScalars(const std::vector<int> filteredDimIndices, const int* labels);
-
-    /** Compute the scalar values of each cluster for the only flooded cells */
-    void computeFloodedClusterScalars(const std::vector<int> filteredDimIndices, const int* labels);
-
-    /** Compute the scalar values of each cluster for the only flooded cells - for single cell option */
-    void computeFloodedClusterScalarsSingleCell(const std::vector<int> filteredDimIndices, const int* labels);
-
-    /** Update the scalar values - to use in Volume Viewer */
-    void updateClusterScalarOutput(const std::vector<float>& scalars);
-
-    /** call to do functional enrichment of genes in each cluster */
-    void getFuntionalEnrichment();
-
-    void updateClick();
 
     /** count distribution of labels within floodfill */
     void countLabelDistribution();
@@ -170,12 +141,6 @@ private:
 
     /** populate the avg expr values to spatil domain */
     DataMatrix populateAvgExprToSpatial();
-
-    /** compute the mean coordinates by each annotation label in the floodfill - only for 3D data */
-    void computeMeanCoordinatesByCluster(std::vector<float>& xAvg, std::vector<float>& yAvg, std::vector<float>& zAvg);
-
-    /** compute the mean floodfill wave numbers by each annotation label in the floodfill*/
-    void computeMeanWaveNumbersByCluster(std::vector<float>& waveAvg);
 
     void saveDataToCsvAction();// save barchart rank to a csv file
 
