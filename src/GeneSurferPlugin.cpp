@@ -337,18 +337,6 @@ void GeneSurferPlugin::positionDatasetChanged()
             _enabledDimNames.push_back(dimNames[i]);
     }
 
-    // TODO: remove, _dataStore and views are not used in ATAC viewer (only in ST mode)
-    //qDebug() << "GeneSurferPlugin::positionDatasetChanged(): start converting dataset ... ";
-    //convertToEigenMatrix(_positionDataset, _positionSourceDataset, _dataStore.getBaseData()); 
-    //convertToEigenMatrixProjection(_positionDataset, _dataStore.getBaseFullProjection());
-
-    //standardizeData(_dataStore.getBaseData(), _dataStore.getVariances()); // getBaseData() is standardized here TO DO: temporarily disabled
-    //normalizeDataEigen(_dataStore.getBaseData(), _dataStore.getBaseNormalizedData());TO DO: getBaseData() or getBaseNormalizedData()
-    //qDebug() << "GeneSurferPlugin::positionDatasetChanged(): finish converting dataset ... ";
-
-    //_dataStore.createDataView();
-    //updateSelectedDim();
-
     updateFloodFillDataset();
 
     _dataInitialized = true;
@@ -607,7 +595,6 @@ void GeneSurferPlugin::updateFloodFillDataset()
 
 void GeneSurferPlugin::updateSelectedDim() {
     // TODO: remove, not used for ATAC viewer
-
 }
 
 void GeneSurferPlugin::updateViewData(std::vector<Vector2f>& positions) {
@@ -850,23 +837,6 @@ void GeneSurferPlugin::setEnrichmentAPIOptions(QStringList options)
 void GeneSurferPlugin::updateEnrichmentSpecies()
 {
     // TODO: remove, not used anymore
-    QString selectedSpecies = _settingsAction.getEnrichmentAction().getSpeciesPickerAction().getCurrentText();
-
-    if (selectedSpecies == "Mus musculus")
-    {
-        _currentEnrichmentSpecies = "mmusculus";
-        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
-        getFuntionalEnrichment();
-
-    }
-    else if (selectedSpecies == "Homo sapiens")
-    {
-        _currentEnrichmentSpecies = "hsapiens";
-        qDebug() << "Enrichment species changed to: " << _currentEnrichmentSpecies;
-        getFuntionalEnrichment();
-    }
-    /*else
-        qDebug() << "ERROR: no valid species selected for enrichment analysis";*/ // TODO check if needed?
 }
 
 void GeneSurferPlugin::updateSelection()
@@ -2080,8 +2050,6 @@ void GeneSurferPlugin::updateClick() {
 }
 
 void GeneSurferPlugin::updateSlice(int sliceIndex) {
-    // TODO: Remove, not used anymore
-
     _currentSliceIndex = sliceIndex;
 
     // TODO: should set the value in ScatterView with eventFilter
@@ -2101,9 +2069,6 @@ void GeneSurferPlugin::updateSlice(int sliceIndex) {
 
     _onSliceIndices.clear();
     _onSliceIndices = indices;
-
-    //_dataStore.createDataView(indices); // TODO: remove, not used in ATAC viewer
-    //updateSelectedDim(); // TODO: check if this would still work if actions are removed
 
     // update floodfill mask on 2D
     if (_isFloodIndex.empty()) {
