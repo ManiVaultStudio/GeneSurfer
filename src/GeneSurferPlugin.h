@@ -153,9 +153,6 @@ private:
 
     void updateClick();
 
-    /** set data for the views */
-    void updateViewData(std::vector<mv::Vector2f>& positions);
-
     /** count distribution of labels within floodfill */
     void countLabelDistribution();
 

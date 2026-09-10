@@ -597,10 +597,6 @@ void GeneSurferPlugin::updateSelectedDim() {
     // TODO: remove, not used for ATAC viewer
 }
 
-void GeneSurferPlugin::updateViewData(std::vector<Vector2f>& positions) {
-    // TODO: remove, not used anymore
-}
-
 void GeneSurferPlugin::updateShowDimension() {
     // TODO: remove, not used anymore
 }
@@ -858,46 +854,18 @@ void GeneSurferPlugin::updateSelection()
     if (_ATACtoRNA)
     {
         if (_isSingleCell && _sliceDataset.isValid()) {
-            //qDebug() << "HARDCODED mode only for 3D ATAC";
             countLabelDistribution();
 
             _computeSubset.computeSubsetDataAvgExpr(_avgExprRNA, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
 
-            //_subsetData3D = _subsetDataAvgOri; // TODO: FIXME: _subsetData3D is not used for RNAtoATAC/RNAtoATAC/sc+Diff, so not needed for ATAC viewer
         }
     }
     else {
-
-        if (!_isSingleCell && !_sliceDataset.isValid()) {
-            qDebug() << "Compute subset: 2D + ST";
-            _computeSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData);
-        }
-        if (!_isSingleCell && _sliceDataset.isValid()) {
-            qDebug() << "Compute subset: 3D + ST";
-            //subset data only contains the onSliceFloodIndice
-            //qDebug() << "GeneSurferPlugin::updateSelection(): _onSliceFloodIndices size: " << _onSliceFloodIndices.size();
-            _computeSubset.computeSubsetData(_dataStore.getBaseData(), _onSliceFloodIndices, _subsetData); //TODO: check if needed
-            //qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData size: " << _subsetData.rows() << " " << _subsetData.cols();
-            //subset data contains all floodfill indices     
-            //qDebug() << "GeneSurferPlugin::updateSelection(): _sortedFloodIndices size: " << _sortedFloodIndices.size();
-            _computeSubset.computeSubsetData(_dataStore.getBaseData(), _sortedFloodIndices, _subsetData3D);
-            //qDebug() << "GeneSurferPlugin::updateSelection(): _subsetData3D size: " << _subsetData3D.rows() << " " << _subsetData3D.cols();
-        }
-        if (_isSingleCell && !_sliceDataset.isValid()) {
-            qDebug() << "Compute subset: 2D + SingleCell";
-            countLabelDistribution();
-            _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
-            _subsetData.resize(_subsetDataAvgOri.rows(), _subsetDataAvgOri.cols());
-            _subsetData = _subsetDataAvgOri;
-        }
         if (_isSingleCell && _sliceDataset.isValid()) {
             qDebug() << "Compute subset: 3D + SingleCell";
             countLabelDistribution();
 
             _computeSubset.computeSubsetDataAvgExpr(_avgExpr, _clustersToKeep, _clusterAliasToRowMap, _subsetDataAvgOri);
-           
-            //_subsetData3D = _subsetDataAvgOri;// FIXME: _subsetData3D is not used for RNAtoATAC/RNAtoATAC/sc+Diff, so not needed for ATAC viewer
-            
         }
     }
 
@@ -905,14 +873,6 @@ void GeneSurferPlugin::updateSelection()
     // Compute correlation for filtering genes //
     /////////////////////////////////////////////
     // -------------- Diff --------------
-    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << "Compute filtering: 2D + ST + Diff";
-        _corrFilter.getDiffFilter().computeDiff(_subsetData, _dataStore.getBaseData(), _corrGeneVector);
-    }
-    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
-        qDebug() << "Compute filtering: 3D + ST + Diff";
-        _corrFilter.getDiffFilter().computeDiff(_subsetData3D, _dataStore.getBaseData(), _corrGeneVector);
-    }
     if (_isSingleCell && _corrFilter.getFilterType() == corrFilter::CorrFilterType::DIFF) {
         qDebug() << "Compute filtering: SingleCell +Diff";
         //_corrFilter.getDiffFilter().computeDiff(_subsetDataAvgOri, _avgExpr, _corrGeneVector); //without weighting
@@ -922,118 +882,10 @@ void GeneSurferPlugin::updateSelection()
             _countsAll, static_cast<std::uint64_t>(_numPoints), _corrGeneVector);
 
     }
-    // -------------- Moran's I -------------- // TO DO: add weighting for SC
 
-    // TODO temporary code only for 2D data and is very slow 
-    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN) {
-        qDebug() << "Compute filtering: 2D + ST + Moran";
-        _corrFilter.getMoranFilter().computeMoranVector(_sortedFloodIndices, _subsetData, _positions, _corrGeneVector);
-    }
-    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
-    {
-        qDebug() << "Compute filtering: 3D + ST + Moran";
-        std::vector<float> xPositions;
-        _positionDataset->extractDataForDimension(xPositions, 2);
-        std::vector<float> yPositions;
-        _positionDataset->extractDataForDimension(yPositions, 1);
-        std::vector<float> zPositions;
-        _positionDataset->extractDataForDimension(zPositions, 0);
-        _corrFilter.getMoranFilter().computeMoranVector(_sortedFloodIndices, _subsetData3D, xPositions, yPositions, zPositions, _corrGeneVector);
-    }
-    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
-    {
-        qDebug() << "Compute filtering: 2D + SingleCell + Moran";
-        DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
-        _corrFilter.getMoranFilter().computeMoranVector(_sortedFloodIndices, populatedSubsetAvg, _positions, _corrGeneVector);
-    }
-    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::MORAN)
-    {
-        qDebug() << "Compute filtering: 3D + SingleCell + Moran";
-        std::vector<float> xAvg;
-        std::vector<float> yAvg;
-        std::vector<float> zAvg;
-        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
-        /*qDebug() << "GeneSurferPlugin::updateSelection(): xAvg size: " << xAvg.size() << "yAvg size " << yAvg.size() << "zAvg size " << zAvg.size();
-        qDebug() << "GeneSurferPlugin::updateSelection(): _subsetDataAvgOri size: " << _subsetDataAvgOri.rows() << " " << _subsetDataAvgOri.cols();
-        qDebug() << "xAvg[0] " << xAvg[0] << "yAvg[0] " << yAvg[0] << "zAvg[0] " << zAvg[0];
-        qDebug() << "_subsetDataAvgOri(0, 0) " << _subsetDataAvgOri(0, 0);*/
-
-        _corrFilter.getMoranFilter().computeMoranVector(_subsetDataAvgOri, xAvg, yAvg, zAvg, _corrGeneVector);
-    }
-
-    // -------------- Spatial z --------------
-    if (!_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
-        //qDebug() << "Compute filtering: 2D + ST + SpatialCorrZ";
-        qDebug() << "ERROR: no z axis in 2D dataset";
-        return;
-    }
-    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
-        qDebug() << "Compute filtering: 3D + ST + SpatialZ";
-        std::vector<float> zPositions;
-        _positionDataset->extractDataForDimension(zPositions, 0);
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData3D, zPositions, _corrGeneVector);
-    }
-    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALZ) {
-        qDebug() << "Compute filtering: 3D + SingleCell + SpatialCorrZ";
-        std::vector<float> xAvg;
-        std::vector<float> yAvg;
-        std::vector<float> zAvg;
-        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
-        //_corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _corrGeneVector);// without weighting
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, zAvg, _countsSubset, _corrGeneVector);// with weighting
-    }
-
-    // -------------- Spatial y --------------
-    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
-        qDebug() << "Compute filtering: 2D + ST + SpatialCorrY";
-        std::vector<float> yPositions;
-        _positionDataset->extractDataForDimension(yPositions, 1);
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData, yPositions, _corrGeneVector);
-    }
-    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
-        qDebug() << "Compute filtering: 3D + ST + SpatialCorrY";
-
-        std::vector<float> yPositions;
-        _positionDataset->extractDataForDimension(yPositions, 1);
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, _subsetData3D, yPositions, _corrGeneVector);
-    }
-    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
-        qDebug() << "Compute filtering: 2D + SingleCell + SpatialCorrY";
-        std::vector<float> yPositions;
-        _positionDataset->extractDataForDimension(yPositions, 1);
-        DataMatrix populatedSubsetAvg = populateAvgExprToSpatial();
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_sortedFloodIndices, populatedSubsetAvg, yPositions, _corrGeneVector);// no need for weighting
-    }
-    if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::SPATIALY) {
-        qDebug() << "Compute filtering: 3D + SingleCell + SpatialCorrY";
-        std::vector<float> xAvg;
-        std::vector<float> yAvg;
-        std::vector<float> zAvg;
-        computeMeanCoordinatesByCluster(xAvg, yAvg, zAvg);
-        // _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _corrGeneVector);// without weighting
-        _corrFilter.getSpatialCorrFilter().computeCorrelationVectorOneDimension(_subsetDataAvgOri, yAvg, _countsSubset, _corrGeneVector);// with weighting
-    }
 
     // -------------- RNA-seq gene to ATAC (RNA-seq as seed, identify similar peaks) --------------
-    // TODO: only for 3D + singlecell right now
-    if (!_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
-    {
-        qDebug() << "Compute filtering: 2D + ST + RNAtoATAC";
-        qDebug() << "ERROR: not implemented yet";
-        return;
-    }
-    if (!_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
-    {
-        qDebug() << "Compute filtering: 3D + ST + RNAtoATAC";
-        qDebug() << "ERROR: not implemented yet";
-        return;
-    }
-    if (_isSingleCell && !_sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC)
-    {
-        qDebug() << "Compute filtering: 2D + SingleCell + RNAtoATAC";
-        qDebug() << "ERROR: not implemented yet";
-        return;
-    }
+    // Only for 3D + singlecell right now
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::RNAtoATAC) {
         qDebug() << "Compute filtering: RNAtoATAC";
 
@@ -1075,7 +927,7 @@ void GeneSurferPlugin::updateSelection()
     }
 
     // // -------------- ATAC to RNA-seq genes (ATAC peak as seed, identify similar RNA-seq genes) --------------
-    // TODO: only for 3D + singlecell right now
+    // Only for 3D + singlecell right now
     if (_isSingleCell && _sliceDataset.isValid() && _corrFilter.getFilterType() == corrFilter::CorrFilterType::ATACtoRNA) {
 
         qDebug() << "Compute filtering: ATACtoRNA";
@@ -1117,9 +969,6 @@ void GeneSurferPlugin::updateSelection()
     ////////////////////
     // Clustering //
     ////////////////////
-    //clusterGenes(); // TODO: remove clustering step
-    //qDebug() << "updateSelection(): data clustered";
-
     // Keep the results struture without clustering
     std::vector<std::pair<float, int>> pairs(_corrGeneVector.size());
     for (int i = 0; i < _corrGeneVector.size(); ++i) {
@@ -2253,5 +2102,3 @@ mv::gui::PluginTriggerActions GeneSurferPluginFactory::getPluginTriggerActions(c
 
     return pluginTriggerActions;
 }
-
-
