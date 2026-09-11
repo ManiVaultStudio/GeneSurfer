@@ -422,13 +422,11 @@ void GeneSurferPlugin::saveDataToCsvAction()
         }
     }
 
-    std::sort(filteredAndSortedGenes.begin(), filteredAndSortedGenes.end(),
-        [](const std::pair<QString, float>& a, const std::pair<QString, float>& b) {
+    std::sort(filteredAndSortedGenes.begin(), filteredAndSortedGenes.end(), [](const std::pair<QString, float>& a, const std::pair<QString, float>& b) {
             return a.second > b.second; // descending
         });
 
-    QString fileName = QFileDialog::getSaveFileName(
-        nullptr, "Save Gene Correlations", "", "CSV files (*.csv);;All files (*.*)");
+    QString fileName = QFileDialog::getSaveFileName(nullptr, "Save Gene Correlations", "", "CSV files (*.csv);;All files (*.*)");
     if (fileName.isEmpty())
         return;
 
@@ -489,8 +487,7 @@ void GeneSurferPlugin::saveDataToCsvAction()
         const QString& geneName = genePair.first;
         float corrValue = genePair.second;
 
-        out << geneName << ","
-            << corrValue << "\n";
+        out << geneName << "," << corrValue << "\n";
     }
 
     file.close();
@@ -581,7 +578,6 @@ void GeneSurferPlugin::updateFloodFillDataset()
 
     // update flag for point selection
     _selectedByFlood = true;
-    //qDebug() << "_selectedByFlood = true";
 
     if (!_sliceDataset.isValid()) {
         _computeSubset.updateFloodFill(_floodFillDataset, _numPoints, _sortedFloodIndices, _sortedWaveNumbers, _isFloodIndex);
@@ -637,12 +633,10 @@ void GeneSurferPlugin::computeAvgExpression() {
             clusterToIndicesMap[clusterName].push_back(ptIndex);
         }
     }
-    //qDebug() << "GeneSurferPlugin::computeAvgExpression(): clusterToIndicesMap size: " << clusterToIndicesMap.size();
 
     _avgExpr.resize(numClusters, numGenes);
 
     // Compute the average expression for each cluster
-
     for (const auto& cluster : clusterToIndicesMap) {
         const auto& indices = cluster.second;
 
@@ -682,7 +676,6 @@ void GeneSurferPlugin::computeAvgExpression() {
 
     // Create and store the dataset
     if (!_avgExprDataset.isValid()) {
-        //qDebug() << "avgExprDataset not valid";
         _avgExprDataset = mv::data().createDataset<Points>("Points", "avgExprDataset");
         events().notifyDatasetAdded(_avgExprDataset);
     }
@@ -696,7 +689,6 @@ void GeneSurferPlugin::computeAvgExpression() {
     loadLabelsFromSTDataset();
 
     qDebug() << "computeAvgExpression() finished ";
-
 }
 
 void GeneSurferPlugin::loadAvgExpression() {
@@ -718,7 +710,6 @@ void GeneSurferPlugin::loadAvgExpression() {
     _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().setEnabled(_avgExprDatasetExists);
 
     qDebug() << "load AvgExpression finished ";
-
 }
 
 void GeneSurferPlugin::loadLabelsFromSTDataset() {
@@ -735,7 +726,6 @@ void GeneSurferPlugin::loadLabelsFromSTDataset() {
 
     for (const auto& data : mv::data().getAllDatasets())
     {
-        //qDebug() << data->getGuiName();
         if (data->getGuiName() == selectedDataName) {
             qDebug() << "data->getParent()->getGuiName() " << data->getParent()->getGuiName();
             if (data->getParent()->getGuiName() == stParentName) {
@@ -812,7 +802,6 @@ void GeneSurferPlugin::setLabelDataset() {
 
     //TODO: should trigger loadLabelsFromSTDatasetFromFile() if load avgExprDataset from file
     qDebug() << "Warning: only the label dataset is set, avgExprDataset still needs to be computed or loaded";
-
 }
 
 void GeneSurferPlugin::updateEnrichmentAPI()
@@ -994,7 +983,6 @@ void GeneSurferPlugin::updateSelection()
     /*std::vector<std::uint32_t> emptySelection;
     _positionDataset->setSelectionIndices(emptySelection);
     events().notifyDatasetDataSelectionChanged(_positionDataset);*/
-
 }
 
 DataMatrix GeneSurferPlugin::populateAvgExprToSpatial() {
@@ -1010,13 +998,13 @@ DataMatrix GeneSurferPlugin::populateAvgExprToSpatial() {
         populatedSubsetAvg.row(i) = row;
     }
 
-    qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
+    //qDebug() << "populatedSubsetAvg size: " << populatedSubsetAvg.rows() << " " << populatedSubsetAvg.cols();
 
     return populatedSubsetAvg;
 }
 
 void GeneSurferPlugin::updateSingleCellOption() {
-    qDebug() << "GeneSurferPlugin::updateSingleCellOption(): start... ";
+    //qDebug() << "GeneSurferPlugin::updateSingleCellOption(): start... ";
 
     _settingsAction.getSingleCellModeAction().getSingleCellOptionAction().isChecked() ? _isSingleCell = true : _isSingleCell = false;
     //qDebug() << "GeneSurferPlugin::updateSingleCellOption(): _isSingleCell: " << _isSingleCell;
@@ -1449,8 +1437,6 @@ void GeneSurferPlugin::loadAvgExpressionFromFile() {
         allData.insert(allData.end(), row.begin(), row.end());
     }
 
-    qDebug() << "GeneSurferPlugin::loadAvgExpressionFromFile(): allData size: " << allData.size();
-
     if (!_avgExprDataset.isValid()) {
         qDebug() << "Create an avgExprDataset";
         _avgExprDataset = mv::data().createDataset<Points>("Points", "avgExprDataset");
@@ -1550,9 +1536,6 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetFromFile() {
             "None of the scRNA-seq clusters were found in the selected ST label dataset."
         );
     }
-
-    /*qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetFromFile(): _cellLabels size: " << _cellLabels.size();
-    qDebug() << "_cellLabels[0]" << _cellLabels[0];*/
 }
 
 void GeneSurferPlugin::loadLabelsFromSTDatasetFromFileForRNA() {
@@ -1635,9 +1618,6 @@ void GeneSurferPlugin::loadLabelsFromSTDatasetFromFileForRNA() {
             "None of the scRNA-seq clusters were found in the selected ST label dataset."
         );
     }
-
-    /*qDebug() << "GeneSurferPlugin::loadLabelsFromSTDatasetFromFile(): _cellLabels size: " << _cellLabels.size();
-    qDebug() << "_cellLabels[0]" << _cellLabels[0];*/
 }
 
 void GeneSurferPlugin::countLabelDistribution()
@@ -1660,14 +1640,12 @@ void GeneSurferPlugin::countLabelDistribution()
     {
         matchLabelInSubset();
     }
-
 }
 
 void GeneSurferPlugin::matchLabelInSubset()
 {
     int numClusters = _avgExpr.rows();
     int numGenes = _avgExpr.cols();
-    //qDebug() << "GeneSurferPlugin::matchLabelInSubset(): before matching numClusters: " << numClusters << " numGenes: " << numGenes;
 
     std::vector<QString> clustersToKeep; // it is cluster names 1
     for (int i = 0; i < numClusters; ++i) {
@@ -1702,7 +1680,6 @@ void GeneSurferPlugin::matchLabelInSubset()
 
     _clustersToKeep.clear();
     _clustersToKeep = clustersToKeep; // TO DO: dirty copy
-    //qDebug() << "GeneSurferPlugin::matchLabelInSubset(): after matching numClusters: " << _clustersToKeep.size();
 
     // prepare the subset counting for adding weighting to the subset
     _countsSubset.resize(_clustersToKeep.size());
@@ -1766,8 +1743,6 @@ void GeneSurferPlugin::matchLabelInSubsetForRNA()
 void GeneSurferPlugin::updateSlice(int sliceIndex) {
     _currentSliceIndex = sliceIndex;
 
-    // TODO: should set the value in ScatterView with eventFilter
-    // Otherwise if updateSlice is called by settingsAction, this is repeated
     _settingsAction.getSectionAction().getSliceAction().setValue(_currentSliceIndex);
 
     if (!_sliceDataset.isValid()) {
