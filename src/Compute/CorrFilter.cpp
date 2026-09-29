@@ -211,50 +211,67 @@ namespace corrFilter
 
     void SpatialCorr::computeCorrelationVectorOneDimension(const DataMatrix& dataMatrix, std::vector<float>& positionsOneDimension, const Eigen::VectorXf& weights, std::vector<float>& corrVector) const
     {
-        // test with weighting
+        // with weighting
         // 3D cluster with mean position
-         
-        // check if the size of weights is the same as positionsOneDimension
-        if (weights.size() != positionsOneDimension.size())
+
+        const auto numColumns = static_cast<std::uint64_t>(dataMatrix.cols());
+
+        if (static_cast<std::uint64_t>(weights.size()) != positionsOneDimension.size() || weights.size() != dataMatrix.rows())
         {
-            qDebug() << "ERROR CorrFilter::computeCorrelationVectorOneDimension: weights.size(): " << weights.size() << " != positionsOneDimension.size(): " << positionsOneDimension.size();
+            qDebug() << "ERROR SpatialCorr::computeCorrelationVectorOneDimension:" << "incompatible matrix, positions, or weights dimensions";
+            corrVector.clear();
             return;
         }
-      
-        Eigen::VectorXf vector = Eigen::Map<Eigen::VectorXf>(positionsOneDimension.data(), positionsOneDimension.size());
 
-        // Compute weighted mean for vector
-        float weightedMean = (weights.array() * vector.array()).sum() / weights.sum();
+        corrVector.assign(numColumns, 0.0f);
 
-        // Compute weighted centered vector and norm
-        Eigen::VectorXf centered = vector.array() - weightedMean;
-        Eigen::VectorXf weightedCentered = centered.array() * weights.array().sqrt();
-        float norm = weightedCentered.squaredNorm();
+        if (weights.size() == 0 || numColumns == 0)
+            return;
 
-        std::vector<float> correlations(dataMatrix.cols());
+        // Weighted Pearson correlation requires finite, nonnegative weights.
+        if (!weights.allFinite() || (weights.array() < 0.0f).any())
+            return;
 
-        corrVector.clear();
-        corrVector.resize(dataMatrix.cols());
+        const float weightSum = weights.sum();
+        if (!(weightSum > 0.0f) || !std::isfinite(weightSum))
+            return;
 
-#pragma omp parallel for
-        for (int i = 0; i < dataMatrix.cols(); ++i) {
-            Eigen::VectorXf column = dataMatrix.col(i);
+        const float inverseWeightSum = 1.0f / weightSum;
 
-            // Compute weighted mean of the column
-            float meanColumn = (weights.array() * column.array()).sum() / weights.sum();
+        const Eigen::Map<const Eigen::VectorXf> positions(positionsOneDimension.data(), weights.size());
 
-            // Compute weighted centered column and norm
-            Eigen::VectorXf centeredColumn = column.array() - meanColumn;
-            Eigen::VectorXf weightedCenteredColumn = centeredColumn.array() * weights.array().sqrt();
-            float normColumn = weightedCenteredColumn.squaredNorm();
+        const float positionMean = weights.dot(positions) * inverseWeightSum;
 
-            // Compute the weighted dot product
-            float weightedDotProduct = (weightedCenteredColumn.array() * weightedCentered.array()).sum();
+        const Eigen::VectorXf centeredPositions = positions.array() - positionMean;
+        const Eigen::VectorXf weightedCenteredPositions = weights.array() * centeredPositions.array();
 
-            float correlation = weightedDotProduct / std::sqrt(normColumn * norm);
+        const float positionVariance = centeredPositions.dot(weightedCenteredPositions);
 
-            if (std::isnan(correlation)) { correlation = 0.0f; }
-            corrVector[i] = correlation;
+        if (!(positionVariance > 0.0f) || !std::isfinite(positionVariance))
+            return;
+
+        const float positionNorm = std::sqrt(positionVariance);
+
+#pragma omp parallel for schedule(static)
+        for (int i = 0; i < numColumns; ++i)
+        {
+            const auto column = dataMatrix.col(static_cast<Eigen::Index>(i));
+
+            const float columnMean = weights.dot(column) * inverseWeightSum;
+
+            const auto centeredColumn = column.array() - columnMean;
+
+            const float columnVariance = (weights.array() * centeredColumn.square()).sum();
+
+            if (!(columnVariance > 0.0f) || !std::isfinite(columnVariance))
+                continue;
+
+            const float covariance = (weightedCenteredPositions.array() * centeredColumn).sum();
+
+            const float correlation = (covariance / std::sqrt(columnVariance)) / positionNorm;
+
+            if (std::isfinite(correlation))
+                corrVector[i] = correlation;
         }
     }
 
@@ -604,29 +621,66 @@ namespace corrFilter
         Eigen::VectorXf meanB = allDataMatrix.colwise().mean();
         Eigen::VectorXf contrast = meanA - meanB;
 
-
-        /*qDebug() << "<<<<< contrast size: " << contrast.size() << " contrast min: " << contrast.minCoeff() << " contrast max: " << contrast.maxCoeff();
-        qDebug() << "contrast[0] " << contrast[0] << " contrast[1] " << contrast[1] << " contrast[2] " << contrast[2];
-        qDebug() << "meanA size: " << meanA.size() << " meanA min: " << meanA.minCoeff() << " meanA max: " << meanA.maxCoeff();
-        qDebug() << "meanA[0] " << meanA[0] << " meanA[1] " << meanA[1] << " meanA[2] " << meanA[2];
-        qDebug() << "meanB size: " << meanB.size() << " meanB min: " << meanB.minCoeff() << " meanB max: " << meanB.maxCoeff();
-        qDebug() << "meanB[0] " << meanB[0] << " meanB[1] " << meanB[1] << " meanB[2] " << meanB[2];*/
-
         // Norm to range [0, 1] for plotting in the bar chart
-        float minContrast = contrast.minCoeff();
-        float maxContrast = contrast.maxCoeff();
-        float rangeContrast = maxContrast - minContrast;
+        const float minContrast = contrast.minCoeff();
+        const float maxContrast = contrast.maxCoeff();
+        const float rangeContrast = maxContrast - minContrast;
 
         if (rangeContrast != 0) {
             contrast = (contrast.array() - minContrast) / rangeContrast;
         }
-        else {
+        else 
             contrast.setZero(); 
-        }
+
 
         diffVector.clear();
         diffVector.assign(contrast.data(), contrast.data() + contrast.size());
 
+    }
+
+    void Diff::computeWeightedDiff(const DataMatrix& selectionDataMatrix, const DataMatrix& allDataMatrix, const Eigen::VectorXf& selectionCounts, std::uint64_t selectionPointCount, const Eigen::VectorXf& allCounts,
+        std::uint64_t allPointCount, std::vector<float>& diffVector)
+    {
+        const auto numGenes = static_cast<std::uint64_t>(selectionDataMatrix.cols());
+
+        if (selectionDataMatrix.cols() != allDataMatrix.cols() || selectionDataMatrix.rows() != selectionCounts.size() ||
+            allDataMatrix.rows() != allCounts.size() || selectionPointCount == 0 || allPointCount == 0)
+        {
+            qDebug() << "Diff::computeWeightedDiff(): incompatible input dimensions";
+            diffVector.clear();
+            return;
+        }
+
+        diffVector.resize(numGenes);
+
+        const float inverseSelectionCount = 1.0f / static_cast<float>(selectionPointCount);
+
+        const float inverseAllCount = 1.0f / static_cast<float>(allPointCount);
+
+        const auto ompNumGenes = static_cast<std::int64_t>(numGenes);
+
+#pragma omp parallel for schedule(static)
+        for (std::int64_t gene = 0; gene < ompNumGenes; ++gene)
+        {
+            const auto eigenGene = static_cast<Eigen::Index>(gene);
+
+            const float selectionMean = selectionDataMatrix.col(eigenGene).dot(selectionCounts) * inverseSelectionCount;
+
+            const float allMean = allDataMatrix.col(eigenGene).dot(allCounts) * inverseAllCount;
+
+            diffVector[static_cast<std::uint64_t>(gene)] = selectionMean - allMean;
+        }
+
+        Eigen::Map<Eigen::VectorXf> contrast( diffVector.data(), static_cast<Eigen::Index>(numGenes));
+
+        const float minContrast = contrast.minCoeff();
+        const float maxContrast = contrast.maxCoeff();
+        const float rangeContrast = maxContrast - minContrast;
+
+        if (rangeContrast != 0.0f)
+            contrast.array() = (contrast.array() - minContrast) / rangeContrast;
+        else
+            contrast.setZero();
     }
 
 }
